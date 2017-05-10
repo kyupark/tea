@@ -13,6 +13,7 @@
 using namespace std;
 
 int main(int argc, char **argv) {
+	cout << "tea main \n";
 	setvbuf(stdout, NULL, _IONBF, 0);
 	tea::TEAOptionParser option_parser(argc, argv);
 	castle::TimeChecker checker;

@@ -174,11 +174,20 @@ private:
 	void pair_cluster_alt(map<int64_t, int64_t>& pm_cl, RAMIntervalVector& p_cl, RAMIntervalVector& n_cl, const int64_t gap_cutoff, const int64_t read_length, bool stringent_pair = false);
 	void count_clipped(
 			boost::unordered_map<string, RefRepeatIntervalVector>& ril_annot_alt,
-			boost::unordered_map<string, GeneIntervalVector>& gene_annot, const string& chr, const string& cl_prefix, const string& contig_dir,
-			const map<int64_t, int64_t>& pm_cl, const RAMIntervalVector& p_cl, const RAMIntervalVector& n_cl,
-			boost::unordered_set<int64_t>& positive_only, boost::unordered_set<int64_t>& negative_only,
-			const int64_t read_length, const int64_t fragment_size,
-			const int64_t rmasker_filter_margin, const int64_t gene_margin, const bool headless);
+			boost::unordered_map<string, GeneIntervalVector>& gene_annot,
+			const string& chr,
+			const string& cl_prefix,
+			const string& contig_dir,
+			const map<int64_t, int64_t>& pm_cl,
+			const RAMIntervalVector& p_cl,
+			const RAMIntervalVector& n_cl,
+			boost::unordered_set<int64_t>& positive_only,
+			boost::unordered_set<int64_t>& negative_only,
+			const int64_t read_length,
+			const int64_t fragment_size,
+			const int64_t rmasker_filter_margin,
+			const int64_t gene_margin,
+			const bool headless);
 	void count_clipped_v(
 				boost::unordered_map<string, RefRepeatIntervalVector>& ril_annot_alt,
 				map<int64_t, string>& vannot,

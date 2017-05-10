@@ -21,6 +21,8 @@ void TEA::set_option_parser(const TEAOptionParser& an_option) {
 	n_cores = options.n_cores;
 }
 void TEA::preprocess() {
+	bool debug = true;
+	if (debug) cout << "TEA::preprocess entered \n";
 	format_isize();
 	int32_t start_step = options.sub_name_map[options.start_step];
 	if("all" == options.sub_module) {
@@ -7671,10 +7673,10 @@ void TEA::generate_cbam_files() {
 	if(options.is_sampe) {
 		_generate_cbam_files_sampe();
 	} else {
-		_generate_cbam_files_mem();
+//		_generate_cbam_files_mem();
 //		_generate_cbam_files_mem_alt();
 //		_generate_cbam_files_mem_alt2();
-//		_generate_cbam_files_mem_org();
+		_generate_cbam_files_mem_org();
 	}
 }
 
@@ -7691,36 +7693,46 @@ void TEA::generate_cbam_files() {
 void TEA::_generate_cbam_files_sampe() {
 	string input_bam_name = options.prefix + ".bam";
 
-
-
 Copy like this  void TEA::_generate_cbam_files_mem_alt() {
  *
  */
 void TEA::_generate_cbam_files_mem() {
+	bool debug = true;
+	if (debug) cout << "TEA::_generate_cbam_files_mem entered \n";
+
 	string original_input_bam_name = options.prefix + ".bam";
 	string firststat_name = options.prefix + ".firststat";
-	string input_bam_name = options.prefix + ".disc.sorted.bam";
-	string input_bam_bfi_name = options.prefix + ".disc.sorted.bam.bfi";
-	string consd_raw_sam_name = options.prefix + ".softclips.consd.raw.sam";
+
+//	string input_bam_name = options.prefix + ".disc.sorted.bam";
+//	string input_bam_bfi_name = options.prefix + ".disc.sorted.bam.bfi";
+	string input_bam_name = options.prefix + ".bam";
+	string input_bam_bfi_name = options.prefix + ".bam.bfi";
+
 	string consd_raw_bam_name = options.prefix + ".softclips.consd.raw.bam";
+	string consd_raw_sam_name = options.prefix + ".softclips.consd.raw.sam";
 	string consd_sorted_bam_name = options.prefix + ".softclips.consd.sorted.bam";
 	string consd_sorted_sam_name = options.prefix + ".softclips.consd.sorted.sam";
 	string consd_sorted_bam_bni_name = options.prefix + ".softclips.consd.sorted.bam.bni";
-	string consd_sorted_raw_sam_name = options.prefix + ".softclips.consd.sorted.raw.sam";
 	string consd_sorted_raw_bam_name = options.prefix + ".softclips.consd.sorted.raw.bam";
+	string consd_sorted_raw_sam_name = options.prefix + ".softclips.consd.sorted.raw.sam";
 	string out_softclips_consd_bam_name = options.prefix + ".softclips.consd.bam";
 	string out_softclips_consd_cpos_name = options.prefix + ".softclips.consd.cpos";
+
 	if (!options.working_dir.empty()) {
 		firststat_name = options.working_prefix + ".firststat";
-		input_bam_name = options.working_prefix + ".disc.sorted.bam";
-		input_bam_bfi_name = options.working_prefix + ".disc.sorted.bam.bfi";
-		consd_raw_sam_name = options.working_prefix + ".softclips.consd.raw.sam";
+
+//		input_bam_name = options.working_prefix + ".disc.sorted.bam";
+//		input_bam_bfi_name = options.working_prefix + ".disc.sorted.bam.bfi";
+		input_bam_name = options.working_prefix + ".bam";
+		input_bam_bfi_name = options.working_prefix + ".bam.bfi";
+
 		consd_raw_bam_name = options.working_prefix + ".softclips.consd.raw.bam";
+		consd_raw_sam_name = options.working_prefix + ".softclips.consd.raw.sam";
 		consd_sorted_bam_name = options.working_prefix + ".softclips.consd.sorted.bam";
 		consd_sorted_sam_name = options.working_prefix + ".softclips.consd.sorted.sam";
 		consd_sorted_bam_bni_name = options.working_prefix + ".softclips.consd.sorted.bam.bni";
-		consd_sorted_raw_sam_name = options.working_prefix + ".softclips.consd.sorted.raw.sam";
 		consd_sorted_raw_bam_name = options.working_prefix + ".softclips.consd.sorted.raw.bam";
+		consd_sorted_raw_sam_name = options.working_prefix + ".softclips.consd.sorted.raw.sam";
 		out_softclips_consd_bam_name = options.working_prefix + ".softclips.consd.bam";
 		out_softclips_consd_cpos_name = options.working_prefix + ".softclips.consd.cpos";
 	}
@@ -8051,6 +8063,7 @@ void TEA::_generate_cbam_files_mem() {
 //						break;
 //					}
 //				}
+
 				if(!cigar.empty() && ('S' == cigar.back().Type)) {
 					clen = cigar.back().Length;
 				}
@@ -9123,6 +9136,9 @@ void TEA::_generate_cbam_files_mem_alt2() {
 }
 
 void TEA::_generate_cbam_files_mem_org() {
+	bool debug = true;
+	if (debug) cout << "TEA::_generate_cbam_files_mem_org entered \n";
+
 	string input_bam_name = options.prefix + ".bam";
 	string firststat_name = options.prefix + ".firststat";
 	string consd_raw_sam_name = options.prefix + ".softclips.consd.raw.sam";
@@ -9330,19 +9346,23 @@ void TEA::_generate_cbam_files_mem_org() {
 					polyAT = selected = selected2 = false;
 					auto& cigar = local_alignment_entry.CigarData;
 					// # clipped in the beginning
-					if (!cigar.empty() && ('S' == cigar.front().Type)) {
+					auto& cigar_front_type = cigar.front().Type;
+
+					if ( !cigar.empty() && ('S' == cigar_front_type || 'H' == cigar_front_type) ) {
 //					if(debug) {
 //						cout << "initial clipped\n";
 //					}
 						clen = cigar.front().Length;
 						if (clen >= 5) {
-							qual1 = qual.substr(0, clen);
+							if ('S' == cigar_front_type) {
+								qual1 = qual.substr(0, clen);
+							}
 //						if(debug) {
 //							cout << "qual1: " << qual1 << "\n";
 //						}
 							//# more than 5 good quality bases
 							int64_t n_good_quals = get_number_of_good_qualities(qual1, qcutoff);
-							if (n_good_quals >= 5) {
+							if (n_good_quals >= 5 || 'H' == cigar_front_type ) {
 //							if(debug) {
 //								cout << "selected 1\n";
 //								exit(0);
@@ -9353,7 +9373,9 @@ void TEA::_generate_cbam_files_mem_org() {
 									selected2 = true;
 									cpos = local_alignment_entry.Position;
 									//								# check whether the clipped seq has >=10
-									cseq1 = seq.substr(0, clen);
+									if ('S' == cigar_front_type) {
+										cseq1 = seq.substr(0, clen);
+									}
 									if (string::npos != cseq1.find(poly_a_str)) {
 										polyAT = true;
 									}
@@ -9369,12 +9391,14 @@ void TEA::_generate_cbam_files_mem_org() {
 //						break;
 //					}
 //				}
-					if(!cigar.empty() && ('S' == cigar.back().Type)) {
+					auto& cigar_back_type = cigar.back().Type;
+
+					if( !cigar.empty() && ('S' == cigar_back_type || 'H' == cigar_back_type) ) {
 						clen = cigar.back().Length;
 					}
 					if (clen >= 5) {
 						int64_t the_qual_sub_str_pos = qual.size() - clen;
-						if (the_qual_sub_str_pos > 0) {
+						if (the_qual_sub_str_pos > 0 && 'S' == cigar_front_type) {
 							qual2 = qual.substr(the_qual_sub_str_pos);
 						} else {
 							qual2 = qual;
@@ -9396,7 +9420,9 @@ void TEA::_generate_cbam_files_mem_org() {
 								cpos = get_cpos(local_alignment_entry.Position, cigar, qual2, -1);
 								//							# check whether the clipped seq has >=10
 								int64_t the_seq_sub_str_pos = seq.size() - clen;
-								cseq2 = seq.substr(the_seq_sub_str_pos);
+								if ('S' == cigar_front_type) {
+									cseq2 = seq.substr(the_seq_sub_str_pos);
+								}
 								//							if ($cseq2 =~ m/T{$min_polyAT,}/) { $polyAT = 1 }
 								if (string::npos != cseq2.find(poly_t_str)) {
 									polyAT = true;
@@ -10853,8 +10879,22 @@ void TEA::pair_cluster_alt(map<int64_t, int64_t>& pm_cl, RAMIntervalVector& p_cl
 //	cout << checker;
 }
 
-void TEA::count_clipped(boost::unordered_map<string, RefRepeatIntervalVector>& ril_annot_alt, boost::unordered_map<string, GeneIntervalVector>& gene_annot, const string& chr, const string& cl_prefix, const string& contig_dir, const map<int64_t, int64_t>& pm_cl, const RAMIntervalVector& p_cl,
-		const RAMIntervalVector& n_cl, boost::unordered_set<int64_t>& positive_only, boost::unordered_set<int64_t>& negative_only, const int64_t read_length, const int64_t fragment_size, const int64_t rmasker_filter_margin, const int64_t gene_margin, const bool headless) {
+void TEA::count_clipped(
+		boost::unordered_map<string, RefRepeatIntervalVector>& ril_annot_alt,
+		boost::unordered_map<string, GeneIntervalVector>& gene_annot,
+		const string& chr,
+		const string& cl_prefix,
+		const string& contig_dir,
+		const map<int64_t, int64_t>& pm_cl,
+		const RAMIntervalVector& p_cl,
+		const RAMIntervalVector& n_cl,
+		boost::unordered_set<int64_t>& positive_only,
+		boost::unordered_set<int64_t>& negative_only,
+		const int64_t read_length,
+		const int64_t fragment_size,
+		const int64_t rmasker_filter_margin,
+		const int64_t gene_margin,
+		const bool headless) {
 //	castle::TimeChecker checker;
 //	checker.setTarget("TEA.count_clipped");
 //	checker.start();
@@ -11266,8 +11306,8 @@ void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& ma
 	if (string::npos == tmp_chr_name.find("chr")) {
 		tmp_chr_name = "chr" + chr;
 	}
-	const bool debug = (17233802 == the_ram_boundary_start && 17234376 == the_ram_boundary_end);
-//	const bool debug = false;
+//	const bool debug = (17233802 == the_ram_boundary_start && 17234376 == the_ram_boundary_end);
+	const bool debug = false;
 	BamTools::BamAlignment local_alignment_entry;
 	auto& ref_vec = local_reader.GetReferenceData();
 	while (local_reader.GetNextAlignment(local_alignment_entry)) {
@@ -11342,54 +11382,50 @@ void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& ma
 				}
 			}
 			delta = n_del - n_in;
-//				if('S' == cigars.front().Type) {
-//					cout << "Reverse(S1): " << local_alignment_entry.QueryBases.substr(0, cigars.front().Length) << "\n";
-//				} else
 			if ('S' == cigars.back().Type || 'H' == cigars.back().Type) {
 				if(debug) {
 					cout << "[TEA.get_clipped_entries] Rev-1\n";
 				}
 				int64_t match_idx = cigars.size();
 				match_idx -= 2;
+
+				int64_t cigars_back_length = cigars.back().Length;
+				if('H' == cigars.back().Type) {
+					cigars_back_length = 0;
+				}
+
 				if (match_idx >= 0 && 'M' == cigars[match_idx].Type) {
 					if(debug) {
 						cout << "[TEA.get_clipped_entries] Rev-2\n";
 					}
-					int64_t match_start = local_alignment_entry.QueryBases.size() - (cigars[match_idx].Length + cigars.back().Length);
-//					cout << "Reverse(M2): " << local_alignment_entry.QueryBases.substr(match_start, cigars[match_idx].Length) << "\n";
+
+
+					int64_t match_start = local_alignment_entry.QueryBases.size() - (cigars[match_idx].Length + cigars_back_length);
+
 					ref_seq = local_alignment_entry.QueryBases.substr(match_start, cigars[match_idx].Length);
-//						clipped_pos += cigars[match_idx].Length;
 				}
-//					int64_t match_clipped_idx = cigars_clipped_pos.size();
-//					match_clipped_idx -= 2;
-//					if(match_clipped_idx >= 0 && 'M' == cigars_clipped_pos[match_clipped_idx].Type) {
-//						clipped_pos += cigars_clipped_pos[match_idx].Length;
-//					}
-				clipped_pos += local_alignment_entry.QueryBases.size() - cigars.back().Length + delta;
+				clipped_pos += local_alignment_entry.QueryBases.size() - cigars_back_length + delta;
 				if ('S' == cigars.front().Type) {
 					if(debug) {
 						cout << "[TEA.get_clipped_entries] Rev-3\n";
 					}
 					clipped_pos -= cigars.front().Length;
 				}
-//				cout << "Reverse(S2): " << local_alignment_entry.QueryBases.substr(local_alignment_entry.QueryBases.size() - cigars.back().Length) << "\n";
-				if('H' != cigars.back().Type) {
-					clipped_seq = local_alignment_entry.QueryBases.substr(local_alignment_entry.QueryBases.size() - cigars.back().Length);
-					clipped_qual = local_alignment_entry.Qualities.substr(local_alignment_entry.Qualities.size() - cigars.back().Length);
+				clipped_seq = local_alignment_entry.QueryBases.substr(local_alignment_entry.QueryBases.size() - cigars_back_length);
+				clipped_qual = local_alignment_entry.Qualities.substr(local_alignment_entry.Qualities.size() - cigars_back_length);
 
-					int64_t n_low = get_number_of_low_qualities_at_begin(clipped_qual, options.qcutoff);
-					++clipped_pos;
-					clipped_pos_qual_trimmed = clipped_pos;
-					if (n_low > 0) {
-						if(debug) {
-							cout << "[TEA.get_clipped_entries] Rev-4\n";
-						}
-	//					cout << "# low(0): " << n_low << "/" << clipped_qual << "\n";
-						int64_t n_quality_trimmed = local_alignment_entry.QueryBases.size() - cigars.back().Length + n_low;
-						clipped_seq_qual_trimmed = local_alignment_entry.QueryBases.substr(n_quality_trimmed);
-						clipped_qual_qual_trimmed = local_alignment_entry.Qualities.substr(n_quality_trimmed);
-						clipped_pos_qual_trimmed += n_low;
+				int64_t n_low = get_number_of_low_qualities_at_begin(clipped_qual, options.qcutoff);
+				++clipped_pos;
+				clipped_pos_qual_trimmed = clipped_pos;
+				if (n_low > 0) {
+					if(debug) {
+						cout << "[TEA.get_clipped_entries] Rev-4\n";
 					}
+					int64_t n_quality_trimmed = local_alignment_entry.QueryBases.size() - cigars_back_length + n_low;
+					clipped_seq_qual_trimmed = local_alignment_entry.QueryBases.substr(n_quality_trimmed);
+					clipped_qual_qual_trimmed = local_alignment_entry.Qualities.substr(n_quality_trimmed);
+					clipped_pos_qual_trimmed += n_low;
+
 				}
 			}
 		} else {
@@ -11401,26 +11437,30 @@ void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& ma
 					cout << "[TEA.get_clipped_entries] For-1\n";
 				}
 				uint64_t match_idx = 1;
+
+				int64_t cigars_front_length = cigars.front().Length;
+				if ('H' == cigars.front().Type){
+					cigars_front_length = 0;
+				}
+
 				if (match_idx < cigars.size() && 'M' == cigars[match_idx].Type) {
 					if(debug) {
 						cout << "[TEA.get_clipped_entries] For-2\n";
 					}
-					int64_t match_start = cigars.front().Length;
-//					cout << "Forward(M3): " << local_alignment_entry.QueryBases.substr(match_start, cigars[match_idx].Length) << "\n";
+					int64_t match_start = cigars_front_length;
+
 					ref_seq = local_alignment_entry.QueryBases.substr(match_start, cigars[match_idx].Length);
 				}
-//					cout << "Forward(S3): " << local_alignment_entry.QueryBases.substr(0, cigars.front().Length) << "\n";
 
 				if('H' != cigars.front().Type) {
-					clipped_seq = local_alignment_entry.QueryBases.substr(0, cigars.front().Length);
-					clipped_qual = local_alignment_entry.Qualities.substr(0, cigars.front().Length);
+					clipped_seq = local_alignment_entry.QueryBases.substr(0, cigars_front_length);
+					clipped_qual = local_alignment_entry.Qualities.substr(0, cigars_front_length);
 					int64_t n_low = get_number_of_low_qualities_at_end(clipped_qual, options.qcutoff);
 					clipped_pos_qual_trimmed = clipped_pos;
 					if (n_low > 0) {
 						if(debug) {
 							cout << "[TEA.get_clipped_entries] For-3\n";
 						}
-	//					cout << "# low(3): " << n_low << "\n";
 						int64_t n_quality_trimmed = cigars.front().Length - n_low;
 						clipped_seq_qual_trimmed = local_alignment_entry.QueryBases.substr(0, n_quality_trimmed);
 						clipped_qual_qual_trimmed = local_alignment_entry.Qualities.substr(0, n_quality_trimmed);
@@ -11429,10 +11469,8 @@ void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& ma
 				}
 
 			}
-//				else if('S' == cigars.back().Type) {
-//					cout << "Forward(S4): " << local_alignment_entry.QueryBases.substr(local_alignment_entry.QueryBases.size() - cigars.back().Length) << "\n";
-//				}
 		}
+
 		ClippedEntry an_entry;
 		an_entry.chr = tmp_chr_name;
 		an_entry.ram_start = the_ram_boundary_start;
@@ -11670,8 +11708,8 @@ void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& ma
 	// if it were not caught by the above conditional statements, then both signals would be strongly supported.
 
 	if(debug) {
-		cout << (boost::format("[TEA.count_clipped] Positive pos: %d, freq: %d\n") % max_pos_positive % max_pos_freq_positive).str();
-		cout << (boost::format("[TEA.count_clipped] Negative pos: %d, freq: %d\n") % max_pos_negative % max_pos_freq_negative).str();
+		cout << (boost::format("[TEA.get_clipped_entries] Positive pos: %d, freq: %d\n") % max_pos_positive % max_pos_freq_positive).str();
+		cout << (boost::format("[TEA.get_clipped_entries] Negative pos: %d, freq: %d\n") % max_pos_negative % max_pos_freq_negative).str();
 	}
 
 	for (auto& an_entry : clipped_entries) {
@@ -13518,6 +13556,8 @@ void TEA::output_mate_fa_v(boost::unordered_map<string, boost::unordered_map<int
 				get_longest_fa(nrammate, nrammate_singlets);
 
 				string orientation("NA");
+
+//TODO check prammate nrammate as well!
 
 				string polyA("-");
 				string polyT("-");

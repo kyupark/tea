@@ -110,6 +110,7 @@ void ParallelDiscordExtractor::extract_discordant_reads_serial() {
 	collect_clipped_discordants_serial();
 	write_discordants_serial();
 }
+
 void ParallelDiscordExtractor::collect_boundaries(const int64_t size_block) {
 	string a_path(options.infile_name);
 	string an_index_path;
@@ -1368,7 +1369,7 @@ void ParallelDiscordExtractor::collect_discordants() {
 				string local_outfile_name = options.outfile_name + "."
 				+ str_block_id;
 				int64_t skip_pos = disc_boundary_pos[block_id];
-				fstream out(options.outfile_name + ".sam", ios::in | ios::out | ios::binary|ios::ate);
+				fstream out(options.outfile_name + ".sam", ios::in | ios::out | ios::binary | ios::ate);
 				out.seekp(skip_pos, ios::beg);
 				out << castle::IOUtils::read_fully(local_outfile_name);
 			});
