@@ -94,6 +94,7 @@ public:
 	bool is_orphan;
 	bool is_cleaning;
 	bool is_sampe;
+	bool is_mem;
 
 };
 

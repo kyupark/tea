@@ -157,7 +157,7 @@ void TEA::run_rid() {
 //	}
 
 	string cbam_file;
-	if (!options.no_clipped && options.is_sampe) {
+	if (!options.no_clipped && (options.is_sampe || options.is_mem) ) {
 		cbam_file = options.prefix + ".softclips.consd.bam";
 	}
 
@@ -166,14 +166,14 @@ void TEA::run_rid() {
 	string contig_dir = options.prefix + "/assembly_" + options.rasym + "m";
 
 	if (!options.working_dir.empty()) {
-		if (!options.no_clipped && options.is_sampe) {
+		if (!options.no_clipped && (options.is_sampe || options.is_mem)) {
 			cbam_file = options.working_prefix + ".softclips.consd.bam";
 		}
 		cl_dir = options.working_prefix + "/cluster_" + options.rasym + "m";
 		contig_dir = options.working_prefix + "/assembly_" + options.rasym + "m";
 	}
 	string cl_prefix = cl_dir + "/" + naive_prefix;
-	if (!options.no_clipped && options.is_sampe) {
+	if (!options.no_clipped && (options.is_sampe || options.is_mem)) {
 		if (!boost::filesystem::exists(cbam_file)) {
 			cout << (boost::format("[TEA.run_rid] there is no clipped bam file: %s\n") % cbam_file).str();
 			exit(1);
@@ -395,7 +395,7 @@ void TEA::run_vid() {
 	load_ref_annotation(chrl, rannot, ril_annot_alt, gap_annot, gene_annot, out_chrl, out_gap);
 
 	string cbam_file;
-	if (!options.no_clipped && options.is_sampe) {
+	if (!options.no_clipped && (options.is_sampe || options.is_mem)) {
 		cbam_file = options.prefix + ".softclips.consd.bam";
 	}
 
@@ -404,14 +404,14 @@ void TEA::run_vid() {
 	string contig_dir = options.prefix + "/assembly_" + options.rasym + "m";
 
 	if (!options.working_dir.empty()) {
-		if (!options.no_clipped && options.is_sampe) {
+		if (!options.no_clipped && (options.is_sampe || options.is_mem)) {
 			cbam_file = options.working_prefix + ".softclips.consd.bam";
 		}
 		cl_dir = options.working_prefix + "/cluster_" + options.rasym + "m";
 		contig_dir = options.prefix + "/assembly_" + options.rasym + "m";
 	}
 	string cl_prefix = cl_dir + "/" + naive_prefix;
-	if (!options.no_clipped && options.is_sampe) {
+	if (!options.no_clipped && (options.is_sampe || options.is_mem)) {
 		if (!boost::filesystem::exists(cbam_file)) {
 			cout << (boost::format("there is no clipped bam file: %s\n") % cbam_file).str();
 			exit(1);
@@ -572,7 +572,7 @@ void TEA::run_uid() {
 //	}
 
 	string cbam_file;
-	if (!options.no_clipped && options.is_sampe) {
+	if (!options.no_clipped && (options.is_sampe || options.is_mem)) {
 		cbam_file = options.prefix + ".softclips.consd.bam";
 	}
 
@@ -581,14 +581,14 @@ void TEA::run_uid() {
 	string contig_dir = options.prefix + "/assembly_" + options.rasym + "m";
 
 	if (!options.working_dir.empty()) {
-		if (!options.no_clipped && options.is_sampe) {
+		if (!options.no_clipped && (options.is_sampe || options.is_mem)) {
 			cbam_file = options.working_prefix + ".softclips.consd.bam";
 		}
 		cl_dir = options.working_prefix + "/cluster_" + options.rasym + "m";
 		contig_dir = options.prefix + "/assembly_" + options.rasym + "m";
 	}
 	string cl_prefix = cl_dir + "/" + naive_prefix;
-	if (!options.no_clipped && options.is_sampe) {
+	if (!options.no_clipped && (options.is_sampe || options.is_mem)) {
 		if (!boost::filesystem::exists(cbam_file)) {
 			cout << (boost::format("there is no clipped bam file: %s\n") % cbam_file).str();
 			exit(1);
@@ -5630,7 +5630,7 @@ void TEA::create_disc_FASTQs() {
 		the_prefix = options.working_prefix;
 	}
 
-	if(options.is_sampe) {
+	if(options.is_sampe || options.is_mem) {
 		string disc_file_name = the_prefix + ".disc.num.bam";
 		string disc_bai_name = the_prefix + ".disc.num.bam.bai";
 		string disc_bni_name = the_prefix + ".disc.num.bam.bni";
@@ -6616,7 +6616,7 @@ void TEA::generate_ram_file(const string& refbam, const string& rbamf, const str
 	load_repeat_mapping(h, exo, rabam_files);
 
 //	# matching read ids from the reference bam and generate a ram file and a bam only with rams
-	if(options.is_sampe) {
+	if(options.is_sampe || options.is_mem) {
 		write_ram_and_bam_serial(refbam, rbamf, ramf, h, exo, headless);
 	} else {
 		write_ram_and_bam_mem_serial(refbam, rbamf, ramf, h, exo, headless);
@@ -7672,11 +7672,13 @@ void TEA::write_ram_and_bam_mem_serial(const string& refbam, const string& rbamf
 void TEA::generate_cbam_files() {
 	if(options.is_sampe) {
 		_generate_cbam_files_sampe();
+	} else if(options.is_mem) {
+		_generate_cbam_files_mem_org();
 	} else {
-//		_generate_cbam_files_mem();
+		_generate_cbam_files_mem();
 //		_generate_cbam_files_mem_alt();
 //		_generate_cbam_files_mem_alt2();
-		_generate_cbam_files_mem_org();
+//		_generate_cbam_files_mem_org();
 	}
 }
 
@@ -10526,7 +10528,7 @@ void TEA::load_ram(boost::unordered_map<string, boost::unordered_map<int8_t, vec
 
 	string line;
 	ifstream in_ram(ram_file, ios::binary);
-	if(options.is_sampe) {
+	if((options.is_sampe || options.is_mem)) {
 		while(getline(in_ram, line, '\n')) {
 			if(line.empty()) {
 				continue;

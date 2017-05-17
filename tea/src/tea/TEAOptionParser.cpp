@@ -44,7 +44,7 @@ void TEAOptionParser::show_help() {
 			"       --force               override the previous results [" << is_force << "]\n"
 			"       --clean               remove some intermediate files after calling all the steps [" << is_cleaning<< "]\n"
 			"       --sampe               the BAM is mapped by bwa sampe [" << is_sampe << "]\n\n"
-
+			"       --mem                 the BAM is mapped by bwa sampe [" << is_sampe << "]\n\n"
 			"       -a [INT]              the minimum number of bases defining the polyAT [" << min_polyAT << "]\n"
 			"       -c [INT]              the quality cutoff [" << qcutoff << "]\n"
 			"       -l [STR]              bwa aln parameter [" << aln_param << "]\n"
@@ -80,7 +80,7 @@ TEAOptionParser::TEAOptionParser() :
 		assembler_param("-i 21 -j 31 -o 16 -s 251 -p 70"), start_step("FASTA"),
 		n_cores(1), qcutoff(2), max_mismatches(9), min_matches(25), min_polyAT(10),
 		min_ram(3), ram_cutoff(6), jittering(2), bp_margin(50), min_acr(2), min_acrr(0.4), min_tsd(-20), max_tsd(50), min_out_conf(5), min_clipped_len(25),
-		is_force(false), no_clipped(false), oneside_ram(false), exo(false), bam_chr(true), merge_family(true), annot_oi(true), stringent_pair(false), annot_gene(true), no_oi(true), is_transduction(false), is_orphan(false), is_cleaning(false), is_sampe(false) {
+		is_force(false), no_clipped(false), oneside_ram(false), exo(false), bam_chr(true), merge_family(true), annot_oi(true), stringent_pair(false), annot_gene(true), no_oi(true), is_transduction(false), is_orphan(false), is_cleaning(false), is_sampe(false), is_mem(false) {
 	ram_cutoff = min_ram;
 	sub_name_map["FASTA"] = 0;
 	sub_name_map["fasta"] = 0;
@@ -98,7 +98,7 @@ TEAOptionParser::TEAOptionParser(int argc, char **argv) : prefix("-"), aln_param
 		assembler_param("-i 21 -j 31 -o 16 -s 251 -p 70"), start_step("FASTA"),
 		qcutoff(2), max_mismatches(9), min_matches(25), min_polyAT(10),
 		min_ram(3), ram_cutoff(6), jittering(2), bp_margin(50), min_acr(2), min_acrr(0.4), min_tsd(-20), max_tsd(50), min_out_conf(5), min_clipped_len(25),
-		is_force(false), no_clipped(false), oneside_ram(false), exo(false), bam_chr(true), merge_family(true), annot_oi(true), stringent_pair(false), annot_gene(true), no_oi(true), is_transduction(false), is_orphan(false), is_cleaning(false), is_sampe(false) {
+		is_force(false), no_clipped(false), oneside_ram(false), exo(false), bam_chr(true), merge_family(true), annot_oi(true), stringent_pair(false), annot_gene(true), no_oi(true), is_transduction(false), is_orphan(false), is_cleaning(false), is_sampe(false), is_mem(false) {
 	string cmd = "[TEAOptionParser.TEAOptionParser] cmd: ";
 	for(int i = 0; i < argc; ++i) {
 		cmd += string(argv[i]) + " ";
@@ -230,6 +230,8 @@ TEAOptionParser::TEAOptionParser(int argc, char **argv) : prefix("-"), aln_param
 				is_cleaning = true;
 			} else if("--sampe" == argument) {
 				is_sampe = true;
+			} else if("--mem" == argument) {
+				is_mem = true;
 			} else if("--transduction" == argument) {
 				is_transduction = true;
 			} else if("--orphan" == argument) {
