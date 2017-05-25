@@ -3483,15 +3483,15 @@ void ParallelBamReader::output_read_groups_alt() {
 			vector<shared_ptr<ofstream>> read_groups_f2;
 
 			for(uint64_t rg_id = 0; rg_id < read_groups.size(); ++rg_id) {
-				string name = read_groups[rg_id];
-				string filename_1 = options.prefix + "/" + name + "_1."
+				string rgname = read_groups[rg_id];
+				string filename_1 = options.prefix + "/" + rgname + "_1."
 				+ str_block_id + ".fq";
-				string filename_2 = options.prefix + "/" + name + "_2."
+				string filename_2 = options.prefix + "/" + rgname + "_2."
 				+ str_block_id + ".fq";
 				if(!options.working_dir.empty()) {
-					filename_1 = options.working_prefix + "/" + name + "_1."
+					filename_1 = options.working_prefix + "/" + rgname + "_1."
 					+ str_block_id + ".fq";
-					filename_2 = options.working_prefix + "/" + name + "_2."
+					filename_2 = options.working_prefix + "/" + rgname + "_2."
 					+ str_block_id + ".fq";
 				}
 				read_groups_f1.push_back(

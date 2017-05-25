@@ -44,7 +44,7 @@ void TEAOptionParser::show_help() {
 			"       --force               override the previous results [" << is_force << "]\n"
 			"       --clean               remove some intermediate files after calling all the steps [" << is_cleaning<< "]\n"
 			"       --sampe               the BAM is mapped by bwa sampe [" << is_sampe << "]\n\n"
-			"       --mem                 the BAM is mapped by bwa sampe [" << is_sampe << "]\n\n"
+			"       --mem                 the BAM is mapped by bwa mem [" << is_mem << "]\n\n"
 			"       -a [INT]              the minimum number of bases defining the polyAT [" << min_polyAT << "]\n"
 			"       -c [INT]              the quality cutoff [" << qcutoff << "]\n"
 			"       -l [STR]              bwa aln parameter [" << aln_param << "]\n"
