@@ -15,7 +15,7 @@ int main(int argc, char **argv) {
 	setvbuf(stdout, NULL, _IONBF, 0);
 	castle::OptionParser option_parser(argc, argv);
 	castle::TimeChecker checker;
-	checker.setTarget("ParallelBamReader.main");
+	checker.setTarget("ParallelBamReader.main_170526-9");
 	checker.start();
 
 	if("preprocess" == option_parser.program_name) {

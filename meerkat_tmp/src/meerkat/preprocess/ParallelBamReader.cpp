@@ -3842,6 +3842,7 @@ void ParallelBamReader::output_read_groups_alt() {
 		});
 	}
 	castle::ParallelRunner::run_unbalanced_load(n_cores, tasks);
+
 //	for (uint64_t rg_id = 0; rg_id < read_groups.size(); ++rg_id) {
 //		tasks.push_back([&, rg_id, calculated_n_blocks] {
 //			string rg_name = read_groups[rg_id];
@@ -3886,7 +3887,7 @@ void ParallelBamReader::output_read_groups_alt() {
 //			boost::filesystem::remove(filename_2);
 //		}
 //	});
-	castle::ParallelRunner::run_unbalanced_load(n_cores, tasks);
+//	castle::ParallelRunner::run_unbalanced_load(n_cores, tasks);
 	cout << checker;
 }
 

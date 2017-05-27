@@ -163,7 +163,16 @@ namespace meerkat {
 	}
 	inline void ReadGroup::writeFQpair(ostream &f1, BamTools::BamAlignment &a,
 			ostream &f2, BamTools::BamAlignment &b, int n_cutoff) {
-//		bool debug = string::npos != a.Name.find("ST-E00104:502:HFJN5CCXX:1:1108:32826:10890");
+
+		//		bool debug = string::npos != a.Name.find("ST-E00206:271:HJGHVALXX:3:2115:1964:20401")
+//				|| string::npos != a.Name.find("ST-E00206:271:HJGHVALXX:3:2118:1984:24163")
+//				|| string::npos != a.Name.find("ST-E00206:271:HJGHVALXX:7:1109:1568:50305")
+//				|| string::npos != a.Name.find("ST-E00206:271:HJGHVALXX:3:2118:1984:15971")
+//				|| string::npos != a.Name.find("ST-E00206:271:HJGHVALXX:5:1106:10997:1695");
+		if (a.Length == 0 || b.Length ==0 ) {
+			return;
+		}
+
 		int n = 0;
 		for (size_t i = 0; i < a.QueryBases.size(); ++i) {
 			if (a.QueryBases[i] == 'N') {
@@ -171,6 +180,7 @@ namespace meerkat {
 			}
 		}
 //		if(debug) {
+//			cout << "[ReadGroup.writeFQpair] name: " << a.Name << "\n";
 //			cout << "[ReadGroup.writeFQpair] n: " << n << "\n";
 //			cout << "[ReadGroup.writeFQpair] QueryBases: " << a.QueryBases << "\n";
 //		}
@@ -190,9 +200,11 @@ namespace meerkat {
 			return;
 		}
 
+
 		writeFQ(f1, a);
 		writeFQ(f2, b);
 	}
+
 	/*
 	 * Write out the substring [start, start+length] (inclusive) of the
 	 * aligned read 'al' to the file 'f' in FASTQ format.

@@ -115,17 +115,27 @@ namespace meerkat {
 			length = min(al.Length, (signed) cop2.Length);
 		}
 
+		al.Length = length;
+
 		try {
+			if(length == 0) {
+				cout << "[ReadGroup::clipAlignment] zero length: " << al.Name << "\n";
+			}
 			al.Qualities = al.Qualities.substr(offset, length);
 			al.QueryBases = al.QueryBases.substr(offset, length);
+
 		} catch (exception &e) {
-			cout << "ERROR: substr failed in clipAlignment()" << endl;
+			cout << "ERROR: substr failed in clipAlignment()" << "\n";
 			cout << al.Name << " " << (al.IsReverseStrand() ? "(-)" : "(+)");
 			cout << " offset: " << offset << " length: " << length
-					<< " taglen: " << al.Length << endl;
-			cout << "cop1: " << cop1.Length << cop1.Type << endl;
-			cout << "cop2: " << cop2.Length << cop2.Type << endl;
+					<< " taglen: " << al.Length << "\n";
+			cout << "cop1: " << cop1.Length << cop1.Type << "\n";
+			cout << "cop2: " << cop2.Length << cop2.Type << "\n";
 			exit(1);
+		}
+
+		if(length == 0) {
+			cout << "[ReadGroup::clipAlignment] error not caught: " << al.Name << "\n";
 		}
 	}
 
@@ -150,12 +160,15 @@ namespace meerkat {
 			copy.Qualities = copy.Qualities.substr(converted_start, len);
 		} catch (exception &e) {
 			cout << "ERROR: substr failed in snip(" << a.Name << ", " << start
-					<< ", " << len << ")" << endl;
+					<< ", " << len << ")" << "\n";
 			cout << (a.IsReverseStrand() ? "(-)" : "(+)")
-					<< ", converted_start: " << converted_start << endl;
-			cout << a.QueryBases << endl;
-			cout << a.Qualities << endl;
+					<< ", converted_start: " << converted_start << "\n";
+			cout << a.QueryBases << "\n";
+			cout << a.Qualities << "\n";
 			exit(1);
+		}
+		if(len == 0) {
+			cout << "[ReadGroup::snip] error not caught: " << a.Name << "\n";
 		}
 		return copy;
 	}
@@ -692,8 +705,7 @@ namespace meerkat {
 		int increment = al.IsReverseStrand() ? 1 : -1;
 
 		/* substr always throws errors on 0 length strings */
-		if ((al.Qualities[start_idx] - known_qencodings[qenc].min) >= q
-				|| al.Length <= 0)
+		if ((al.Qualities[start_idx] - known_qencodings[qenc].min) >= q || al.Length <= 0)
 			return;
 
 		s = 0;
@@ -714,17 +726,18 @@ namespace meerkat {
 		int new_len = al.Length - x;
 
 		al.Length = new_len;
+
 		try {
 			al.QueryBases = al.QueryBases.substr(new_start, new_len);
 			al.Qualities = al.Qualities.substr(new_start, new_len);
 		} catch (exception &e) {
-			cout << "ERROR: substr failed in trim_read" << endl;
-			cout << "trim_read(" << al.Name << ", " << q << ")" << endl;
+			cout << "ERROR: substr failed in trim_read" << "\n";
+			cout << "trim_read(" << al.Name << ", " << q << ")" << "\n";
 			cout << new_start << " " << new_len << " x: " << x << " best_s: "
-					<< best_s << " best_i: " << best_i << endl;
-			cout << al.IsReverseStrand() << endl;
-			cout << al.QueryBases << endl;
-			cout << al.Qualities << endl;
+					<< best_s << " best_i: " << best_i << "\n";
+			cout << al.IsReverseStrand() << "\n";
+			cout << al.QueryBases << "\n";
+			cout << al.Qualities << "\n";
 			exit(1);
 		}
 
@@ -734,15 +747,14 @@ namespace meerkat {
 			return;
 
 		int idx = al.IsReverseStrand() ? 0 : al.CigarData.size() - 1;
-		al.CigarData[idx].Length = max(0,
-				(signed) al.CigarData[idx].Length - x);
+		al.CigarData[idx].Length = max(0, (signed) al.CigarData[idx].Length - x);
 	}
 	void ReadGroup::split_read(BamTools::BamAlignment &al, ostream & split1,
 			ostream& split2, int frag_size, int n_cutoff) {
 		if (al.Length < 2 * frag_size) {
 			cout << "ERROR: split_read tried to save alignment " << al.Name
 					<< " with length " << al.Length << " when -s=" << frag_size
-					<< endl;
+					<< "\n";
 			exit(1);
 		}
 //		bool debug = al.Name == "ST-E00104:502:HFJN5CCXX:7:2122:32400:13527";
