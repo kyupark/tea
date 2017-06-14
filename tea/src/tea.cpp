@@ -17,7 +17,7 @@ int main(int argc, char **argv) {
 	setvbuf(stdout, NULL, _IONBF, 0);
 	tea::TEAOptionParser option_parser(argc, argv);
 	castle::TimeChecker checker;
-	checker.setTarget("TEA.main");
+	checker.setTarget("TEA.main tea-170613-1-fix-polya");
 	checker.start();
 
 	if("tea" == option_parser.program_name) {

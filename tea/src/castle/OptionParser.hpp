@@ -127,9 +127,9 @@ namespace castle {
 			string get_working_path(const string& a_path);
 			string get_working_folder_path() const;
 		private:
-					/* Utility function for read_isinfo. */
-					string get_rg(string& s);
-					string f(string& s);
+			/* Utility function for read_isinfo. */
+			string get_rg(string& s);
+			string f(string& s);
 	};
 	inline string OptionParser::get_rg(string& s) {
 		int i = s.find_last_of(" \r\n\t", s.find(":") + 1);

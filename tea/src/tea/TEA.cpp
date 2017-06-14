@@ -194,8 +194,7 @@ void TEA::run_rid() {
 	auto& the_rep_is = is["all"];
 	double rmasker_filter_margin = 500;
 
-	cout << (boost::format("[TEA.run_rid] fragment: %d (mu: %d, sd: %d), intra.gap: %d, inter.gap: %d, ins.margin: %d, rmasker.filter.margin: %d\n") % the_rep_is["fr"] % the_rep_is["mu"] % the_rep_is["sd"] % the_rep_is["intra_gap"] % the_rep_is["inter_gap"] % the_rep_is["ins_margin"]
-					% rmasker_filter_margin).str();
+	cout << (boost::format("[TEA.run_rid] fragment: %d (mu: %d, sd: %d), intra.gap: %d, inter.gap: %d, ins.margin: %d, rmasker.filter.margin: %d\n") % the_rep_is["fr"] % the_rep_is["mu"] % the_rep_is["sd"] % the_rep_is["intra_gap"] % the_rep_is["inter_gap"] % the_rep_is["ins_margin"] % rmasker_filter_margin).str();
 
 	const bool rm_dup = false;
 
@@ -3939,8 +3938,7 @@ void TEA::output_raw_file(const string& chr, const string& cl_prefix, const RAMI
 			string p_read_name = castle::StringUtils::join(positive_entry.value.rname, ",");
 			string n_read_name = castle::StringUtils::join(negative_entry.value.rname, ",");
 
-			out_cl_raw << tmp_chr_name << "\t" << the_ram_boundary_start << "\t" << the_ram_boundary_end << "\t" << ram_boundary_size << "\t" << p_rep_repeat << "\t" << repeat_family << "\t" << repeat_class << "\t" << ram << "\t" << pram << "\t" << nram << "\t" << pram_start << "\t" << pram_end
-					<< "\t" << nram_start << "\t" << nram_end << "\t" << pram_pos << "\t" << nram_pos << "\t" << p_rep_repeat << "\t" << n_rep_repeat << "\t" << p_repeat_name << "\t" << n_repeat_name << "\t" << p_read_name << "\t" << n_read_name << "\n";
+			out_cl_raw << tmp_chr_name << "\t" << the_ram_boundary_start << "\t" << the_ram_boundary_end << "\t" << ram_boundary_size << "\t" << p_rep_repeat << "\t" << repeat_family << "\t" << repeat_class << "\t" << ram << "\t" << pram << "\t" << nram << "\t" << pram_start << "\t" << pram_end << "\t" << nram_start << "\t" << nram_end << "\t" << pram_pos << "\t" << nram_pos << "\t" << p_rep_repeat << "\t" << n_rep_repeat << "\t" << p_repeat_name << "\t" << n_repeat_name << "\t" << p_read_name << "\t" << n_read_name << "\n";
 		}
 	}
 	{
@@ -7705,11 +7703,8 @@ void TEA::_generate_cbam_files_mem() {
 	string original_input_bam_name = options.prefix + ".bam";
 	string firststat_name = options.prefix + ".firststat";
 
-//	string input_bam_name = options.prefix + ".disc.sorted.bam";
-//	string input_bam_bfi_name = options.prefix + ".disc.sorted.bam.bfi";
 	string input_bam_name = options.prefix + ".bam";
 	string input_bam_bfi_name = options.prefix + ".bam.bfi";
-
 	string consd_raw_bam_name = options.prefix + ".softclips.consd.raw.bam";
 	string consd_raw_sam_name = options.prefix + ".softclips.consd.raw.sam";
 	string consd_sorted_bam_name = options.prefix + ".softclips.consd.sorted.bam";
@@ -7722,11 +7717,6 @@ void TEA::_generate_cbam_files_mem() {
 
 	if (!options.working_dir.empty()) {
 		firststat_name = options.working_prefix + ".firststat";
-
-//		input_bam_name = options.working_prefix + ".disc.sorted.bam";
-//		input_bam_bfi_name = options.working_prefix + ".disc.sorted.bam.bfi";
-		input_bam_name = options.working_prefix + ".bam";
-		input_bam_bfi_name = options.working_prefix + ".bam.bfi";
 
 		consd_raw_bam_name = options.working_prefix + ".softclips.consd.raw.bam";
 		consd_raw_sam_name = options.working_prefix + ".softclips.consd.raw.sam";
@@ -10681,8 +10671,8 @@ void TEA::get_cluster_alt(const string& chr, RAMIntervalVector& cl, vector<RAMRe
 		return;
 	}
 	// declares each break point if the gap between rams is larger than gap_cutoff or the repeat family name is not the same except for PolyA family
-	// since Poly-A family can be attached to any family.
-	boost::unordered_map<string, vector<vector<int64_t>>> breakpoint_ids;
+	// since PolyA family can be attached to any family.
+boost::unordered_map<string, vector<vector<int64_t>>> breakpoint_ids;
 	for (int64_t pos_id = 0; pos_id < max_id; ++pos_id) {
 		auto& a_ram = sram[pos_id];
 		auto& the_family = a_ram.repeat_family;
@@ -10692,6 +10682,8 @@ void TEA::get_cluster_alt(const string& chr, RAMIntervalVector& cl, vector<RAMRe
 		breakpoint_ids[the_family].reserve(10000);
 	}
 //	const bool debug = false;
+
+// 	gap_cutoff check
 	for (int64_t pos_id = 0; pos_id < max_id; ++pos_id) {
 		auto& a_ram = sram[pos_id];
 //		const bool debug = chr == "1" && a_ram.pos >= 1508219 && a_ram.pos <= 1508937;
@@ -10752,6 +10744,8 @@ void TEA::get_cluster_alt(const string& chr, RAMIntervalVector& cl, vector<RAMRe
 			}
 		}
 	}
+
+//
 //	int64_t max_sram_id = sram.size();
 	vector<RepeatClusterEntry> cluster_entries;
 	for (auto& a_family_entry : breakpoint_ids) {
@@ -10816,24 +10810,26 @@ void TEA::pair_cluster_alt(map<int64_t, int64_t>& pm_cl, RAMIntervalVector& p_cl
 	results.reserve(10000);
 	const int64_t ram_boundary_limit = 2 * read_length + 10;
 	for (uint64_t r_id = 0; r_id < p_cl.size(); ++r_id) {
-		auto& a_ram_entry = p_cl[r_id];
+		auto& a_positive_ram_entry = p_cl[r_id];
 		RAMIntervalVector result_selected;
 		int64_t n_ram_supports = 0;
 //		int64_t ram_boundary_size = (a_ram_entry.stop - a_ram_entry.start + 1);
 //		if (ram_boundary_size < ram_boundary_limit) {
 //			continue;
 //		}
-		n_ram_supports += a_ram_entry.value.ram;
+		n_ram_supports += a_positive_ram_entry.value.ram;
 		results.clear();
 		boost::unordered_set<string> possible_family;
 		possible_family.insert("PolyA");
-		possible_family.insert(a_ram_entry.value.family.begin(), a_ram_entry.value.family.end());
+		possible_family.insert(a_positive_ram_entry.value.family.begin(), a_positive_ram_entry.value.family.end());
 //		const bool debug  = (37925043 == a_ram_entry.start);
 		const bool debug = false;
-		negative_strand_interval_tree.find_overlap(a_ram_entry.start, a_ram_entry.stop + gap_cutoff, results);
+		negative_strand_interval_tree.find_overlap(a_positive_ram_entry.start, a_positive_ram_entry.stop + gap_cutoff, results);
 		if (debug) {
 			cout << "[TEA.pair_cluster_alt] results: " << results.size() << "\n";
 		}
+		bool is_paired = false;
+
 		for (auto& a_negative_ram_entry : results) {
 
 			bool found_incompatible = false;
@@ -10850,19 +10846,21 @@ void TEA::pair_cluster_alt(map<int64_t, int64_t>& pm_cl, RAMIntervalVector& p_cl
 				continue;
 			}
 
-			const int64_t ram_boundary_size = a_negative_ram_entry.stop - a_ram_entry.start + read_length;
+			const int64_t ram_boundary_size = a_negative_ram_entry.stop - a_positive_ram_entry.start + read_length;
 			if (debug) {
 				cout << "[TEA.pair_cluster_alt] ram_boundary_size: " << ram_boundary_size << "/" << ram_boundary_limit << "\n";
 			}
 			// the ram boundary is smaller than the minimum ram boundary size
 			if (ram_boundary_size > ram_boundary_limit) {
 				if (stringent_pair) {
-					if (a_ram_entry.start <= a_negative_ram_entry.start && a_ram_entry.stop <= a_negative_ram_entry.stop) {
+					if (a_positive_ram_entry.start <= a_negative_ram_entry.start && a_positive_ram_entry.stop <= a_negative_ram_entry.stop) {
 						result_selected.push_back(a_negative_ram_entry);
+						is_paired=true;
 					}
 				} else {
-					if (a_ram_entry.start < a_negative_ram_entry.stop) {
+					if (a_positive_ram_entry.start < a_negative_ram_entry.stop) {
 						result_selected.push_back(a_negative_ram_entry);
+						is_paired=true;
 					}
 				}
 			}
