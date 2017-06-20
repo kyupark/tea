@@ -13,11 +13,11 @@
 using namespace std;
 
 int main(int argc, char **argv) {
-	cout << "tea main \n";
+	cout << "tea main tea-170618-1-one-ram-map-to-multi\n";
 	setvbuf(stdout, NULL, _IONBF, 0);
 	tea::TEAOptionParser option_parser(argc, argv);
 	castle::TimeChecker checker;
-	checker.setTarget("TEA.main tea-170613-1-fix-polya");
+	checker.setTarget("TEA.main");
 	checker.start();
 
 	if("tea" == option_parser.program_name) {

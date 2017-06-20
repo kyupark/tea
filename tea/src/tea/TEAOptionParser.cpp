@@ -31,7 +31,8 @@ void TEAOptionParser::show_help() {
 			"       comp                  compare results\n\n"
 			"Options:\n\n"
 			"       -x [STR]              the absolute path prefix of the INPUT BAM file excluding \".bam\" suffix. e.g.) /home/test.bam -> /home/test [" << prefix << "]\n";
-	cout << boolalpha << "       -D [STR]              the path to output folder [" << working_dir << "]\n"
+	cout << boolalpha <<
+			"       -D [STR]              the path to output folder [" << working_dir << "]\n"
 			"       -t [INT]              # cores for parallelization [" << n_cores << "]\n\n"
 			"       -M [STR]              the path to a repeat masker text file [NONE]\n"
 			"       -N [STR]              the path to a repeat annotation file [NONE]\n"
@@ -223,7 +224,7 @@ TEAOptionParser::TEAOptionParser(int argc, char **argv) : prefix("-"), aln_param
 			} else if("--sub" == argument) {
 				string value(argv[i + 1]);
 				sub_module = value;
-			}  else if("--step" == argument) {
+			} else if("--step" == argument) {
 				string value(argv[i + 1]);
 				start_step = value;
 			} else if("--clean" == argument) {

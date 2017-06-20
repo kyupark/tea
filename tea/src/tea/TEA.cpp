@@ -282,6 +282,9 @@ void TEA::run_rid() {
 				}
 				pair_cluster_alt(pm_cl, p_cl, n_cl, is["all"]["inter_gap"], rl["all"], stringent_pair);
 			}
+
+//			pm_cl
+
 			boost::unordered_set<int64_t> positive_paired;
 			boost::unordered_set<int64_t> negative_paired;
 
@@ -6506,7 +6509,6 @@ void TEA::generate_ra_bams() {
 			string cl_disc_1_bwa_err = cl_disc_1_file_name + ".bwa.err." + str_block_id;
 			cl_disc_1_bwa_errs.push_back(cl_disc_1_bwa_err);
 		}
-
 		for (int64_t block_id = 0; block_id < n_blocks_cl_disc_2; ++block_id) {
 			string str_block_id = boost::lexical_cast<string>(block_id);
 			string cl_disc_2_bwa_err = cl_disc_2_file_name + ".bwa.err." + str_block_id;
@@ -10645,9 +10647,9 @@ void TEA::load_ram(boost::unordered_map<string, boost::unordered_map<int8_t, vec
 }
 
 void TEA::get_cluster_alt(const string& chr, RAMIntervalVector& cl, vector<RAMRepeatEntry>& sram, boost::unordered_map<string, pair<string, string>>& rannot, const int32_t strand, int64_t gap_cutoff) {
-//	castle::TimeChecker checker;
-//	checker.setTarget("TEA.get_cluster_alt");
-//	checker.start();
+	castle::TimeChecker checker;
+	checker.setTarget("TEA.get_cluster_alt");
+	checker.start();
 	int64_t max_id = sram.size();
 	if (max_id < 2) {
 		if (1 == max_id) {
@@ -10797,14 +10799,14 @@ boost::unordered_map<string, vector<vector<int64_t>>> breakpoint_ids;
 		cl.push_back(an_interval_entry);
 	}
 
-//	cout << checker;
+	cout << checker;
 }
 
 void TEA::pair_cluster_alt(map<int64_t, int64_t>& pm_cl, RAMIntervalVector& p_cl, RAMIntervalVector& n_cl, const int64_t gap_cutoff, const int64_t read_length, bool stringent_pair) {
-//	castle::TimeChecker checker;
-//	checker.setTarget("TEA.pair_cluster_alt");
-//	checker.start();
-//	cout << (boost::format("[TEA.pair_cluster_alt] gap cutoff: %d\n") % gap_cutoff).str();
+	castle::TimeChecker checker;
+	checker.setTarget("TEA.pair_cluster_alt");
+	checker.start();
+	cout << (boost::format("[TEA.pair_cluster_alt] gap cutoff: %d\n") % gap_cutoff).str();
 	RAMIntervalTree negative_strand_interval_tree(n_cl);
 	RAMIntervalVector results;
 	results.reserve(10000);
@@ -10828,7 +10830,6 @@ void TEA::pair_cluster_alt(map<int64_t, int64_t>& pm_cl, RAMIntervalVector& p_cl
 		if (debug) {
 			cout << "[TEA.pair_cluster_alt] results: " << results.size() << "\n";
 		}
-		bool is_paired = false;
 
 		for (auto& a_negative_ram_entry : results) {
 
@@ -10855,12 +10856,10 @@ void TEA::pair_cluster_alt(map<int64_t, int64_t>& pm_cl, RAMIntervalVector& p_cl
 				if (stringent_pair) {
 					if (a_positive_ram_entry.start <= a_negative_ram_entry.start && a_positive_ram_entry.stop <= a_negative_ram_entry.stop) {
 						result_selected.push_back(a_negative_ram_entry);
-						is_paired=true;
 					}
 				} else {
 					if (a_positive_ram_entry.start < a_negative_ram_entry.stop) {
 						result_selected.push_back(a_negative_ram_entry);
-						is_paired=true;
 					}
 				}
 			}
@@ -10871,12 +10870,15 @@ void TEA::pair_cluster_alt(map<int64_t, int64_t>& pm_cl, RAMIntervalVector& p_cl
 			for (auto& a_negative_entry : result_selected) {
 //				pm_cl[a_negative_entry.value.global_cluster_id] = result_selected;
 				pm_cl[r_id] = a_negative_entry.value.global_cluster_id;
-//				cout << r_id << "<->" << a_negative_entry.value.global_cluster_id << "\n";
+//				cout << r_id << " ps:" << p_cl[r_id].value.s << " pe:" << p_cl[r_id].value.e
+//						<< " <-> " << a_negative_entry.value.global_cluster_id << "ns:" << a_negative_entry.value.s << "ne:" << a_negative_entry.value.e << "\n";
+
 			}
 //			pm_cl[r_id] = result_selected;
 		}
+
 	}
-//	cout << checker;
+	cout << checker;
 }
 
 void TEA::count_clipped(
