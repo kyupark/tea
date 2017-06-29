@@ -11107,23 +11107,12 @@ void TEA::count_clipped(
 		auto& a_ref = a_ref_vector[ref_id];
 		ref_reverse_index[a_ref.RefName] = ref_id;
 	}
-	auto rev_itr = ref_reverse_index.find(chr);
-	if (ref_reverse_index.end() == rev_itr) {
-		cout << "the chromosome name is not the same\n";
-		exit(0);
-	}
-
-	string header_cl = "chr\ts\te\tsize\ttsd\tpbp\tnbp\trep.repeat\tfamily\tclass\tram\tpram\tnram\tcr\tpcr\tncr\t"
-			"acr\tpacr\tnacr\tacrr\tpram_start\tpram_end\tnram_start\tnram_end\tpgene\tngene\tscore\ts2n\toi\tdesc\tconf\n";
-	string header_germline = "sample\t" + header_cl;
-
-	string header_clipped = "chr\ts\te\trep.repeat\tcpos\taligned\tcigar\ttname\tref.seq\tclipped.seq\tclipped.qual\n";
 
 	RefRepeatIntervalTree ref_repeat_interval_tree(the_target_repeat_annot);
 	RefRepeatIntervalVector stat_results;
 	GeneIntervalTree gene_interval_tree(the_target_gene_annot);
 	GeneIntervalVector gene_results;
-	const int64_t chr_ref_id = rev_itr->second;
+
 //	cout << "[TEA.count_clipped] process paired\n";
 	string cl_file = cl_prefix + "." + tmp_chr_name + ".cluster";
 	string germline_file = cl_prefix + "." + tmp_chr_name + ".germline";
@@ -11142,11 +11131,25 @@ void TEA::count_clipped(
 	ofstream out_p_clipped_filename(p_clipped_filename_file, ios::binary);
 	ofstream out_n_clipped_filename(n_clipped_filename_file, ios::binary);
 
+	string header_cl = "chr\ts\te\tsize\ttsd\tpbp\tnbp\trep.repeat\tfamily\tclass\tram\tpram\tnram\tcr\tpcr\tncr\t"
+			"acr\tpacr\tnacr\tacrr\tpram_start\tpram_end\tnram_start\tnram_end\tpgene\tngene\tscore\ts2n\toi\tdesc\tconf\n";
+	string header_germline = "sample\t" + header_cl;
+
+	string header_clipped = "chr\ts\te\trep.repeat\tcpos\taligned\tcigar\ttname\tref.seq\tclipped.seq\tclipped.qual\n";
+
 	if(!headless) {
 		out_cl << header_cl;
 		out_germline << header_germline;
 		out_clipped << header_clipped;
 	}
+
+	auto rev_itr = ref_reverse_index.find(chr);
+	if (ref_reverse_index.end() == rev_itr) {
+		cout << "this chromosome name does not exist in index: " << chr << "\n";
+		return;
+	}
+	const int64_t chr_ref_id = rev_itr->second;
+
 	{
 		for (auto& a_pair : pm_cl) {
 			int64_t p_idx = a_pair.first;
@@ -11186,8 +11189,7 @@ void TEA::count_clipped(
 
 			int64_t mid_point = (positive_entry.stop + negative_entry.start + read_length) / (double)2;
 			local_reader.SetRegion(chr_ref_id, start_pos, chr_ref_id, end_pos);
-			output_clipped_stat(out_p_clipped_filename, out_n_clipped_filename, out_p_mate_rname, out_n_mate_rname, out_cl, out_germline, out_clipped, contig_dir, ref_repeat_interval_tree, stat_results, gene_interval_tree, gene_results, local_reader, the_ram_boundary_start, the_ram_boundary_end,
-					positive_entry, negative_entry, chr, prefixed_chr, read_length, rmasker_filter_margin, gene_margin, mid_point);
+			output_clipped_stat(out_p_clipped_filename, out_n_clipped_filename, out_p_mate_rname, out_n_mate_rname, out_cl, out_germline, out_clipped, contig_dir, ref_repeat_interval_tree, stat_results, gene_interval_tree, gene_results, local_reader, the_ram_boundary_start, the_ram_boundary_end, positive_entry, negative_entry, chr, prefixed_chr, read_length, rmasker_filter_margin, gene_margin, mid_point);
 		}
 	}
 	RepeatClusterEntry an_empty_entry;
