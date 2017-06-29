@@ -104,7 +104,7 @@ public:
 	void create_post_contig_list(const string& out_path, const set<string>& o, const string& in_path);
 
 	void output_raw_file(const string& chr, const string& cl_prefix,
-			const RAMIntervalVector& p_cl, const RAMIntervalVector& n_cl, const map<int64_t, int64_t>& pm_cl, const boost::unordered_set<int64_t>& positive_only, const boost::unordered_set<int64_t>& negative_only, const int64_t read_length, const int64_t fragment_size, const bool headless);
+			const RAMIntervalVector& p_cl, const RAMIntervalVector& n_cl, const multimap<int64_t, int64_t>& pm_cl, const boost::unordered_set<int64_t>& positive_only, const boost::unordered_set<int64_t>& negative_only, const int64_t read_length, const int64_t fragment_size, const bool headless);
 	void BAM_to_FASTQ_serial(const string& input_BAM_name, const string& orphan_FASTQ_name, const string& disc_1_FASTQ_name, const string& disc_2_FASTQ_name);
 	void BAM_to_FASTQ(const string& a_path, const string& a_bai_path, const string& a_bni_path, const string& orphan_FASTQ_name, const string& disc_1_FASTQ_name, const string& disc_2_FASTQ_name);
 
@@ -171,14 +171,14 @@ private:
 	void load_insert_size(boost::unordered_map<string, boost::unordered_map<string, double>>& is, boost::unordered_map<string, int32_t>& rl);
 	void load_ram(boost::unordered_map<string, boost::unordered_map<int8_t, vector<RAMRepeatEntry>>>& ram, boost::unordered_map<string, pair<string, string>>& rannot, const bool rm_dup = false);
 	void get_cluster_alt(const string& chr, RAMIntervalVector& cl, vector<RAMRepeatEntry>& sram, boost::unordered_map<string, pair<string, string>>& rannot, const int32_t strand, int64_t gap_cutoff);
-	void pair_cluster_alt(map<int64_t, int64_t>& pm_cl, RAMIntervalVector& p_cl, RAMIntervalVector& n_cl, const int64_t gap_cutoff, const int64_t read_length, bool stringent_pair = false);
+	void pair_cluster_alt(multimap<int64_t, int64_t>& pm_cl, RAMIntervalVector& p_cl, RAMIntervalVector& n_cl, const int64_t gap_cutoff, const int64_t read_length, bool stringent_pair = false);
 	void count_clipped(
 			boost::unordered_map<string, RefRepeatIntervalVector>& ril_annot_alt,
 			boost::unordered_map<string, GeneIntervalVector>& gene_annot,
 			const string& chr,
 			const string& cl_prefix,
 			const string& contig_dir,
-			const map<int64_t, int64_t>& pm_cl,
+			const multimap<int64_t, int64_t>& pm_cl,
 			const RAMIntervalVector& p_cl,
 			const RAMIntervalVector& n_cl,
 			boost::unordered_set<int64_t>& positive_only,
@@ -192,7 +192,7 @@ private:
 				boost::unordered_map<string, RefRepeatIntervalVector>& ril_annot_alt,
 				map<int64_t, string>& vannot,
 				const string& chr, const string& cl_prefix, const string& contig_dir,
-				const map<int64_t, int64_t>& pm_cl, const RAMIntervalVector& p_cl, const RAMIntervalVector& n_cl,
+				const multimap<int64_t, int64_t>& pm_cl, const RAMIntervalVector& p_cl, const RAMIntervalVector& n_cl,
 				boost::unordered_set<int64_t>& positive_only, boost::unordered_set<int64_t>& negative_only,
 				const int64_t read_length, const int64_t fragment_size,
 				const int64_t rmasker_filter_margin, const int64_t gene_margin);

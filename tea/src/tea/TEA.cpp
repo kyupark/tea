@@ -258,6 +258,9 @@ void TEA::run_rid() {
 	vector<function<void()> > tasks;
 	bool headless = false;
 	for (auto c: chr_names) {
+//		if (c!="9") {
+//			continue;
+//		}
 //		auto c = c_entry.first;
 		tasks.push_back([&, c, headless] {
 			RAMIntervalVector p_cl;
@@ -268,7 +271,7 @@ void TEA::run_rid() {
 			if (ram[c][-1].size() > 0) {
 				get_cluster_alt(c, n_cl, ram[c][-1], rannot, -1, is["all"]["intra_gap"]);
 			}
-			map<int64_t, int64_t> pm_cl;
+			multimap<int64_t, int64_t> pm_cl;
 			vector<int64_t> unpaired_pidx;
 			vector<int64_t> unpaired_nidx;
 
@@ -283,17 +286,99 @@ void TEA::run_rid() {
 				pair_cluster_alt(pm_cl, p_cl, n_cl, is["all"]["inter_gap"], rl["all"], stringent_pair);
 			}
 
-//			pm_cl
-
 			boost::unordered_set<int64_t> positive_paired;
 			boost::unordered_set<int64_t> negative_paired;
 
-			for (auto an_entry : pm_cl) {
-				auto& positive_entry = p_cl[an_entry.first];
-				auto& negative_entry = n_cl[an_entry.second];
-				positive_paired.insert(positive_entry.value.global_cluster_id);
-				negative_paired.insert(negative_entry.value.global_cluster_id);
+//			for (auto an_entry : pm_cl) {
+//				auto& positive_entry = p_cl[an_entry.first];
+//				auto& negative_entry = n_cl[an_entry.second];
+//				positive_paired.insert(positive_entry.value.global_cluster_id);
+//				negative_paired.insert(negative_entry.value.global_cluster_id);
+//			}
+
+
+			bool debug = false;
+//			bool debug = (c == "22");
+
+			if (debug) {
+				for (auto& cl : pm_cl) {
+					auto& en = p_cl[cl.first].value;
+					cout << "p id:" << en.global_cluster_id <<
+							"\ts:" << en.s <<
+							"\te:" << en.e <<
+							"\tram:" << en.ram <<
+							"\trep:" << castle::StringUtils::join(en.rep_repeat, ",") << "\n";
+				}
+				for (auto& cl : pm_cl) {
+					auto& en = n_cl[cl.second].value;
+					cout << "n id:" << en.global_cluster_id <<
+							"\ts:" << en.s <<
+							"\te:" << en.e <<
+							"\tram:" << en.ram <<
+							"\trep:" << castle::StringUtils::join(en.rep_repeat, ",") << "\n";
+				}
 			}
+
+			auto it = pm_cl.begin();
+			cout << c << ":" << pm_cl.size() << "\n";
+			if (pm_cl.size() == 1) {
+				auto p = p_cl[it->first];
+				auto n = n_cl[it->second];
+
+				positive_paired.insert(p.value.global_cluster_id);
+				negative_paired.insert(n.value.global_cluster_id);
+			}
+			else if (pm_cl.size() > 1) {
+				while (it != prev(pm_cl.end())) {
+					if (debug) cout << "in while \n";
+					auto nx = next(it);
+					auto p = p_cl[it->first];
+					auto n = n_cl[it->second];
+					if (debug) cout << "p.start" << p.start << "p.stop" << p.stop << "\n";
+					if (debug) cout << "n.start" << n.start << "n.stop" << n.stop << "\n";
+
+					auto pp = p_cl[nx->first];
+					auto nn = n_cl[nx->second];
+					if (debug) cout << "pp.start" << pp.start << "pp.stop" << pp.stop  << "\n";
+					if (debug) cout << "nn.start" << nn.start << "nn.stop" << nn.stop  << "\n";
+
+					if ((p.start == pp.start || n.stop == nn.stop)
+							&& (p.value.rep_repeat == pp.value.rep_repeat
+									|| n.value.rep_repeat == nn.value.rep_repeat)) {
+						if( p.value.ram + n.value.ram < pp.value.ram + nn.value.ram) {
+							if (debug) cout << "before erase it \n";
+							it = pm_cl.erase(it);
+							if (debug) cout << "after erase it, size:" << pm_cl.size() << "\n";
+//							if (nx == pm_cl.end()) {
+//								if (debug) cout << "before break \n";
+//								break;
+//							}
+							if (debug) cout << "before continue \n";
+							continue;
+						}
+						else {
+							if (debug) cout << "before erase nx \n";
+							pm_cl.erase(nx);
+							if (debug) cout << "after erase nx, size:" << pm_cl.size() << "\n";
+						}
+					}
+					positive_paired.insert(p.value.global_cluster_id);
+					negative_paired.insert(n.value.global_cluster_id);
+					if (nx == pm_cl.end()) {
+						if (debug) cout << "before break nx==pm_cl.end\n";
+						break;
+					}
+					if (debug) cout << "before ++it \n";
+					++it;
+					if (debug) cout << "after ++it \n";
+				}
+				auto& p = p_cl[it->first];
+				auto& n = n_cl[it->second];
+
+				positive_paired.insert(p.value.global_cluster_id);
+				negative_paired.insert(n.value.global_cluster_id);
+			}
+
 			boost::unordered_set<int64_t> positive_only;
 			boost::unordered_set<int64_t> negative_only;
 
@@ -301,13 +386,33 @@ void TEA::run_rid() {
 				if (positive_paired.end() != positive_paired.find(r_id)) {
 					continue;
 				}
-				positive_only.insert(r_id);
+				bool only_polya = false;
+				if (1 == p_cl[r_id].value.rep_repeat.size()) {
+					for (auto& rep : p_cl[r_id].value.rep_repeat) {
+						if("PolyA" == rep) {
+							only_polya = true;
+						}
+					}
+				}
+				if (!only_polya) {
+					positive_only.insert(r_id);
+				}
 			}
 			for (int64_t r_id = 0; r_id < static_cast<int64_t>(n_cl.size()); ++r_id) {
 				if (negative_paired.end() != negative_paired.find(r_id)) {
 					continue;
 				}
-				negative_only.insert(r_id);
+				bool only_polya = false;
+				if (1 == n_cl[r_id].value.rep_repeat.size()) {
+					for (auto& rep : n_cl[r_id].value.rep_repeat) {
+						if("PolyA" == rep) {
+							only_polya = true;
+						}
+					}
+				}
+				if (!only_polya) {
+					negative_only.insert(r_id);
+				}
 			}
 			output_raw_file(c, cl_prefix, p_cl, n_cl, pm_cl, positive_only, negative_only, rl["all"], the_rep_is["fr"], headless);
 			int64_t gene_margin = 2;
@@ -484,7 +589,7 @@ void TEA::run_vid() {
 			if (ram[c][-1].size() > 0) {
 				get_cluster_alt(c, n_cl, ram[c][-1], rannot, -1, is["all"]["intra_gap"]);
 			}
-			map<int64_t, int64_t> pm_cl;
+			multimap<int64_t, int64_t> pm_cl;
 			vector<int64_t> unpaired_pidx;
 			vector<int64_t> unpaired_nidx;
 
@@ -661,7 +766,7 @@ void TEA::run_uid() {
 			if (ram[c][-1].size() > 0) {
 				get_cluster_alt(c, n_cl, ram[c][-1], rannot, -1, is["all"]["intra_gap"]);
 			}
-			map<int64_t, int64_t> pm_cl;
+			multimap<int64_t, int64_t> pm_cl;
 			vector<int64_t> unpaired_pidx;
 			vector<int64_t> unpaired_nidx;
 
@@ -3886,7 +3991,7 @@ void TEA::create_post_contig_list(const string& out_path, const set<string>& o, 
 	}
 }
 
-void TEA::output_raw_file(const string& chr, const string& cl_prefix, const RAMIntervalVector& p_cl, const RAMIntervalVector& n_cl, const map<int64_t, int64_t>& pm_cl, const boost::unordered_set<int64_t>& positive_only, const boost::unordered_set<int64_t>& negative_only, const int64_t read_length,
+void TEA::output_raw_file(const string& chr, const string& cl_prefix, const RAMIntervalVector& p_cl, const RAMIntervalVector& n_cl, const multimap<int64_t, int64_t>& pm_cl, const boost::unordered_set<int64_t>& positive_only, const boost::unordered_set<int64_t>& negative_only, const int64_t read_length,
 		const int64_t fragment_size, const bool headless) {
 
 	string header_cl_raw = "chr\ts\te\tsize\trep.repeat\tfamily\tclass\tram\tram1\tram2\ts1\te1\ts2\te2\tpos1\tpos2\trep.repeat1\trep.repeat2\trepeat.name1\trepeat.name2\t"
@@ -3903,24 +4008,47 @@ void TEA::output_raw_file(const string& chr, const string& cl_prefix, const RAMI
 	}
 	{
 		for (auto an_entry : pm_cl) {
+
 			auto& positive_entry = p_cl[an_entry.first];
 			auto& negative_entry = n_cl[an_entry.second];
 			int64_t the_ram_boundary_start = positive_entry.start;
 			int64_t the_ram_boundary_end = negative_entry.stop + read_length;
 			int64_t ram_boundary_size = the_ram_boundary_end - the_ram_boundary_start + 1;
 
-			string p_rep_repeat = castle::StringUtils::join(positive_entry.value.rep_repeat, ",");
-			string n_rep_repeat = castle::StringUtils::join(negative_entry.value.rep_repeat, ",");
+			set<string> rep_repeat;
+			set<string> rep_repeat_p;
+			set<string> rep_repeat_n;
+			rep_repeat_p.insert(positive_entry.value.rep_repeat.begin(), positive_entry.value.rep_repeat.end());
+			if (rep_repeat_p.size() > 1 && rep_repeat_p.find("PolyA") != rep_repeat_p.end()) {
+				rep_repeat_p.erase("PolyA");
+			}
+			rep_repeat_n.insert(negative_entry.value.rep_repeat.begin(), negative_entry.value.rep_repeat.end());
+			if (rep_repeat_n.size() > 1 && rep_repeat_n.find("PolyA") != rep_repeat_n.end()) {
+				rep_repeat_n.erase("PolyA");
+			}
+			rep_repeat.insert(rep_repeat_p.begin(), rep_repeat_p.end());
+			rep_repeat.insert(rep_repeat_n.begin(), rep_repeat_n.end());
+			string repeat_repeat = castle::StringUtils::join(rep_repeat, ",");
+			string p_rep_repeat = castle::StringUtils::join(rep_repeat_p, ",");
+			string n_rep_repeat = castle::StringUtils::join(rep_repeat_n, ",");
 
 			set<string> rep_family;
 			rep_family.insert(positive_entry.value.family.begin(), positive_entry.value.family.end());
+			rep_family.insert(negative_entry.value.family.begin(), negative_entry.value.family.end());
+			if (rep_family.size() > 1 && rep_family.find("PolyA") != rep_family.end()) {
+				rep_family.erase("PolyA");
+			}
 			string repeat_family = castle::StringUtils::join(rep_family, ",");
+
 			set<string> rep_class;
 			rep_class.insert(positive_entry.value.repeat_class.begin(), positive_entry.value.repeat_class.end());
+			rep_class.insert(negative_entry.value.repeat_class.begin(), negative_entry.value.repeat_class.end());
+			if (rep_class.size() > 1 && rep_class.find("PolyA") != rep_class.end()) {
+				rep_class.erase("PolyA");
+			}
 			string repeat_class = castle::StringUtils::join(rep_class, ",");
 
 			int64_t ram = positive_entry.value.pos.size() + negative_entry.value.pos.size();
-
 			int64_t pram = positive_entry.value.pos.size();
 			int64_t nram = negative_entry.value.pos.size();
 			int64_t pram_start = positive_entry.value.pos[0];
@@ -3941,7 +4069,7 @@ void TEA::output_raw_file(const string& chr, const string& cl_prefix, const RAMI
 			string p_read_name = castle::StringUtils::join(positive_entry.value.rname, ",");
 			string n_read_name = castle::StringUtils::join(negative_entry.value.rname, ",");
 
-			out_cl_raw << tmp_chr_name << "\t" << the_ram_boundary_start << "\t" << the_ram_boundary_end << "\t" << ram_boundary_size << "\t" << p_rep_repeat << "\t" << repeat_family << "\t" << repeat_class << "\t" << ram << "\t" << pram << "\t" << nram << "\t" << pram_start << "\t" << pram_end << "\t" << nram_start << "\t" << nram_end << "\t" << pram_pos << "\t" << nram_pos << "\t" << p_rep_repeat << "\t" << n_rep_repeat << "\t" << p_repeat_name << "\t" << n_repeat_name << "\t" << p_read_name << "\t" << n_read_name << "\n";
+			out_cl_raw << tmp_chr_name << "\t" << the_ram_boundary_start << "\t" << the_ram_boundary_end << "\t" << ram_boundary_size << "\t" << repeat_repeat << "\t" << repeat_family << "\t" << repeat_class << "\t" << ram << "\t" << pram << "\t" << nram << "\t" << pram_start << "\t" << pram_end << "\t" << nram_start << "\t" << nram_end << "\t" << pram_pos << "\t" << nram_pos << "\t" << p_rep_repeat << "\t" << n_rep_repeat << "\t" << p_repeat_name << "\t" << n_repeat_name << "\t" << p_read_name << "\t" << n_read_name << "\n";
 		}
 	}
 	{
@@ -3957,29 +4085,37 @@ void TEA::output_raw_file(const string& chr, const string& cl_prefix, const RAMI
 			int64_t the_ram_boundary_end = positive_entry.stop + read_length + fragment_size;
 			int64_t ram_boundary_size = the_ram_boundary_end - the_ram_boundary_start + 1;
 
-			string p_rep_repeat = castle::StringUtils::join(positive_entry.value.rep_repeat, ",");
+			set<string> rep_repeat;
+			rep_repeat.insert(positive_entry.value.rep_repeat.begin(), positive_entry.value.rep_repeat.end());
+			if (rep_repeat.size() > 1 && rep_repeat.find("PolyA") != rep_repeat.end()) {
+				rep_repeat.erase("PolyA");
+			}
+			string p_rep_repeat = castle::StringUtils::join(rep_repeat, ",");
 
 			set<string> rep_family;
 			rep_family.insert(positive_entry.value.family.begin(), positive_entry.value.family.end());
+			if (rep_family.size() > 1 && rep_family.find("PolyA") != rep_family.end()) {
+				rep_family.erase("PolyA");
+			}
 			string repeat_family = castle::StringUtils::join(rep_family, ",");
+
 			set<string> rep_class;
 			rep_class.insert(positive_entry.value.repeat_class.begin(), positive_entry.value.repeat_class.end());
+			if (rep_class.size() > 1 && rep_class.find("PolyA") != rep_class.end()) {
+				rep_class.erase("PolyA");
+			}
 			string repeat_class = castle::StringUtils::join(rep_class, ",");
 
 			int64_t ram = positive_entry.value.pos.size();
-
 			int64_t pram = positive_entry.value.pos.size();
 			int64_t pram_start = positive_entry.value.pos[0];
 			int64_t pram_end = positive_entry.value.pos.back();
 
 			string pram_pos = castle::StringUtils::join(positive_entry.value.pos, ",");
-
 			string p_repeat_name = castle::StringUtils::join(positive_entry.value.repeat_name, ",");
-
 			string p_read_name = castle::StringUtils::join(positive_entry.value.rname, ",");
 
-			out_cl_raw << tmp_chr_name << "\t" << the_ram_boundary_start << "\t" << the_ram_boundary_end << "\t" << ram_boundary_size << "\t" << p_rep_repeat << "\t" << repeat_family << "\t" << repeat_class << "\t" << ram << "\t" << pram << "\t0\t" << pram_start << "\t" << pram_end << "\t0\t0\t"
-					<< pram_pos << "\t\t" << p_rep_repeat << "\t\t" << p_repeat_name << "\t\t" << p_read_name << "\t\n";
+			out_cl_raw << tmp_chr_name << "\t" << the_ram_boundary_start << "\t" << the_ram_boundary_end << "\t" << ram_boundary_size << "\t" << p_rep_repeat << "\t" << repeat_family << "\t" << repeat_class << "\t" << ram << "\t" << pram << "\t0\t" << pram_start << "\t" << pram_end << "\t0\t0\t" << pram_pos << "\t\t" << p_rep_repeat << "\t\t" << p_repeat_name << "\t\t" << p_read_name << "\t\n";
 		}
 	}
 	{
@@ -3995,17 +4131,28 @@ void TEA::output_raw_file(const string& chr, const string& cl_prefix, const RAMI
 			int64_t the_ram_boundary_end = negative_entry.stop + read_length;
 			int64_t ram_boundary_size = the_ram_boundary_end - the_ram_boundary_start + 1;
 
-			string n_rep_repeat = castle::StringUtils::join(negative_entry.value.rep_repeat, ",");
+			set<string> rep_repeat;
+			rep_repeat.insert(negative_entry.value.rep_repeat.begin(), negative_entry.value.rep_repeat.end());
+			if (rep_repeat.size() > 1 && rep_repeat.find("PolyA") != rep_repeat.end()) {
+				rep_repeat.erase("PolyA");
+			}
+			string n_rep_repeat = castle::StringUtils::join(rep_repeat, ",");
 
 			set<string> rep_family;
 			rep_family.insert(negative_entry.value.family.begin(), negative_entry.value.family.end());
+			if (rep_family.size() > 1 && rep_family.find("PolyA") != rep_family.end()) {
+				rep_family.erase("PolyA");
+			}
 			string repeat_family = castle::StringUtils::join(rep_family, ",");
+
 			set<string> rep_class;
 			rep_class.insert(negative_entry.value.repeat_class.begin(), negative_entry.value.repeat_class.end());
+			if (rep_class.size() > 1 && rep_class.find("PolyA") != rep_class.end()) {
+				rep_class.erase("PolyA");
+			}
 			string repeat_class = castle::StringUtils::join(rep_class, ",");
 
 			int64_t ram = negative_entry.value.pos.size();
-
 			int64_t nram = negative_entry.value.pos.size();
 			int64_t nram_start = negative_entry.value.pos[0];
 			int64_t nram_end = negative_entry.value.pos.back();
@@ -4017,11 +4164,9 @@ void TEA::output_raw_file(const string& chr, const string& cl_prefix, const RAMI
 			string nram_pos = castle::StringUtils::join(negative_pos, ",");
 
 			string n_repeat_name = castle::StringUtils::join(negative_entry.value.repeat_name, ",");
-
 			string n_read_name = castle::StringUtils::join(negative_entry.value.rname, ",");
 
-			out_cl_raw << tmp_chr_name << "\t" << the_ram_boundary_start << "\t" << the_ram_boundary_end << "\t" << ram_boundary_size << "\t" << n_rep_repeat << "\t" << repeat_family << "\t" << repeat_class << "\t" << ram << "\t0\t" << nram << "\t0\t0\t" << nram_start << "\t" << nram_end << "\t\t"
-					<< nram_pos << "\t\t" << n_rep_repeat << "\t\t" << n_repeat_name << "\t\t" << n_read_name << "\n";
+			out_cl_raw << tmp_chr_name << "\t" << the_ram_boundary_start << "\t" << the_ram_boundary_end << "\t" << ram_boundary_size << "\t" << n_rep_repeat << "\t" << repeat_family << "\t" << repeat_class << "\t" << ram << "\t0\t" << nram << "\t0\t0\t" << nram_start << "\t" << nram_end << "\t\t" << nram_pos << "\t\t" << n_rep_repeat << "\t\t" << n_repeat_name << "\t\t" << n_read_name << "\n";
 		}
 	}
 }
@@ -10647,9 +10792,9 @@ void TEA::load_ram(boost::unordered_map<string, boost::unordered_map<int8_t, vec
 }
 
 void TEA::get_cluster_alt(const string& chr, RAMIntervalVector& cl, vector<RAMRepeatEntry>& sram, boost::unordered_map<string, pair<string, string>>& rannot, const int32_t strand, int64_t gap_cutoff) {
-	castle::TimeChecker checker;
-	checker.setTarget("TEA.get_cluster_alt");
-	checker.start();
+//	castle::TimeChecker checker;
+//	checker.setTarget("TEA.get_cluster_alt");
+//	checker.start();
 	int64_t max_id = sram.size();
 	if (max_id < 2) {
 		if (1 == max_id) {
@@ -10661,7 +10806,6 @@ void TEA::get_cluster_alt(const string& chr, RAMIntervalVector& cl, vector<RAMRe
 			an_entry.e = sram[0].pos;
 			auto& r = sram[0];
 			an_entry.rep_repeat.insert(r.repeat_name);
-//			cout << "[TEA.get_cluster] the current family: " << r.repeat_family << "\n";
 			an_entry.family.push_back(r.repeat_family);
 			an_entry.repeat_class.push_back(r.repeat_class);
 			an_entry.repeat_name.push_back(r.repeat_name);
@@ -10678,9 +10822,9 @@ boost::unordered_map<string, vector<vector<int64_t>>> breakpoint_ids;
 	for (int64_t pos_id = 0; pos_id < max_id; ++pos_id) {
 		auto& a_ram = sram[pos_id];
 		auto& the_family = a_ram.repeat_family;
-		if ("PolyA" == the_family) {
-			continue;
-		}
+//		if ("PolyA" == the_family) {
+//			continue;
+//		}
 		breakpoint_ids[the_family].reserve(10000);
 	}
 //	const bool debug = false;
@@ -10714,37 +10858,39 @@ boost::unordered_map<string, vector<vector<int64_t>>> breakpoint_ids;
 					}
 				}
 			}
+		}
+
+//		else {
+		if (breakpoint_ids[the_family].empty()) {
+			vector<int64_t> the_next_cluster_vec;
+			breakpoint_ids[the_family].push_back(the_next_cluster_vec);
+		}
+		if (breakpoint_ids[the_family].back().empty()) {
+			if(debug) {
+				cout << "Insert(New) : " << a_ram.pos << "\n";
+			}
+			breakpoint_ids[the_family].back().push_back(pos_id);
 		} else {
-			if (breakpoint_ids[the_family].empty()) {
+			int64_t the_last_pos_id = breakpoint_ids[the_family].back().back();
+			auto& prev_ram = sram[the_last_pos_id];
+			int64_t delta = a_ram.pos - prev_ram.pos;
+			if(debug) {
+				cout << "prev: " << prev_ram.str() << ", current: " << a_ram.str() << ", delta: " << delta << "\n";
+			}
+
+			if (delta > gap_cutoff) {
+				if(debug) {
+					cout << "Insert(New Current BreakPoint) : " << a_ram.pos << ", gap_cutoff: " << gap_cutoff << ", delta: " << delta << "\n";
+				}
 				vector<int64_t> the_next_cluster_vec;
 				breakpoint_ids[the_family].push_back(the_next_cluster_vec);
 			}
-			if (breakpoint_ids[the_family].back().empty()) {
-				if(debug) {
-					cout << "Insert(New) : " << a_ram.pos << "\n";
-				}
-				breakpoint_ids[the_family].back().push_back(pos_id);
-			} else {
-				int64_t the_last_pos_id = breakpoint_ids[the_family].back().back();
-				auto& prev_ram = sram[the_last_pos_id];
-				int64_t delta = a_ram.pos - prev_ram.pos;
-				if(debug) {
-					cout << "prev: " << prev_ram.str() << ", current: " << a_ram.str() << ", delta: " << delta << "\n";
-				}
-
-				if (delta > gap_cutoff) {
-					if(debug) {
-						cout << "Insert(New Current BreakPoint) : " << a_ram.pos << ", gap_cutoff: " << gap_cutoff << ", delta: " << delta << "\n";
-					}
-					vector<int64_t> the_next_cluster_vec;
-					breakpoint_ids[the_family].push_back(the_next_cluster_vec);
-				}
 //				else {
 //					cout << "Insert(Normal) : " << a_ram.pos << "\n";
 //				}
-				breakpoint_ids[the_family].back().push_back(pos_id);
-			}
+			breakpoint_ids[the_family].back().push_back(pos_id);
 		}
+//		}
 	}
 
 //
@@ -10779,8 +10925,8 @@ boost::unordered_map<string, vector<vector<int64_t>>> breakpoint_ids;
 				if(name_checker.end() != name_checker.find(r.read_name)) {
 					continue;
 				}
+
 				an_entry.rep_repeat.insert(r.repeat_name);
-				//			cout << "[TEA.get_cluster] the current family: " << r.repeat_family << "\n";
 				an_entry.family.push_back(r.repeat_family);
 				an_entry.repeat_class.push_back(r.repeat_class);
 				an_entry.repeat_name.push_back(r.repeat_name);
@@ -10790,6 +10936,7 @@ boost::unordered_map<string, vector<vector<int64_t>>> breakpoint_ids;
 				string sc_read_name = r.read_name + "sc";
 				name_checker.insert(sc_read_name);
 			}
+
 			cluster_entries.push_back(an_entry);
 		}
 	}
@@ -10799,20 +10946,20 @@ boost::unordered_map<string, vector<vector<int64_t>>> breakpoint_ids;
 		cl.push_back(an_interval_entry);
 	}
 
-	cout << checker;
+//	cout << checker;
 }
 
-void TEA::pair_cluster_alt(map<int64_t, int64_t>& pm_cl, RAMIntervalVector& p_cl, RAMIntervalVector& n_cl, const int64_t gap_cutoff, const int64_t read_length, bool stringent_pair) {
-	castle::TimeChecker checker;
-	checker.setTarget("TEA.pair_cluster_alt");
-	checker.start();
-	cout << (boost::format("[TEA.pair_cluster_alt] gap cutoff: %d\n") % gap_cutoff).str();
+void TEA::pair_cluster_alt(multimap<int64_t, int64_t>& pm_cl, RAMIntervalVector& p_cl, RAMIntervalVector& n_cl, const int64_t gap_cutoff, const int64_t read_length, bool stringent_pair) {
+//	castle::TimeChecker checker;
+//	checker.setTarget("TEA.pair_cluster_alt");
+//	checker.start();
+//	cout << (boost::format("[TEA.pair_cluster_alt] gap cutoff: %d\n") % gap_cutoff).str();
 	RAMIntervalTree negative_strand_interval_tree(n_cl);
 	RAMIntervalVector results;
 	results.reserve(10000);
 	const int64_t ram_boundary_limit = 2 * read_length + 10;
-	for (uint64_t r_id = 0; r_id < p_cl.size(); ++r_id) {
-		auto& a_positive_ram_entry = p_cl[r_id];
+	for (uint64_t p_id = 0; p_id < p_cl.size(); ++p_id) {
+		auto& a_positive_ram_entry = p_cl[p_id];
 		RAMIntervalVector result_selected;
 		int64_t n_ram_supports = 0;
 //		int64_t ram_boundary_size = (a_ram_entry.stop - a_ram_entry.start + 1);
@@ -10820,11 +10967,13 @@ void TEA::pair_cluster_alt(map<int64_t, int64_t>& pm_cl, RAMIntervalVector& p_cl
 //			continue;
 //		}
 		n_ram_supports += a_positive_ram_entry.value.ram;
+		auto& pfams = a_positive_ram_entry.value.rep_repeat;
+
 		results.clear();
 		boost::unordered_set<string> possible_family;
+		possible_family.insert(pfams.begin(), pfams.end());
 		possible_family.insert("PolyA");
-		possible_family.insert(a_positive_ram_entry.value.family.begin(), a_positive_ram_entry.value.family.end());
-//		const bool debug  = (37925043 == a_ram_entry.start);
+
 		const bool debug = false;
 		negative_strand_interval_tree.find_overlap(a_positive_ram_entry.start, a_positive_ram_entry.stop + gap_cutoff, results);
 		if (debug) {
@@ -10832,17 +10981,20 @@ void TEA::pair_cluster_alt(map<int64_t, int64_t>& pm_cl, RAMIntervalVector& p_cl
 		}
 
 		for (auto& a_negative_ram_entry : results) {
+			auto& nfams = a_negative_ram_entry.value.rep_repeat;
 
 			bool found_incompatible = false;
-			for (auto& a_family : a_negative_ram_entry.value.family) {
-				if (possible_family.end() == possible_family.find(a_family)) {
+			for (auto& nfam : nfams) {
+				if (possible_family.end() == possible_family.find(nfam)) {
 					found_incompatible = true;
 					break;
 				}
 			}
+
 			if (debug) {
 				cout << "[TEA.pair_cluster_alt] found_incompatible: " << found_incompatible << "\n";
 			}
+
 			if (found_incompatible) {
 				continue;
 			}
@@ -10867,18 +11019,28 @@ void TEA::pair_cluster_alt(map<int64_t, int64_t>& pm_cl, RAMIntervalVector& p_cl
 
 		if (result_selected.size() > 0) {
 //			cout << "Positive: " << n_ram_supports << "/Negative: " << result_selected.size() << "\n";
-			for (auto& a_negative_entry : result_selected) {
-//				pm_cl[a_negative_entry.value.global_cluster_id] = result_selected;
-				pm_cl[r_id] = a_negative_entry.value.global_cluster_id;
-//				cout << r_id << " ps:" << p_cl[r_id].value.s << " pe:" << p_cl[r_id].value.e
-//						<< " <-> " << a_negative_entry.value.global_cluster_id << "ns:" << a_negative_entry.value.s << "ne:" << a_negative_entry.value.e << "\n";
-
+			for (uint64_t id = 0; id < result_selected.size(); ++id) {
+				auto& a_negative_ram_entry = result_selected[id];
+				bool only_polya = false;
+				if (1 == a_positive_ram_entry.value.rep_repeat.size()
+						&& 1 == a_negative_ram_entry.value.rep_repeat.size()) {
+					for (auto& prep : a_positive_ram_entry.value.rep_repeat) {
+						for (auto& nrep : a_negative_ram_entry.value.rep_repeat) {
+							if (prep == "PolyA" && nrep == "PolyA") {
+								only_polya = true;
+							}
+						}
+					}
+				}
+				if (only_polya) {
+					continue;
+				}
+				auto& n_id = a_negative_ram_entry.value.global_cluster_id;
+				pm_cl.insert(pair<int64_t, int64_t>(p_id, n_id));
 			}
-//			pm_cl[r_id] = result_selected;
 		}
-
 	}
-	cout << checker;
+//	cout << checker;
 }
 
 void TEA::count_clipped(
@@ -10887,7 +11049,7 @@ void TEA::count_clipped(
 		const string& chr,
 		const string& cl_prefix,
 		const string& contig_dir,
-		const map<int64_t, int64_t>& pm_cl,
+		const multimap<int64_t, int64_t>& pm_cl,
 		const RAMIntervalVector& p_cl,
 		const RAMIntervalVector& n_cl,
 		boost::unordered_set<int64_t>& positive_only,
@@ -11115,7 +11277,7 @@ void TEA::count_clipped_v(
 				boost::unordered_map<string, RefRepeatIntervalVector>& ril_annot_alt,
 				map<int64_t, string>& vannot,
 				const string& chr, const string& cl_prefix, const string& contig_dir,
-				const map<int64_t, int64_t>& pm_cl, const RAMIntervalVector& p_cl, const RAMIntervalVector& n_cl,
+				const multimap<int64_t, int64_t>& pm_cl, const RAMIntervalVector& p_cl, const RAMIntervalVector& n_cl,
 				boost::unordered_set<int64_t>& positive_only, boost::unordered_set<int64_t>& negative_only,
 				const int64_t read_length, const int64_t fragment_size,
 				const int64_t rmasker_filter_margin, const int64_t gene_margin) {
@@ -11865,7 +12027,7 @@ void TEA::output_clipped_stat(ofstream& out_p_clipped_filename, ofstream& out_n_
 	rep_family.insert(positive_entry.value.family.begin(), positive_entry.value.family.end());
 	rep_family.insert(negative_entry.value.family.begin(), negative_entry.value.family.end());
 	auto family_itr = rep_family.find("PolyA");
-	if (rep_family.end() != family_itr) {
+	if (rep_family.end() != family_itr && rep_family.size() != 1) {
 		rep_family.erase(family_itr);
 	}
 	a_stat_entry.repeat_family = castle::StringUtils::join(rep_family, ",");
@@ -11874,7 +12036,7 @@ void TEA::output_clipped_stat(ofstream& out_p_clipped_filename, ofstream& out_n_
 	rep_class.insert(positive_entry.value.repeat_class.begin(), positive_entry.value.repeat_class.end());
 	rep_class.insert(negative_entry.value.repeat_class.begin(), negative_entry.value.repeat_class.end());
 	auto class_itr = rep_class.find("PolyA");
-	if (rep_class.end() != class_itr) {
+	if (rep_class.end() != class_itr && rep_class.size() != 1) {
 		rep_class.erase(class_itr);
 	}
 	a_stat_entry.repeat_class = castle::StringUtils::join(rep_class, ",");
@@ -12202,7 +12364,7 @@ void TEA::output_clipped_stat_v(ofstream& out_p_clipped_filename, ofstream& out_
 	rep_family.insert(positive_entry.value.family.begin(), positive_entry.value.family.end());
 	rep_family.insert(negative_entry.value.family.begin(), negative_entry.value.family.end());
 	auto family_itr = rep_family.find("PolyA");
-	if (rep_family.end() != family_itr) {
+	if (rep_family.end() != family_itr && rep_family.size() != 1) {
 		rep_family.erase(family_itr);
 	}
 	a_stat_entry.repeat_family = castle::StringUtils::join(rep_family, ",");
@@ -12210,7 +12372,7 @@ void TEA::output_clipped_stat_v(ofstream& out_p_clipped_filename, ofstream& out_
 	rep_class.insert(positive_entry.value.repeat_class.begin(), positive_entry.value.repeat_class.end());
 	rep_class.insert(negative_entry.value.repeat_class.begin(), negative_entry.value.repeat_class.end());
 	auto class_itr = rep_class.find("PolyA");
-	if (rep_class.end() != class_itr) {
+	if (rep_class.end() != class_itr && rep_class.size() != 1) {
 		rep_class.erase(class_itr);
 	}
 	if(a_stat_entry.repeat_family.empty()) {
@@ -12598,7 +12760,8 @@ void TEA::output_mate_fa(boost::unordered_map<string, boost::unordered_map<int8_
 		}
 	});
 	castle::ParallelRunner::run_unbalanced_load(n_cores, tasks);
-	cout << "[TEA.output_mate_fa] # positive mates: " << a_positive_repeat_map.size() << ", # negative mates: " << a_negative_repeat_map.size() << "\n";
+	cout << "[TEA.output_mate_fa] # positive mates: " << a_positive_repeat_map.size()
+			<< ", # negative mates: " << a_negative_repeat_map.size() << "\n";
 
 	string disc_file_name = options.prefix + ".disc.num.bam";
 
