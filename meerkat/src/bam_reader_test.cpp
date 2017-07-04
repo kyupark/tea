@@ -12,10 +12,11 @@
 using namespace std;
 
 int main(int argc, char **argv) {
+	cout << "meerkat-170702-2-dre-handles-empty-blacklist\n";
 	setvbuf(stdout, NULL, _IONBF, 0);
 	castle::OptionParser option_parser(argc, argv);
 	castle::TimeChecker checker;
-	checker.setTarget("ParallelBamReader.main_170608-1");
+	checker.setTarget("ParallelBamReader.main");
 	checker.start();
 
 	if("preprocess" == option_parser.program_name) {

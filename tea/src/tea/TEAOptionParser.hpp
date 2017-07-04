@@ -37,6 +37,7 @@ public:
 	string prefix;
 	string naive_prefix;
 	string working_dir;
+	string output_dir;
 	string working_prefix;
 
 	string isinfoname;

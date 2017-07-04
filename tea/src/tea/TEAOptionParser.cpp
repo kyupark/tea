@@ -30,6 +30,7 @@ void TEAOptionParser::show_help() {
 			"       post                  post-processing for the transduction, and orphan modules [experimental]\n"
 			"       comp                  compare results\n\n"
 			"Options:\n\n"
+			"       -b [STR]              the absolute path of the INPUT BAM file [" << prefix << "]\n"
 			"       -x [STR]              the absolute path prefix of the INPUT BAM file excluding \".bam\" suffix. e.g.) /home/test.bam -> /home/test [" << prefix << "]\n";
 	cout << boolalpha <<
 			"       -D [STR]              the path to output folder [" << working_dir << "]\n"
@@ -184,6 +185,16 @@ TEAOptionParser::TEAOptionParser(int argc, char **argv) : prefix("-"), aln_param
 			}  else if ("-x" == argument) {
 				string value(argv[i + 1]);
 				prefix = value;
+			}  else if ("-b" == argument) {
+				string value(argv[i + 1]);
+				auto bam_pos = value.rfind(".bam");
+				if (bam_pos == value.size()-4){
+					prefix = value.substr(0, bam_pos);
+				}
+				else {
+					cout << "-b takes a '.bam' file \n";
+					exit(1);
+				}
 			} else if ("-h" == argument) {
 				show_help();
 			} else if("--force" == argument) {
@@ -261,11 +272,14 @@ TEAOptionParser::TEAOptionParser(int argc, char **argv) : prefix("-"), aln_param
 		if ((prefix.size() - 1) == delim_pos) {
 			delim_pos = prefix.rfind("/", prefix.size() - 2);
 			working_prefix = prefix.substr(delim_pos + 1);
+			output_dir = prefix.substr(delim_pos + 1);
 		} else {
 			if (string::npos == delim_pos) {
-				working_prefix = working_dir + prefix.substr(0);
+				working_prefix = working_dir + prefix.substr(0) + "/" + prefix.substr(0);
+				output_dir = working_dir + prefix.substr(0);
 			} else {
-				working_prefix = working_dir + prefix.substr(delim_pos + 1);
+				working_prefix = working_dir + prefix.substr(delim_pos + 1) + "/" + prefix.substr(delim_pos + 1);
+				output_dir = working_dir + prefix.substr(delim_pos + 1);
 			}
 		}
 		if ("-" != prefix) {
@@ -273,6 +287,7 @@ TEAOptionParser::TEAOptionParser(int argc, char **argv) : prefix("-"), aln_param
 				boost::filesystem::create_directories(working_prefix);
 			}
 		}
+
 		string sep = prefix.empty() ? "" : ".";
 		isinfoname = working_prefix + sep + "isinfo";
 	}

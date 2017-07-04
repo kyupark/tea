@@ -13,7 +13,7 @@
 using namespace std;
 
 int main(int argc, char **argv) {
-	cout << "tea main tea-170629-2-skip_chr_when_not_in_index-fixing_header \n";
+	cout << "tea main tea-170703-1-positive-polya-pairs-any-negative \n";
 	setvbuf(stdout, NULL, _IONBF, 0);
 	tea::TEAOptionParser option_parser(argc, argv);
 	castle::TimeChecker checker;

@@ -164,11 +164,6 @@ namespace meerkat {
 	inline void ReadGroup::writeFQpair(ostream &f1, BamTools::BamAlignment &a,
 			ostream &f2, BamTools::BamAlignment &b, int n_cutoff) {
 
-		//		bool debug = string::npos != a.Name.find("ST-E00206:271:HJGHVALXX:3:2115:1964:20401")
-//				|| string::npos != a.Name.find("ST-E00206:271:HJGHVALXX:3:2118:1984:24163")
-//				|| string::npos != a.Name.find("ST-E00206:271:HJGHVALXX:7:1109:1568:50305")
-//				|| string::npos != a.Name.find("ST-E00206:271:HJGHVALXX:3:2118:1984:15971")
-//				|| string::npos != a.Name.find("ST-E00206:271:HJGHVALXX:5:1106:10997:1695");
 		if (a.Length == 0 || b.Length ==0 ) {
 			return;
 		}
@@ -179,27 +174,18 @@ namespace meerkat {
 				++n;
 			}
 		}
-//		if(debug) {
-//			cout << "[ReadGroup.writeFQpair] name: " << a.Name << "\n";
-//			cout << "[ReadGroup.writeFQpair] n: " << n << "\n";
-//			cout << "[ReadGroup.writeFQpair] QueryBases: " << a.QueryBases << "\n";
-//		}
 		if (n > n_cutoff) {
 			return;
 		}
+
 		for (size_t i = 0; i < b.QueryBases.size(); ++i) {
 			if (b.QueryBases[i] == 'N') {
 				++n;
 			}
 		}
-//		if(debug) {
-//			cout << "[ReadGroup.writeFQpair] n: " << n << "\n";
-//			cout << "[ReadGroup.writeFQpair] QueryBases: " << b.QueryBases << "\n";
-//		}
 		if (n > n_cutoff) {
 			return;
 		}
-
 
 		writeFQ(f1, a);
 		writeFQ(f2, b);

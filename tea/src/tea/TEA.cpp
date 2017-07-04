@@ -161,7 +161,8 @@ void TEA::run_rid() {
 		cbam_file = options.prefix + ".softclips.consd.bam";
 	}
 
-	string cl_dir = options.prefix + "/cluster_" + options.rasym + "m";
+//	string cl_dir = options.prefix + "/cluster_" + options.rasym + "m";
+	string cl_dir = options.output_dir + "-" + options.rasym + "m";
 	string naive_prefix = options.naive_prefix;
 	string contig_dir = options.prefix + "/assembly_" + options.rasym + "m";
 
@@ -169,7 +170,8 @@ void TEA::run_rid() {
 		if (!options.no_clipped && (options.is_sampe || options.is_mem)) {
 			cbam_file = options.working_prefix + ".softclips.consd.bam";
 		}
-		cl_dir = options.working_prefix + "/cluster_" + options.rasym + "m";
+//		cl_dir = options.working_prefix + "/cluster_" + options.rasym + "m";
+		cl_dir = options.output_dir + "-" + options.rasym + "m";
 		contig_dir = options.working_prefix + "/assembly_" + options.rasym + "m";
 	}
 	string cl_prefix = cl_dir + "/" + naive_prefix;
@@ -506,7 +508,8 @@ void TEA::run_vid() {
 		cbam_file = options.prefix + ".softclips.consd.bam";
 	}
 
-	string cl_dir = options.prefix + "/cluster_" + options.rasym + "m";
+//	string cl_dir = options.prefix + "/cluster_" + options.rasym + "m";
+	string cl_dir = options.output_dir + "-" + options.rasym + "m";
 	string naive_prefix = options.naive_prefix;
 	string contig_dir = options.prefix + "/assembly_" + options.rasym + "m";
 
@@ -514,7 +517,8 @@ void TEA::run_vid() {
 		if (!options.no_clipped && (options.is_sampe || options.is_mem)) {
 			cbam_file = options.working_prefix + ".softclips.consd.bam";
 		}
-		cl_dir = options.working_prefix + "/cluster_" + options.rasym + "m";
+//		cl_dir = options.working_prefix + "/cluster_" + options.rasym + "m";
+		cl_dir = options.output_dir + "-" + options.rasym + "m";
 		contig_dir = options.prefix + "/assembly_" + options.rasym + "m";
 	}
 	string cl_prefix = cl_dir + "/" + naive_prefix;
@@ -683,7 +687,8 @@ void TEA::run_uid() {
 		cbam_file = options.prefix + ".softclips.consd.bam";
 	}
 
-	string cl_dir = options.prefix + "/cluster_" + options.rasym + "m";
+//	string cl_dir = options.prefix + "/cluster_" + options.rasym + "m";
+	string cl_dir = options.output_dir + "-" + options.rasym + "m";
 	string naive_prefix = options.naive_prefix;
 	string contig_dir = options.prefix + "/assembly_" + options.rasym + "m";
 
@@ -691,7 +696,8 @@ void TEA::run_uid() {
 		if (!options.no_clipped && (options.is_sampe || options.is_mem)) {
 			cbam_file = options.working_prefix + ".softclips.consd.bam";
 		}
-		cl_dir = options.working_prefix + "/cluster_" + options.rasym + "m";
+//		cl_dir = options.working_prefix + "/cluster_" + options.rasym + "m";
+		cl_dir = options.output_dir + "-" + options.rasym + "m";
 		contig_dir = options.prefix + "/assembly_" + options.rasym + "m";
 	}
 	string cl_prefix = cl_dir + "/" + naive_prefix;
@@ -819,11 +825,13 @@ void TEA::run_transduction() {
 	options.rasym = "um";
 	set<string> chrs;
 	load_chr(chrs);
-	string cl_dir = options.prefix + "/cluster_" + options.rasym + "m";
+//	string cl_dir = options.prefix + "/cluster_" + options.rasym + "m";
+	string cl_dir = options.output_dir + "-" + options.rasym + "m";
 	string naive_prefix = options.naive_prefix;
 	string transduction_dir = options.prefix + "/transduction_" + options.rasym + "m";
 	if (!options.working_dir.empty()) {
-		cl_dir = options.working_prefix + "/cluster_" + options.rasym + "m";
+//		cl_dir = options.working_prefix + "/cluster_" + options.rasym + "m";
+		cl_dir = options.output_dir + "-" + options.rasym + "m";
 		transduction_dir = options.working_prefix + "/transduction_" + options.rasym + "m";
 	}
 	if(!boost::filesystem::exists(transduction_dir)) {
@@ -1334,11 +1342,13 @@ void TEA::run_transduction_contig() {
 	checker.start();
 	set<string> chrs;
 	load_chr(chrs);
-	string cl_dir = options.prefix + "/cluster_" + options.rasym + "m";
+//	string cl_dir = options.prefix + "/cluster_" + options.rasym + "m";
+	string cl_dir = options.output_dir + "-" + options.rasym + "m";
 	string naive_prefix = options.naive_prefix;
 	string transduction_dir = options.prefix + "/transduction_" + options.rasym + "m";
 	if (!options.working_dir.empty()) {
-		cl_dir = options.working_prefix + "/cluster_" + options.rasym + "m";
+//		cl_dir = options.working_prefix + "/cluster_" + options.rasym + "m";
+		cl_dir = options.output_dir + "-" + options.rasym + "m";
 		transduction_dir = options.working_prefix + "/transduction_" + options.rasym + "m";
 	}
 	if(!boost::filesystem::exists(transduction_dir)) {
@@ -1928,11 +1938,13 @@ void TEA::run_orphan() {
 	options.rasym = "um";
 	set<string> chrs;
 	load_chr(chrs);
-	string cl_dir = options.prefix + "/cluster_" + options.rasym + "m";
+//	string cl_dir = options.prefix + "/cluster_" + options.rasym + "m";
+	string cl_dir = options.output_dir + "-" + options.rasym + "m";
 	string naive_prefix = options.naive_prefix;
 	string orphan_dir = options.prefix + "/orphan_" + options.rasym + "m";
 	if (!options.working_dir.empty()) {
-		cl_dir = options.working_prefix + "/cluster_" + options.rasym + "m";
+//		cl_dir = options.working_prefix + "/cluster_" + options.rasym + "m";
+		cl_dir = options.output_dir + "-" + options.rasym + "m";
 		orphan_dir = options.working_prefix + "/orphan_" + options.rasym + "m";
 	}
 	if(!boost::filesystem::exists(orphan_dir)) {
@@ -2359,11 +2371,13 @@ void TEA::run_orphan_contig() {
 	checker.start();
 	set<string> chrs;
 	load_chr(chrs);
-	string cl_dir = options.prefix + "/cluster_" + options.rasym + "m";
+//	string cl_dir = options.prefix + "/cluster_" + options.rasym + "m";
+	string cl_dir = options.output_dir + "-" + options.rasym + "m";
 	string naive_prefix = options.naive_prefix;
 	string orphan_dir = options.prefix + "/orphan_" + options.rasym + "m";
 	if (!options.working_dir.empty()) {
-		cl_dir = options.working_prefix + "/cluster_" + options.rasym + "m";
+//		cl_dir = options.working_prefix + "/cluster_" + options.rasym + "m";
+		cl_dir = options.output_dir + "-" + options.rasym + "m";
 		orphan_dir = options.working_prefix + "/orphan_" + options.rasym + "m";
 	}
 	if(!boost::filesystem::exists(orphan_dir)) {
@@ -3225,7 +3239,8 @@ void TEA::post_process() {
 	checker.start();
 	set<string> chrs;
 	load_chr(chrs);
-	string cl_dir = options.prefix + "/cluster_" + options.rasym + "m";
+//	string cl_dir = options.prefix + "/cluster_" + options.rasym + "m";
+	string cl_dir = options.output_dir + "-" + options.rasym + "m";
 	string naive_prefix = options.naive_prefix;
 	string transduction_dir = options.prefix + "/transduction_" + options.rasym + "m";
 	string orphan_dir = options.prefix + "/orphan_" + options.rasym + "m";
@@ -3233,7 +3248,8 @@ void TEA::post_process() {
 	string germline_result_dir = options.prefix + "/germline_result_" + options.rasym + "m";
 
 	if (!options.working_dir.empty()) {
-		cl_dir = options.working_prefix + "/cluster_" + options.rasym + "m";
+//		cl_dir = options.working_prefix + "/cluster_" + options.rasym + "m";
+		cl_dir = options.output_dir + "-" + options.rasym + "m";
 		transduction_dir = options.working_prefix + "/transduction_" + options.rasym + "m";
 		orphan_dir = options.working_prefix + "/orphan_" + options.rasym + "m";
 		germline_tmp_dir = options.working_prefix + "/germline_tmp_" + options.rasym + "m";
@@ -10984,10 +11000,13 @@ void TEA::pair_cluster_alt(multimap<int64_t, int64_t>& pm_cl, RAMIntervalVector&
 			auto& nfams = a_negative_ram_entry.value.rep_repeat;
 
 			bool found_incompatible = false;
-			for (auto& nfam : nfams) {
-				if (possible_family.end() == possible_family.find(nfam)) {
-					found_incompatible = true;
-					break;
+
+			if (pfams.find("PolyA") == pfams.end() || pfams.size() != 1) {
+				for (auto& nfam : nfams) {
+					if (possible_family.end() == possible_family.find(nfam)) {
+						found_incompatible = true;
+						break;
+					}
 				}
 			}
 
@@ -12025,6 +12044,7 @@ void TEA::output_clipped_stat(ofstream& out_p_clipped_filename, ofstream& out_n_
 	alt_rep.insert(positive_entry.value.rep_repeat.begin(), positive_entry.value.rep_repeat.end());
 	alt_rep.insert(negative_entry.value.rep_repeat.begin(), negative_entry.value.rep_repeat.end());
 	a_stat_entry.rep_repeat = castle::StringUtils::join(alt_rep, ",");
+
 	set<string> rep_family;
 	rep_family.insert(positive_entry.value.family.begin(), positive_entry.value.family.end());
 	rep_family.insert(negative_entry.value.family.begin(), negative_entry.value.family.end());
@@ -12034,6 +12054,7 @@ void TEA::output_clipped_stat(ofstream& out_p_clipped_filename, ofstream& out_n_
 	}
 	a_stat_entry.repeat_family = castle::StringUtils::join(rep_family, ",");
 	a_stat_entry.rep_suffix = *rep_family.begin();
+
 	set<string> rep_class;
 	rep_class.insert(positive_entry.value.repeat_class.begin(), positive_entry.value.repeat_class.end());
 	rep_class.insert(negative_entry.value.repeat_class.begin(), negative_entry.value.repeat_class.end());
@@ -12621,12 +12642,14 @@ void TEA::output_mate_fa(boost::unordered_map<string, boost::unordered_map<int8_
 	castle::TimeChecker checker;
 	checker.setTarget("TEA.output_mate_fa");
 	checker.start();
-	string cl_dir = options.prefix + "/cluster_" + options.rasym + "m";
+//	string cl_dir = options.prefix + "/cluster_" + options.rasym + "m";
+	string cl_dir = options.output_dir + "-" + options.rasym + "m";
 	string naive_prefix = options.naive_prefix;
 	string contig_dir = options.prefix + "/assembly_" + options.rasym + "m";
 
 	if (!options.working_dir.empty()) {
-		cl_dir = options.working_prefix + "/cluster_" + options.rasym + "m";
+//		cl_dir = options.working_prefix + "/cluster_" + options.rasym + "m";
+		cl_dir = options.output_dir + "-" + options.rasym + "m";
 		contig_dir = options.working_prefix + "/assembly_" + options.rasym + "m";
 	}
 	string cl_prefix = cl_dir + "/" + naive_prefix;
@@ -13309,12 +13332,14 @@ void TEA::output_mate_fa_v(boost::unordered_map<string, boost::unordered_map<int
 	castle::TimeChecker checker;
 	checker.setTarget("TEA.output_mate_fa_v");
 	checker.start();
-	string cl_dir = options.prefix + "/cluster_" + options.rasym + "m";
+//	string cl_dir = options.prefix + "/cluster_" + options.rasym + "m";
+	string cl_dir = options.output_dir + "-" + options.rasym + "m";
 	string naive_prefix = options.naive_prefix;
 	string contig_dir = options.prefix + "/assembly_" + options.rasym + "m";
 
 	if (!options.working_dir.empty()) {
-		cl_dir = options.working_prefix + "/cluster_" + options.rasym + "m";
+//		cl_dir = options.working_prefix + "/cluster_" + options.rasym + "m";
+		cl_dir = options.output_dir + "-" + options.rasym + "m";
 		contig_dir = options.working_prefix + "/assembly_" + options.rasym + "m";
 	}
 	string cl_prefix = cl_dir + "/" + naive_prefix;
