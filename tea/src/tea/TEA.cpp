@@ -4596,21 +4596,6 @@ void TEA::_MEMBAM_to_FASTQ(vector<int64_t>& block_boundary, const string& input_
 				auto& cur_name = al.Name;
 
 				if(prev_read_name != cur_name) {
-//					const bool debug = string::npos != cur_name.find("HSQ700642:191:D18JJACXX:1:2312:4453:42941");
-		//			for(auto& an_aln : pair1_alns) {
-		//				bool has_H = an_aln.CigarData.size() > 0 && 'H' == an_aln.CigarData.back().Type;
-		//				if(an_aln.IsReverseStrand() && has_H) {
-		////					debug = true;
-		//					break;
-		//				}
-		//			}
-		//			for(auto& an_aln : pair2_alns) {
-		//				bool has_H = an_aln.CigarData.size() > 0 && 'H' == an_aln.CigarData.back().Type;
-		//				if(an_aln.IsReverseStrand() && has_H) {
-		////					debug = true;
-		//					break;
-		//				}
-		//			}
 					if(debug) {
 						for(auto& an_aln : pair1_alns) {
 							cout << "[TEA.MEMBAM_to_FASTQ] 1-1 " << (an_aln.IsReverseStrand() ? "R:" : "F:") << BamTools::BamWriter::GetSAMAlignment(an_aln, m_ref) << "\n";
@@ -7876,7 +7861,6 @@ void TEA::_generate_cbam_files_mem() {
 	string consd_sorted_raw_bam_name = options.prefix + ".softclips.consd.sorted.raw.bam";
 	string consd_sorted_raw_sam_name = options.prefix + ".softclips.consd.sorted.raw.sam";
 	string out_softclips_consd_bam_name = options.prefix + ".softclips.consd.bam";
-	string out_softclips_consd_cpos_name = options.prefix + ".softclips.consd.cpos";
 
 	if (!options.working_dir.empty()) {
 		firststat_name = options.working_prefix + ".firststat";
@@ -7889,10 +7873,9 @@ void TEA::_generate_cbam_files_mem() {
 		consd_sorted_raw_bam_name = options.working_prefix + ".softclips.consd.sorted.raw.bam";
 		consd_sorted_raw_sam_name = options.working_prefix + ".softclips.consd.sorted.raw.sam";
 		out_softclips_consd_bam_name = options.working_prefix + ".softclips.consd.bam";
-		out_softclips_consd_cpos_name = options.working_prefix + ".softclips.consd.cpos";
 	}
 
-	if (!options.is_force && castle::IOUtils::get_file_size(out_softclips_consd_bam_name) > 0 && castle::IOUtils::get_file_size(out_softclips_consd_cpos_name) > 0) {
+	if (!options.is_force && castle::IOUtils::get_file_size(out_softclips_consd_bam_name) > 0) {
 		return;
 	}
 
@@ -7932,7 +7915,6 @@ void TEA::_generate_cbam_files_mem() {
 	int64_t n_block_boundaries = block_boundary.size();
 	cout << (boost::format("[TEA.generate_cbam_files_mem] # blocks: %d of .disc.sorted.bam\n") % (n_block_boundaries - 1)).str();
 	vector<string> raw_bam_name_lists(n_block_boundaries - 1);
-	vector<string> softclips_consd_cpos_name_lists(n_block_boundaries - 1);
 
 	for (int64_t block_id = 0; block_id < n_block_boundaries - 1; ++block_id) {
 		tasks.push_back([&, block_id] {
@@ -7961,10 +7943,8 @@ void TEA::_generate_cbam_files_mem() {
 			auto& ref_vec = local_reader.GetReferenceData();
 
 			string local_raw_sam_name = consd_raw_sam_name + "." + str_block_id;
-			string local_softclips_consd_cpos_name = out_softclips_consd_cpos_name + "." + str_block_id;
 
 			raw_bam_name_lists[block_id] = local_raw_sam_name;
-			softclips_consd_cpos_name_lists[block_id] = local_softclips_consd_cpos_name;
 //			bool debug = false;
 			BamAlignment local_alignment_entry;
 			BamWriter out_raw_sam;
@@ -7974,7 +7954,6 @@ void TEA::_generate_cbam_files_mem() {
 				out_raw_sam.SAMOpenNoHeader(local_raw_sam_name, ref_vec);
 			}
 
-//			ofstream out_consd_cpos(local_softclips_consd_cpos_name, ios::binary);
 			vector<BamAlignment> pair1_alns;
 			vector<BamAlignment> pair2_alns;
 			string prev_name;
@@ -8058,9 +8037,7 @@ void TEA::_generate_cbam_files_mem() {
 	int64_t calculated_n_blocks = unmapped_block_boundaries.size();
 	cout << (boost::format("[TEA.generate_cbam_files_mem] # blocks: %d of .consd.sorted.bam\n") % (calculated_n_blocks - 1)).str();
 	raw_bam_name_lists.clear();
-	softclips_consd_cpos_name_lists.clear();
 	raw_bam_name_lists.resize(calculated_n_blocks - 1);
-	softclips_consd_cpos_name_lists.resize(calculated_n_blocks - 1);
 	boost::mutex print_mutex;
 	for (int64_t block_id = 0; block_id < calculated_n_blocks - 1; ++block_id) {
 		tasks.push_back([&, block_id] {
@@ -8103,7 +8080,6 @@ void TEA::_generate_cbam_files_mem() {
 
 			bool selected = false;
 			bool selected2 = false;
-			int32_t cpos;
 
 			string poly_a_str(min_polyAT, 'A');
 			string poly_t_str(min_polyAT, 'T');
@@ -8119,10 +8095,8 @@ void TEA::_generate_cbam_files_mem() {
 
 			string local_raw_sam_name = consd_sorted_raw_sam_name + "." + str_block_id;
 			string local_sorted_sam_name = consd_sorted_sam_name + "." + str_block_id;
-			string local_softclips_consd_cpos_name = out_softclips_consd_cpos_name + "." + str_block_id;
 
 			raw_bam_name_lists[block_id] = local_raw_sam_name;
-			softclips_consd_cpos_name_lists[block_id] = local_softclips_consd_cpos_name;
 
 			BamTools::BamAlignment local_alignment_entry;
 			BamTools::BamWriter out_raw_sam;
@@ -8136,8 +8110,6 @@ void TEA::_generate_cbam_files_mem() {
 			}
 //			bool debug = (0 == block_id);
 			const bool debug = false;
-//			const bool debug = true;
-			ofstream out_consd_cpos(local_softclips_consd_cpos_name, ios::binary);
 
 			while (local_reader.LoadNextAlignmentCore(local_alignment_entry)) {
 				cur_offset = m_bgzf.Tell();
@@ -8196,7 +8168,6 @@ void TEA::_generate_cbam_files_mem() {
 									cout << "[TEA.generate_cbam_files_mem] selected 2-1\n";
 								}
 								selected2 = true;
-								cpos = local_alignment_entry.Position;
 								//								# check whether the clipped seq has >=10
 								cseq1 = seq.substr(0, clen);
 								if (string::npos != cseq1.find(poly_a_str)) {
@@ -8249,7 +8220,6 @@ void TEA::_generate_cbam_files_mem() {
 								cout << "[TEA.generate_cbam_files_mem] selected 2-2\n";
 							}
 							selected2 = true;
-							cpos = get_cpos(local_alignment_entry.Position, cigar, qual2, -1);
 							//							# check whether the clipped seq has >=10
 							int64_t the_seq_sub_str_pos = seq.size() - clen;
 							cseq2 = seq.substr(the_seq_sub_str_pos);
@@ -8292,10 +8262,10 @@ void TEA::_generate_cbam_files_mem() {
 					}
 				}
 
-				if (selected2) {
-					out_raw_sam.SaveSAMAlignment(local_alignment_entry);
-					out_consd_cpos << (boost::format("%s\t%s\n") % ref_vec[local_alignment_entry.RefID].RefName % cpos).str();
-				}
+					if (selected2) {
+						out_raw_sam.SaveSAMAlignment(local_alignment_entry);
+
+					}
 				} catch(exception& ex) {
 					cout << ex.what() << "\n";
 					cout << BamWriter::GetSAMAlignment(local_alignment_entry, ref_vec) << "\n";
@@ -8316,7 +8286,7 @@ void TEA::_generate_cbam_files_mem() {
 	cout << (boost::format("[TEA.generate_cbam_files_mem] start sorting and generating the index for %s ...\n") % consd_sorted_raw_bam_name).str();
 	string sambamba_last_sort_cmd = (boost::format("sambamba sort -l 1 -t %d -o %s %s") % n_cores % out_softclips_consd_bam_name % consd_sorted_raw_bam_name).str();
 	system(sambamba_last_sort_cmd.c_str());
-	castle::IOUtils::plain_file_merge(out_softclips_consd_cpos_name, softclips_consd_cpos_name_lists, n_cores, true);
+
 	cout << "[TEA.generate_cbam_files_mem] done generating cbam and its index.\n";
 
 	cout << checker;
@@ -8333,7 +8303,6 @@ void TEA::_generate_cbam_files_mem_alt() {
 	string consd_raw_sam_name = the_prefix + ".softclips.consd.raw.sam";
 	string consd_raw_bam_name = the_prefix + ".softclips.consd.raw.bam";
 	string out_softclips_consd_bam_name = the_prefix + ".softclips.consd.bam";
-	string out_softclips_consd_cpos_name = the_prefix + ".softclips.consd.cpos";
 
 //	if (!options.is_force && boost::filesystem::exists(out_softclips_consd_bam_name) && boost::filesystem::exists(out_softclips_consd_cpos_name)) {
 //		return;
@@ -8547,7 +8516,6 @@ void TEA::_generate_cbam_files_mem_alt() {
 	//	boost::unordered_map<string, string> ram;
 
 	vector<string> raw_bam_name_lists(calculated_n_blocks - 1);
-	vector<string> softclips_consd_cpos_name_lists(calculated_n_blocks - 1);
 //	vector<int64_t> cnt_lists(calculated_n_blocks - 1);
 	for (int64_t block_id = 0; block_id < calculated_n_blocks - 1; ++block_id) {
 		tasks.push_back([&, block_id] {
@@ -8612,7 +8580,6 @@ void TEA::_generate_cbam_files_mem_alt() {
 
 			bool selected = false;
 			bool selected2 = false;
-			int32_t cpos;
 
 			string poly_a_str(min_polyAT, 'A');
 			string poly_t_str(min_polyAT, 'T');
@@ -8627,10 +8594,8 @@ void TEA::_generate_cbam_files_mem_alt() {
 			const char* delim_all_stopwords = a_delim_str.c_str();
 
 			string local_raw_sam_name = consd_raw_sam_name + "." + str_block_id;
-			string local_softclips_consd_cpos_name = out_softclips_consd_cpos_name + "." + str_block_id;
 
 			raw_bam_name_lists[block_id] = local_raw_sam_name;
-			softclips_consd_cpos_name_lists[block_id] = local_softclips_consd_cpos_name;
 //			bool debug = false;
 				BamTools::BamAlignment local_alignment_entry;
 				BamTools::BamWriter out_raw_sam;
@@ -8639,7 +8604,6 @@ void TEA::_generate_cbam_files_mem_alt() {
 				} else {
 					out_raw_sam.SAMOpenNoHeader(local_raw_sam_name, ref_vec);
 				}
-				ofstream out_consd_cpos(local_softclips_consd_cpos_name, ios::binary);
 
 				while (local_reader.LoadNextAlignmentCore(local_alignment_entry)) {
 //					if(verbose && 0 == num_total) {
@@ -8719,8 +8683,7 @@ void TEA::_generate_cbam_files_mem_alt() {
 	//							if (!(sam_flag & 0x0010)) { // # positive strand mapping
 									if (!local_alignment_entry.IsReverseStrand()) { // # positive strand mapping
 										selected2 = true;
-										cpos = local_alignment_entry.Position;
-										//								# check whether the clipped seq has >=10
+	//								# check whether the clipped seq has >=10
 										cseq1 = seq.substr(0, clen);
 										if (string::npos != cseq1.find(poly_a_str)) {
 											polyAT = true;
@@ -8767,7 +8730,6 @@ void TEA::_generate_cbam_files_mem_alt() {
 	//						if (sam_flag & 0x0010) { // # negative strand mapping
 							if (local_alignment_entry.IsReverseStrand()) {
 								selected2 = true;
-								cpos = get_cpos(local_alignment_entry.Position, cigar, qual2, -1);
 								//							# check whether the clipped seq has >=10
 								int64_t the_seq_sub_str_pos = seq.size() - clen;
 								cseq2 = seq.substr(the_seq_sub_str_pos);
@@ -8808,7 +8770,6 @@ void TEA::_generate_cbam_files_mem_alt() {
 
 					if (selected2) {
 						out_raw_sam.SaveSAMAlignment(local_alignment_entry);
-						out_consd_cpos << (boost::format("%s\t%s\n") % ref_vec[local_alignment_entry.RefID].RefName % cpos).str();
 					}
 				} catch(exception& ex) {
 					cout << BamWriter::GetSAMAlignment(local_alignment_entry, ref_vec) << "\n";
@@ -8842,7 +8803,7 @@ void TEA::_generate_cbam_files_mem_alt() {
 	//	cout << "[TEA.load_repeat_mapping] gather scattered information\n";
 
 	castle::IOUtils::plain_file_merge(consd_raw_sam_name, raw_bam_name_lists, n_cores, true);
-	castle::IOUtils::plain_file_merge(out_softclips_consd_cpos_name, softclips_consd_cpos_name_lists, n_cores, true);
+
 	string sam_to_bam_cmd = (boost::format("samtools view -@ %d -o %s -Sb %s") % n_cores % consd_raw_bam_name % consd_raw_sam_name).str();
 	system(sam_to_bam_cmd.c_str());
 	cout << (boost::format("[TEA.generate_cbam_files_mem_alt] done generating cbam: %s\n") % consd_raw_bam_name).str();
@@ -8871,7 +8832,6 @@ void TEA::_generate_cbam_files_mem_alt2() {
 	string consd_sorted_raw_sam_name = the_prefix + ".softclips.consd.sorted.raw.sam";
 	string consd_sorted_raw_bam_name = the_prefix + ".softclips.consd.sorted.raw.bam";
 	string out_softclips_consd_bam_name = the_prefix + ".softclips.consd.bam";
-	string out_softclips_consd_cpos_name = the_prefix + ".softclips.consd.cpos";
 
 //	if (castle::IOUtils::get_file_size(out_softclips_consd_bam_name) > 0 && castle::IOUtils::get_file_size(out_softclips_consd_cpos_name) > 0) {
 //		return;
@@ -8915,7 +8875,6 @@ void TEA::_generate_cbam_files_mem_alt2() {
 	int64_t n_block_boundaries = block_boundary.size();
 	cout << (boost::format("[TEA.generate_cbam_files_mem_alt2] # blocks: %d of .disc.sorted.bam\n") % (n_block_boundaries - 1)).str();
 	vector<string> raw_bam_name_lists(n_block_boundaries - 1);
-	vector<string> softclips_consd_cpos_name_lists(n_block_boundaries - 1);
 
 	for (int64_t block_id = 0; block_id < n_block_boundaries - 1; ++block_id) {
 		tasks.push_back([&, block_id] {
@@ -8944,10 +8903,8 @@ void TEA::_generate_cbam_files_mem_alt2() {
 			auto& ref_vec = local_reader.GetReferenceData();
 
 			string local_raw_sam_name = consd_raw_sam_name + "." + str_block_id;
-			string local_softclips_consd_cpos_name = out_softclips_consd_cpos_name + "." + str_block_id;
 
 			raw_bam_name_lists[block_id] = local_raw_sam_name;
-			softclips_consd_cpos_name_lists[block_id] = local_softclips_consd_cpos_name;
 //			bool debug = false;
 			BamAlignment local_alignment_entry;
 			BamWriter out_raw_sam;
@@ -8957,7 +8914,6 @@ void TEA::_generate_cbam_files_mem_alt2() {
 				out_raw_sam.SAMOpenNoHeader(local_raw_sam_name, ref_vec);
 			}
 
-//			ofstream out_consd_cpos(local_softclips_consd_cpos_name, ios::binary);
 			vector<BamAlignment> pair1_alns;
 			vector<BamAlignment> pair2_alns;
 			string prev_name;
@@ -9037,9 +8993,7 @@ void TEA::_generate_cbam_files_mem_alt2() {
 	int64_t calculated_n_blocks = unmapped_block_boundaries.size();
 	cout << (boost::format("[TEA.generate_cbam_files_mem_alt2] # blocks: %d of .consd.sorted.bam\n") % (calculated_n_blocks - 1)).str();
 	raw_bam_name_lists.clear();
-	softclips_consd_cpos_name_lists.clear();
 	raw_bam_name_lists.resize(calculated_n_blocks - 1);
-	softclips_consd_cpos_name_lists.resize(calculated_n_blocks - 1);
 	boost::mutex print_mutex;
 	for (int64_t block_id = 0; block_id < calculated_n_blocks - 1; ++block_id) {
 		tasks.push_back([&, block_id] {
@@ -9082,7 +9036,6 @@ void TEA::_generate_cbam_files_mem_alt2() {
 
 			bool selected = false;
 			bool selected2 = false;
-			int32_t cpos;
 
 			string poly_a_str(min_polyAT, 'A');
 			string poly_t_str(min_polyAT, 'T');
@@ -9098,10 +9051,8 @@ void TEA::_generate_cbam_files_mem_alt2() {
 
 			string local_raw_sam_name = consd_sorted_raw_sam_name + "." + str_block_id;
 			string local_sorted_sam_name = consd_sorted_sam_name + "." + str_block_id;
-			string local_softclips_consd_cpos_name = out_softclips_consd_cpos_name + "." + str_block_id;
 
 			raw_bam_name_lists[block_id] = local_raw_sam_name;
-			softclips_consd_cpos_name_lists[block_id] = local_softclips_consd_cpos_name;
 
 			BamTools::BamAlignment local_alignment_entry;
 			BamTools::BamWriter out_raw_sam;
@@ -9116,7 +9067,6 @@ void TEA::_generate_cbam_files_mem_alt2() {
 //			bool debug = (0 == block_id);
 			const bool debug = false;
 //			const bool debug = true;
-			ofstream out_consd_cpos(local_softclips_consd_cpos_name, ios::binary);
 
 			while (local_reader.LoadNextAlignmentCore(local_alignment_entry)) {
 				cur_offset = m_bgzf.Tell();
@@ -9165,8 +9115,7 @@ void TEA::_generate_cbam_files_mem_alt2() {
 									cout << "[TEA.generate_cbam_files_mem_alt2] selected 2-1\n";
 								}
 								selected2 = true;
-								cpos = local_alignment_entry.Position;
-								//								# check whether the clipped seq has >=10
+//								# check whether the clipped seq has >=10
 								cseq1 = seq.substr(0, clen);
 								if (string::npos != cseq1.find(poly_a_str)) {
 									if(debug) {
@@ -9217,7 +9166,6 @@ void TEA::_generate_cbam_files_mem_alt2() {
 								cout << "[TEA.generate_cbam_files_mem_alt2] selected 2-2\n";
 							}
 							selected2 = true;
-							cpos = get_cpos(local_alignment_entry.Position, cigar, qual2, -1);
 							//							# check whether the clipped seq has >=10
 							int64_t the_seq_sub_str_pos = seq.size() - clen;
 							cseq2 = seq.substr(the_seq_sub_str_pos);
@@ -9260,10 +9208,9 @@ void TEA::_generate_cbam_files_mem_alt2() {
 					}
 				}
 
-				if (selected2) {
-					out_raw_sam.SaveSAMAlignment(local_alignment_entry);
-					out_consd_cpos << (boost::format("%s\t%s\n") % ref_vec[local_alignment_entry.RefID].RefName % cpos).str();
-				}
+			if (selected2) {
+				out_raw_sam.SaveSAMAlignment(local_alignment_entry);
+			}
 				} catch(exception& ex) {
 					cout << ex.what() << "\n";
 					cout << BamWriter::GetSAMAlignment(local_alignment_entry, ref_vec) << "\n";
@@ -9284,7 +9231,6 @@ void TEA::_generate_cbam_files_mem_alt2() {
 	cout << (boost::format("[TEA.generate_cbam_files_mem_alt2] start sorting and generating the index for %s ...\n") % consd_sorted_raw_bam_name).str();
 	string sambamba_last_sort_cmd = (boost::format("sambamba sort -l 1 -t %d -o %s %s") % n_cores % out_softclips_consd_bam_name % consd_sorted_raw_bam_name).str();
 	system(sambamba_last_sort_cmd.c_str());
-	castle::IOUtils::plain_file_merge(out_softclips_consd_cpos_name, softclips_consd_cpos_name_lists, n_cores, true);
 	cout << "[TEA.generate_cbam_files_mem_alt2] done generating cbam and its index.\n";
 
 	cout << checker;
@@ -9299,13 +9245,11 @@ void TEA::_generate_cbam_files_mem_org() {
 	string consd_raw_sam_name = options.prefix + ".softclips.consd.raw.sam";
 	string consd_raw_bam_name = options.prefix + ".softclips.consd.raw.bam";
 	string out_softclips_consd_bam_name = options.prefix + ".softclips.consd.bam";
-	string out_softclips_consd_cpos_name = options.prefix + ".softclips.consd.cpos";
 	if (!options.working_dir.empty()) {
 		firststat_name = options.working_prefix + ".firststat";
 		consd_raw_sam_name = options.working_prefix + ".softclips.consd.raw.sam";
 		consd_raw_bam_name = options.working_prefix + ".softclips.consd.raw.bam";
 		out_softclips_consd_bam_name = options.working_prefix + ".softclips.consd.bam";
-		out_softclips_consd_cpos_name = options.working_prefix + ".softclips.consd.cpos";
 	}
 
 //	if (!options.is_force && boost::filesystem::exists(out_softclips_consd_bam_name) && boost::filesystem::exists(out_softclips_consd_cpos_name)) {
@@ -9361,7 +9305,6 @@ void TEA::_generate_cbam_files_mem_org() {
 	//	boost::unordered_map<string, string> ram;
 
 	vector<string> raw_bam_name_lists(calculated_n_blocks - 1);
-	vector<string> softclips_consd_cpos_name_lists(calculated_n_blocks - 1);
 //	vector<int64_t> cnt_lists(calculated_n_blocks - 1);
 	for (int64_t block_id = 0; block_id < calculated_n_blocks - 1; ++block_id) {
 		tasks.push_back([&, block_id] {
@@ -9426,7 +9369,6 @@ void TEA::_generate_cbam_files_mem_org() {
 
 			bool selected = false;
 			bool selected2 = false;
-			int32_t cpos;
 
 			string poly_a_str(min_polyAT, 'A');
 			string poly_t_str(min_polyAT, 'T');
@@ -9441,10 +9383,8 @@ void TEA::_generate_cbam_files_mem_org() {
 			const char* delim_all_stopwords = a_delim_str.c_str();
 
 			string local_raw_sam_name = consd_raw_sam_name + "." + str_block_id;
-			string local_softclips_consd_cpos_name = out_softclips_consd_cpos_name + "." + str_block_id;
 
 			raw_bam_name_lists[block_id] = local_raw_sam_name;
-			softclips_consd_cpos_name_lists[block_id] = local_softclips_consd_cpos_name;
 //			bool debug = false;
 				BamTools::BamAlignment local_alignment_entry;
 				BamTools::BamWriter out_raw_sam;
@@ -9453,7 +9393,6 @@ void TEA::_generate_cbam_files_mem_org() {
 				} else {
 					out_raw_sam.SAMOpenNoHeader(local_raw_sam_name, ref_vec);
 				}
-				ofstream out_consd_cpos(local_softclips_consd_cpos_name, ios::binary);
 
 				while (local_reader.LoadNextAlignmentCore(local_alignment_entry)) {
 //					if(verbose && 0 == num_total) {
@@ -9526,8 +9465,7 @@ void TEA::_generate_cbam_files_mem_org() {
 //							if (!(sam_flag & 0x0010)) { // # positive strand mapping
 								if (!local_alignment_entry.IsReverseStrand()) { // # positive strand mapping
 									selected2 = true;
-									cpos = local_alignment_entry.Position;
-									//								# check whether the clipped seq has >=10
+//								# check whether the clipped seq has >=10
 									if ('S' == cigar_front_type) {
 										cseq1 = seq.substr(0, clen);
 									}
@@ -9572,7 +9510,6 @@ void TEA::_generate_cbam_files_mem_org() {
 //						if (sam_flag & 0x0010) { // # negative strand mapping
 							if (local_alignment_entry.IsReverseStrand()) {
 								selected2 = true;
-								cpos = get_cpos(local_alignment_entry.Position, cigar, qual2, -1);
 								//							# check whether the clipped seq has >=10
 								int64_t the_seq_sub_str_pos = seq.size() - clen;
 								if ('S' == cigar_front_type) {
@@ -9615,7 +9552,6 @@ void TEA::_generate_cbam_files_mem_org() {
 
 					if (selected2) {
 						out_raw_sam.SaveSAMAlignment(local_alignment_entry);
-						out_consd_cpos << (boost::format("%s\t%s\n") % ref_vec[local_alignment_entry.RefID].RefName % cpos).str();
 					}
 
 				}
@@ -9651,7 +9587,6 @@ void TEA::_generate_cbam_files_mem_org() {
 	//	cout << "[TEA.load_repeat_mapping] gather scattered information\n";
 
 	castle::IOUtils::plain_file_merge(consd_raw_sam_name, raw_bam_name_lists, n_cores, true);
-	castle::IOUtils::plain_file_merge(out_softclips_consd_cpos_name, softclips_consd_cpos_name_lists, n_cores, true);
 	string sam_to_bam_cmd = (boost::format("samtools view -@ %d -o %s -Sb %s") % n_cores % consd_raw_bam_name % consd_raw_sam_name).str();
 	system(sam_to_bam_cmd.c_str());
 	cout << (boost::format("[TEA.generate_cbam_files_mem_org] done generating cbam: %s\n") % consd_raw_bam_name).str();
@@ -9670,16 +9605,14 @@ void TEA::_generate_cbam_files_sampe() {
 	string consd_raw_sam_name = options.prefix + ".softclips.consd.raw.sam";
 	string consd_raw_bam_name = options.prefix + ".softclips.consd.raw.bam";
 	string out_softclips_consd_bam_name = options.prefix + ".softclips.consd.bam";
-	string out_softclips_consd_cpos_name = options.prefix + ".softclips.consd.cpos";
 	if (!options.working_dir.empty()) {
 		firststat_name = options.working_prefix + ".firststat";
 		consd_raw_sam_name = options.working_prefix + ".softclips.consd.raw.sam";
 		consd_raw_bam_name = options.working_prefix + ".softclips.consd.raw.bam";
 		out_softclips_consd_bam_name = options.working_prefix + ".softclips.consd.bam";
-		out_softclips_consd_cpos_name = options.working_prefix + ".softclips.consd.cpos";
 	}
 
-	if (!options.is_force && boost::filesystem::exists(out_softclips_consd_bam_name) && boost::filesystem::exists(out_softclips_consd_cpos_name)) {
+	if ( !options.is_force && boost::filesystem::exists(out_softclips_consd_bam_name) ) {
 		return;
 	}
 
@@ -9732,8 +9665,6 @@ void TEA::_generate_cbam_files_sampe() {
 	//	boost::unordered_map<string, string> ram;
 
 	vector<string> raw_bam_name_lists(calculated_n_blocks - 1);
-	vector<string> softclips_consd_cpos_name_lists(calculated_n_blocks - 1);
-//	vector<int64_t> cnt_lists(calculated_n_blocks - 1);
 	for (int64_t block_id = 0; block_id < calculated_n_blocks - 1; ++block_id) {
 		tasks.push_back([&, block_id] {
 			BamTools::BamReader local_reader;
@@ -9797,7 +9728,6 @@ void TEA::_generate_cbam_files_sampe() {
 
 			bool selected = false;
 			bool selected2 = false;
-			int32_t cpos;
 
 			string poly_a_str(min_polyAT, 'A');
 			string poly_t_str(min_polyAT, 'T');
@@ -9812,10 +9742,8 @@ void TEA::_generate_cbam_files_sampe() {
 			const char* delim_all_stopwords = a_delim_str.c_str();
 
 			string local_raw_sam_name = consd_raw_sam_name + "." + str_block_id;
-			string local_softclips_consd_cpos_name = out_softclips_consd_cpos_name + "." + str_block_id;
 
 			raw_bam_name_lists[block_id] = local_raw_sam_name;
-			softclips_consd_cpos_name_lists[block_id] = local_softclips_consd_cpos_name;
 			const bool debug = false;
 //			bool debug = false;
 				BamTools::BamAlignment local_alignment_entry;
@@ -9825,7 +9753,6 @@ void TEA::_generate_cbam_files_sampe() {
 				} else {
 					out_raw_sam.SAMOpenNoHeader(local_raw_sam_name, ref_vec);
 				}
-				ofstream out_consd_cpos(local_softclips_consd_cpos_name, ios::binary);
 
 				while (local_reader.LoadNextAlignmentCore(local_alignment_entry)) {
 //					if(verbose && 0 == num_total) {
@@ -9894,7 +9821,6 @@ void TEA::_generate_cbam_files_sampe() {
 //							if (!(sam_flag & 0x0010)) { // # positive strand mapping
 								if (!local_alignment_entry.IsReverseStrand()) { // # positive strand mapping
 									selected2 = true;
-									cpos = local_alignment_entry.Position;
 									//								# check whether the clipped seq has >=10
 									cseq1 = seq.substr(0, clen);
 									if (string::npos != cseq1.find(poly_a_str)) {
@@ -9942,7 +9868,6 @@ void TEA::_generate_cbam_files_sampe() {
 									cout << "[TEA.generate_cbam_files_sampe] selected 2-2: qual\n";
 								}
 								selected2 = true;
-								cpos = get_cpos(local_alignment_entry.Position, cigar, qual2, -1);
 								//							# check whether the clipped seq has >=10
 								int64_t the_seq_sub_str_pos = seq.size() - clen;
 								cseq2 = seq.substr(the_seq_sub_str_pos);
@@ -9995,7 +9920,6 @@ void TEA::_generate_cbam_files_sampe() {
 							cout << "[TEA.generate_cbam_files_sampe] selected 3: write\n";
 						}
 						out_raw_sam.SaveSAMAlignment(local_alignment_entry);
-						out_consd_cpos << (boost::format("%s\t%s\n") % ref_vec[local_alignment_entry.RefID].RefName % cpos).str();
 					}
 
 				}
@@ -10031,7 +9955,6 @@ void TEA::_generate_cbam_files_sampe() {
 	//	cout << "[TEA.load_repeat_mapping] gather scattered information\n";
 
 	castle::IOUtils::plain_file_merge(consd_raw_sam_name, raw_bam_name_lists, n_cores, true);
-	castle::IOUtils::plain_file_merge(out_softclips_consd_cpos_name, softclips_consd_cpos_name_lists, n_cores, true);
 	string sam_to_bam_cmd = (boost::format("samtools view -@ %d -o %s -Sb %s") % n_cores % consd_raw_bam_name % consd_raw_sam_name).str();
 	system(sam_to_bam_cmd.c_str());
 	cout << (boost::format("[TEA.generate_cbam_files_sampe] done generating cbam: %s\n") % consd_raw_bam_name).str();
@@ -10051,12 +9974,10 @@ void TEA::generate_cbam_files_serial() {
 	string bamf = options.prefix + ".bam";
 	string consd_raw_bam_name = options.prefix + ".softclips.consd.raw.bam";
 	string out_bam = options.prefix + ".softclips.consd.bam";
-	string outf3 = options.prefix + ".softclips.consd.cpos.bz2";
 	if (!options.working_dir.empty()) {
 		bamf = options.working_prefix + ".bam";
 		consd_raw_bam_name = options.working_prefix + ".softclips.consd.raw.bam";
 		out_bam = options.working_prefix + ".softclips.consd.bam";
-		outf3 = options.working_prefix + ".softclips.consd.cpos.bz2";
 	}
 
 	string a_path(bamf);
@@ -10077,7 +9998,6 @@ void TEA::generate_cbam_files_serial() {
 
 	BamTools::BamWriter O2;
 	O2.SAMOpen(consd_raw_bam_name, local_reader.GetHeaderText(), local_reader.GetReferenceData());
-	ofstream O3(outf3, ios::binary);
 //	open(O2, "| $samtools view -bS - > $outf2") || die "Can't create $outf2";
 //	open(O3, "| bzip2 - > $outf3") || die "Can't create $outf3";
 
@@ -10101,7 +10021,6 @@ void TEA::generate_cbam_files_serial() {
 
 	bool selected = false;
 	bool selected2 = false;
-	int32_t cpos;
 
 	string poly_a_str(min_polyAT, 'A');
 	string poly_t_str(min_polyAT, 'T');
@@ -10115,7 +10034,7 @@ void TEA::generate_cbam_files_serial() {
 	int64_t n_entries = 0;
 	vector<string> b;
 	const char* delim_all_stopwords = a_delim_str.c_str();
-	auto& ref_vec = local_reader.GetReferenceData();
+//	auto& ref_vec = local_reader.GetReferenceData();
 	BamTools::BamAlignment local_alignment_entry;
 	while (local_reader.LoadNextAlignmentCore(local_alignment_entry)) {
 		++n_entries;
@@ -10151,7 +10070,6 @@ void TEA::generate_cbam_files_serial() {
 					selected = true;
 					if (!(sam_flag & 0x0010)) { // # positive strand mapping
 						selected2 = true;
-						cpos = local_alignment_entry.Position;
 //								# check whether the clipped seq has >=10
 						cseq1 = seq.substr(0, clen);
 						if (string::npos != cseq1.find(poly_a_str)) {
@@ -10187,7 +10105,6 @@ void TEA::generate_cbam_files_serial() {
 				selected = true;
 				if (sam_flag & 0x0010) { // # negative strand mapping
 					selected2 = true;
-					cpos = get_cpos(local_alignment_entry.Position, cigar, qual2, -1);
 //							# check whether the clipped seq has >=10
 					int64_t the_seq_sub_str_pos = seq.size() - clen;
 					cseq2 = seq.substr(the_seq_sub_str_pos);
@@ -10228,7 +10145,6 @@ void TEA::generate_cbam_files_serial() {
 
 		if (selected2) {
 			O2.SaveSAMAlignment(local_alignment_entry);
-			O3 << (boost::format("%s\t%s\n") % ref_vec[local_alignment_entry.RefID].RefName % cpos).str();
 		}
 	}
 	cout << (boost::format("[TEA.generate_cbam_files] %d processed\n") % n_entries).str();
@@ -11087,10 +11003,8 @@ void TEA::count_clipped(
 	}
 	const string prefixed_chr = "chr" + chr;
 	string input_softclips_consd_bam_name = options.prefix + ".softclips.consd.bam";
-	string input_softclips_consd_cpos_name = options.prefix + ".softclips.consd.cpos";
 	if (!options.working_dir.empty()) {
 		input_softclips_consd_bam_name = options.working_prefix + ".softclips.consd.bam";
-		input_softclips_consd_cpos_name = options.working_prefix + ".softclips.consd.cpos";
 	}
 
 	auto repeat_annot_itr = ril_annot_alt.find(chr);
@@ -11311,10 +11225,8 @@ void TEA::count_clipped_v(
 		}
 		const string prefixed_chr = "chr" + chr;
 		string input_softclips_consd_bam_name = options.prefix + ".softclips.consd.bam";
-		string input_softclips_consd_cpos_name = options.prefix + ".softclips.consd.cpos";
 		if (!options.working_dir.empty()) {
 			input_softclips_consd_bam_name = options.working_prefix + ".softclips.consd.bam";
-			input_softclips_consd_cpos_name = options.working_prefix + ".softclips.consd.cpos";
 		}
 
 		auto repeat_annot_itr = ril_annot_alt.find(chr);
@@ -12136,7 +12048,6 @@ void TEA::output_clipped_stat(ofstream& out_p_clipped_filename, ofstream& out_n_
 			if (delta <= options.jittering) {
 				an_entry.aligned = 1;
 			}
-//				df1$cpos[i] - ccnt$pbp
 		} else if (-1 == an_entry.strand) {
 			int64_t delta = abs(an_entry.clipped_pos_rep - a_stat_entry.nbp);
 			if (delta <= options.jittering) {
@@ -12473,7 +12384,6 @@ void TEA::output_clipped_stat_v(ofstream& out_p_clipped_filename, ofstream& out_
 			if (delta <= options.jittering) {
 				an_entry.aligned = 1;
 			}
-//				df1$cpos[i] - ccnt$pbp
 		} else if (-1 == an_entry.strand) {
 			int64_t delta = abs(an_entry.clipped_pos_rep - a_stat_entry.nbp);
 			if (delta <= options.jittering) {

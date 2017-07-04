@@ -1109,7 +1109,8 @@ void ParallelDiscordExtractor::write_discordants_alt() {
 			num_memorized_clipped_discs_lists[block_id] = num_memorized_clipped_discs;
 			if(verbose) {
 				string a_block_boundary_str = (boost::format("%s %d-%d %d")
-						% local_alignment_entry.Name % local_alignment_entry.RefID % local_alignment_entry.Position
+						% local_alignment_entry.Name % local_alignment_entry.RefID
+						% local_alignment_entry.Position
 						% local_alignment_entry.AlignmentFlag).str();
 				cout << (boost::format("[ParallelDiscordExtrator.write_discordants] (last) Block-%d %s\n")
 						% block_id % a_block_boundary_str).str();
