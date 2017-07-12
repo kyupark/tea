@@ -182,10 +182,10 @@ TEAOptionParser::TEAOptionParser(int argc, char **argv) : prefix("-"), aln_param
 			} else if("-V" == argument) {
 				string value(argv[i + 1]);
 				vannot_file = value;
-			}  else if ("-x" == argument) {
+			} else if ("-x" == argument) {
 				string value(argv[i + 1]);
 				prefix = value;
-			}  else if ("-b" == argument) {
+			} else if ("-b" == argument) {
 				string value(argv[i + 1]);
 				auto bam_pos = value.rfind(".bam");
 				if (bam_pos == value.size()-4){

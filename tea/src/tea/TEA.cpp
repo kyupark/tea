@@ -202,16 +202,7 @@ void TEA::run_rid() {
 
 	boost::unordered_map<string, boost::unordered_map<int8_t, vector<RAMRepeatEntry>>> ram;
 	load_ram(ram, rannot, rm_dup);
-	for (auto& c_entry : ram) {
-		auto& c = c_entry.first;
-		// create positive and negative ram storage for the parallelization
-		if (ram[c][1].size() > 0) {
-			;
-		}
-		if (ram[c][-1].size() > 0) {
-			;
-		}
-	}
+
 	string the_first_stat_file = options.prefix + ".firststat";
 	if (!options.working_dir.empty()) {
 		the_first_stat_file = options.working_prefix + ".firststat";
@@ -260,10 +251,6 @@ void TEA::run_rid() {
 	vector<function<void()> > tasks;
 	bool headless = false;
 	for (auto c: chr_names) {
-//		if (c!="9") {
-//			continue;
-//		}
-//		auto c = c_entry.first;
 		tasks.push_back([&, c, headless] {
 			RAMIntervalVector p_cl;
 			RAMIntervalVector n_cl;
@@ -291,38 +278,8 @@ void TEA::run_rid() {
 			boost::unordered_set<int64_t> positive_paired;
 			boost::unordered_set<int64_t> negative_paired;
 
-//			for (auto an_entry : pm_cl) {
-//				auto& positive_entry = p_cl[an_entry.first];
-//				auto& negative_entry = n_cl[an_entry.second];
-//				positive_paired.insert(positive_entry.value.global_cluster_id);
-//				negative_paired.insert(negative_entry.value.global_cluster_id);
-//			}
-
-
-			bool debug = false;
-//			bool debug = (c == "22");
-
-			if (debug) {
-				for (auto& cl : pm_cl) {
-					auto& en = p_cl[cl.first].value;
-					cout << "p id:" << en.global_cluster_id <<
-							"\ts:" << en.s <<
-							"\te:" << en.e <<
-							"\tram:" << en.ram <<
-							"\trep:" << castle::StringUtils::join(en.rep_repeat, ",") << "\n";
-				}
-				for (auto& cl : pm_cl) {
-					auto& en = n_cl[cl.second].value;
-					cout << "n id:" << en.global_cluster_id <<
-							"\ts:" << en.s <<
-							"\te:" << en.e <<
-							"\tram:" << en.ram <<
-							"\trep:" << castle::StringUtils::join(en.rep_repeat, ",") << "\n";
-				}
-			}
-
 			auto it = pm_cl.begin();
-			cout << c << ":" << pm_cl.size() << "\n";
+
 			if (pm_cl.size() == 1) {
 				auto p = p_cl[it->first];
 				auto n = n_cl[it->second];
@@ -332,47 +289,30 @@ void TEA::run_rid() {
 			}
 			else if (pm_cl.size() > 1) {
 				while (it != prev(pm_cl.end())) {
-					if (debug) cout << "in while \n";
 					auto nx = next(it);
 					auto p = p_cl[it->first];
 					auto n = n_cl[it->second];
-					if (debug) cout << "p.start" << p.start << "p.stop" << p.stop << "\n";
-					if (debug) cout << "n.start" << n.start << "n.stop" << n.stop << "\n";
 
 					auto pp = p_cl[nx->first];
 					auto nn = n_cl[nx->second];
-					if (debug) cout << "pp.start" << pp.start << "pp.stop" << pp.stop  << "\n";
-					if (debug) cout << "nn.start" << nn.start << "nn.stop" << nn.stop  << "\n";
 
 					if ((p.start == pp.start || n.stop == nn.stop)
 							&& (p.value.rep_repeat == pp.value.rep_repeat
 									|| n.value.rep_repeat == nn.value.rep_repeat)) {
 						if( p.value.ram + n.value.ram < pp.value.ram + nn.value.ram) {
-							if (debug) cout << "before erase it \n";
 							it = pm_cl.erase(it);
-							if (debug) cout << "after erase it, size:" << pm_cl.size() << "\n";
-//							if (nx == pm_cl.end()) {
-//								if (debug) cout << "before break \n";
-//								break;
-//							}
-							if (debug) cout << "before continue \n";
 							continue;
 						}
 						else {
-							if (debug) cout << "before erase nx \n";
 							pm_cl.erase(nx);
-							if (debug) cout << "after erase nx, size:" << pm_cl.size() << "\n";
 						}
 					}
 					positive_paired.insert(p.value.global_cluster_id);
 					negative_paired.insert(n.value.global_cluster_id);
 					if (nx == pm_cl.end()) {
-						if (debug) cout << "before break nx==pm_cl.end\n";
 						break;
 					}
-					if (debug) cout << "before ++it \n";
 					++it;
-					if (debug) cout << "after ++it \n";
 				}
 				auto& p = p_cl[it->first];
 				auto& n = n_cl[it->second];
@@ -5808,6 +5748,7 @@ void TEA::create_disc_FASTQs() {
 		string cl_disc_out_file_name = the_prefix + ".cl.disc.fq.gz";
 		string cl_disc_1_out_file_name = the_prefix + ".cl.disc_1.fq.gz";
 		string cl_disc_2_out_file_name = the_prefix + ".cl.disc_2.fq.gz";
+
 		if (options.is_force || (!boost::filesystem::exists(disc_1_out_file_name) && !boost::filesystem::exists(disc_2_out_file_name))) {
 			MEMBAM_to_FASTQ(disc_file_name, disc_1_out_file_name, disc_2_out_file_name);
 		}
@@ -7123,25 +7064,6 @@ void TEA::write_ram_and_bam(const string& refbam, const string& rbamf, const str
 				auto& h_pos = h_pos_lists[block_id];
 				auto& ram = ram_lists[block_id];
 				while (local_reader.LoadNextAlignmentCore(local_alignment_entry)) {
-//					if(verbose && 0 == num_total) {
-//						string a_block_boundary_str = (boost::format("%s %d-%d %d")
-//								% local_alignment_entry.Name % local_alignment_entry.RefID % local_alignment_entry.Position
-//								% local_alignment_entry.AlignmentFlag).str();
-//						if(block_boundary_strs.end() == block_boundary_strs.find(a_block_boundary_str)) {
-//							cout << (boost::format("[TEA.write_ram_and_bam] Block-%d (first-wrong) %s\n")
-//									% block_id % a_block_boundary_str).str();
-//						} else {
-//							cout << (boost::format("[TEA.write_ram_and_bam] Block-%d (first) %s\n")
-//									% block_id % a_block_boundary_str).str();
-//						}
-//					}
-//					if(local_alignment_entry.RefID == the_next_ref_id
-//							&& local_alignment_entry.Position == the_next_ref_pos
-//							&& local_alignment_entry.AlignmentFlag == the_next_aln_flag
-//							&& local_alignment_entry.Name == the_next_block_read_name
-//					) {
-//						break;
-//					}
 					cur_offset = m_bgzf.Tell();
 					if(prev_offset >= the_next_ref_offset) {
 						break;
@@ -7218,7 +7140,7 @@ void TEA::write_ram_and_bam(const string& refbam, const string& rbamf, const str
 
 										dup = true;
 										auto& record = an_entry.second.bam;
-										//							# compare the mapping quality of the current ram and the rams that appeared before
+//							# compare the mapping quality of the current ram and the rams that appeared before
 										if (local_alignment_entry.MapQuality > record.MapQuality) {
 											if (debug) {
 												cout << "choose the best quality\n" << map << "\n";
@@ -9272,15 +9194,7 @@ void TEA::_generate_cbam_files_mem_org() {
 	vector<meerkat::BlockBoundary> local_independent_blocks;
 	collect_boundaries_pos(local_fixed_size_blocks, local_unmapped_included_blocks, local_independent_blocks, input_bam_name, a_bai_path, a_bni_path, size_block);
 	vector<meerkat::BlockBoundary> actual_blocks = local_unmapped_included_blocks;
-//	vector<meerkat::BlockBoundary> actual_blocks;
-//	collect_boundaries(actual_blocks, input_bam_name, size_block);
 
-//	BamTools::BamReader local_reader;
-//	if (!local_reader.Open(a_path, an_index_path)) {
-//		cout << "ERROR: could not open BAM file '" << a_path << "'\n";
-//		exit(1);
-//	}
-//	find_quality_standard(local_reader);
 	{
 		string line;
 		ifstream in(firststat_name, ios::binary);
@@ -9299,13 +9213,8 @@ void TEA::_generate_cbam_files_mem_org() {
 //	const bool verbose = false;
 	string done_vector(calculated_n_blocks - 1, 'U');
 	set<string> block_boundary_strs;
-//	vector<boost::unordered_map<string, boost::unordered_map<string, RAMEntry>>>h_pos_lists(calculated_n_blocks - 1);
-//	vector<boost::unordered_map<string, string>> ram_lists(calculated_n_blocks - 1);
-	//	boost::unordered_map<string, boost::unordered_map<string, RAMEntry>> h_pos;
-	//	boost::unordered_map<string, string> ram;
 
 	vector<string> raw_bam_name_lists(calculated_n_blocks - 1);
-//	vector<int64_t> cnt_lists(calculated_n_blocks - 1);
 	for (int64_t block_id = 0; block_id < calculated_n_blocks - 1; ++block_id) {
 		tasks.push_back([&, block_id] {
 			BamTools::BamReader local_reader;
@@ -9313,28 +9222,10 @@ void TEA::_generate_cbam_files_mem_org() {
 				return;
 			}
 
-//			int32_t the_current_ref_id = actual_blocks[block_id].ref_id;
-//			int32_t the_current_ref_pos = actual_blocks[block_id].pos;
-//
-//			int32_t the_next_ref_id = actual_blocks[block_id + 1].ref_id;
-//			int32_t the_next_ref_pos = actual_blocks[block_id + 1].pos;
-//			uint32_t the_next_aln_flag = actual_blocks[block_id + 1].aln_flag;
 			string str_block_id = boost::lexical_cast<string>(block_id);
 
 			string the_next_block_read_name = actual_blocks[block_id + 1].read_name;
-//			bool jump_success = local_reader.Jump(actual_blocks[block_id].ref_id, actual_blocks[block_id].jump_pos);
-//			if(!jump_success) {
-//				cout << (boost::format("[TEA.write_ram_and_bam] block-%d (Jump fail): %d:%d (%d/%d)-(%d/%d)\n")
-//						% block_id % actual_blocks[block_id].ref_id % actual_blocks[block_id].jump_pos % the_current_ref_id % the_current_ref_pos
-//						% the_next_ref_id % the_next_ref_pos).str();
-//				local_reader.Close();
-//				return;
-//			}
-//			if(verbose) {
-//				cout << (boost::format("[TEA.write_ram_and_bam] block-%d (start) (%d/%d)-(%d/%d)\n")
-//						% block_id % the_current_ref_id % the_current_ref_pos
-//						% the_next_ref_id % the_next_ref_pos).str();
-//			}
+
 			int64_t the_current_ref_offset = actual_blocks[block_id].offset;
 			int64_t the_next_ref_offset = actual_blocks[block_id + 1].offset;
 			auto& m_bgzf = local_reader.GetBGZF();
@@ -9395,39 +9286,14 @@ void TEA::_generate_cbam_files_mem_org() {
 				}
 
 				while (local_reader.LoadNextAlignmentCore(local_alignment_entry)) {
-//					if(verbose && 0 == num_total) {
-//						string a_block_boundary_str = (boost::format("%s %d-%d %d")
-//								% local_alignment_entry.Name % local_alignment_entry.RefID % local_alignment_entry.Position
-//								% local_alignment_entry.AlignmentFlag).str();
-//						if(block_boundary_strs.end() == block_boundary_strs.find(a_block_boundary_str)) {
-//							cout << (boost::format("[TEA.write_ram_and_bam] Block-%d (first-wrong) %s\n")
-//									% block_id % a_block_boundary_str).str();
-//						} else {
-//							cout << (boost::format("[TEA.write_ram_and_bam] Block-%d (first) %s\n")
-//									% block_id % a_block_boundary_str).str();
-//						}
-//					}
-//					if(local_alignment_entry.RefID == the_next_ref_id
-//							&& local_alignment_entry.Position == the_next_ref_pos
-//							&& local_alignment_entry.AlignmentFlag == the_next_aln_flag
-//							&& local_alignment_entry.Name == the_next_block_read_name
-//					) {
-//						break;
-//					}
+
 					cur_offset = m_bgzf.Tell();
 					if(prev_offset >= the_next_ref_offset) {
 						break;
 					}
 					prev_offset = cur_offset;
 					++num_total;
-//				debug = "DHFC08P1:370:C1784ACXX:2:1214:21254:59267" == local_alignment_entry.Name;
-//				if(!debug) {
-//					continue;
-//				}
 
-					//	while(<F>) {
-					//		chomp; my @a=split(/\t/);
-					//		if ($a[1] & 0x400 | $a[1] & 0x4) { next }; # skip PCR duplicate or unmapped reads
 					uint32_t sam_flag = local_alignment_entry.AlignmentFlag;
 					if ((sam_flag & 0x400) || (sam_flag & 0x4)) {
 						continue;
@@ -9478,12 +9344,7 @@ void TEA::_generate_cbam_files_mem_org() {
 					}
 					// # clipping in the end
 					clen = 0;
-//				for (auto& a_cigar : cigar) {
-//					if ('D' == a_cigar.Type) {
-//						clen = a_cigar.Length;
-//						break;
-//					}
-//				}
+
 					auto& cigar_back_type = cigar.back().Type;
 
 					if( !cigar.empty() && ('S' == cigar_back_type || 'H' == cigar_back_type) ) {
@@ -9533,13 +9394,7 @@ void TEA::_generate_cbam_files_mem_org() {
 
 						string md_str;
 						local_alignment_entry.GetTag("MD", md_str);
-						//        $md = $_;
 
-						//        # check min_matches is satisfied
-
-						//        $md =~  s/.*\sMD:Z:([\w^]+)($|\s.*)/$1/;
-						//        my @b=split(/[A-Za-z^]/, $md);
-						//				cout << local_alignment_entry.Name << "/" << md_str << "\n";
 						castle::StringUtils::c_string_multi_split(md_str, delim_all_stopwords, b);
 						int64_t summed_n_bases = 0;
 						for (auto a_value_str : b) {
@@ -9557,34 +9412,11 @@ void TEA::_generate_cbam_files_mem_org() {
 				}
 				local_reader.Close();
 				out_raw_sam.Close();
-				//				done_vector[block_id] = 'D';
 
-				//				if(verbose) {
-				//					string a_block_boundary_str = (boost::format("%s %d-%d %d")
-				//							% local_alignment_entry.Name % local_alignment_entry.RefID % local_alignment_entry.Position
-				//							% local_alignment_entry.AlignmentFlag).str();
-				//					if(block_boundary_strs.end() == block_boundary_strs.find(a_block_boundary_str)) {
-				//						cout << (boost::format("[TEA.BAM_to_FASTQ] Block-%d (last-wrong) %s\n")
-				//								% block_id % a_block_boundary_str).str();
-				//					} else {
-				//						cout << (boost::format("[TEA.BAM_to_FASTQ] Block-%d (last) %s\n")
-				//								% block_id % a_block_boundary_str).str();
-				//					}
-				//				} else {
-				//					size_t n = count(done_vector.begin(), done_vector.end(), 'D');
-				//					double processed = n/(double)done_vector.size() * 100.0;
-				//					cout << (boost::format("%.2f %%\n") % processed).str();
-				//				}
 			});
 	}
-	// sometimes the unaligned reads are in the last portion of BAM file, hence
-	// changing the order.
-//	if (tasks.size() > 0) {
-//		swap(tasks[0], tasks.back());
-//	}
-	castle::ParallelRunner::run_unbalanced_load(n_cores, tasks);
 
-	//	cout << "[TEA.load_repeat_mapping] gather scattered information\n";
+	castle::ParallelRunner::run_unbalanced_load(n_cores, tasks);
 
 	castle::IOUtils::plain_file_merge(consd_raw_sam_name, raw_bam_name_lists, n_cores, true);
 	string sam_to_bam_cmd = (boost::format("samtools view -@ %d -o %s -Sb %s") % n_cores % consd_raw_bam_name % consd_raw_sam_name).str();
@@ -11129,13 +10961,7 @@ void TEA::count_clipped(
 	RAMIntervalEntry empty_interval_entry(0, 0, an_empty_entry);
 //	cout << "[TEA.count_clipped] process positive only\n";
 	{
-//		string cl_file = cl_prefix + "." + tmp_chr_name + ".p.cluster";
-//		string clipped_file = cl_prefix + "." + tmp_chr_name + ".p.clipped";
 
-//		ofstream out_cl(cl_file, ios::binary);
-//		ofstream out_clipped(clipped_file, ios::binary);
-//		out_cl << header_cl;
-//		out_clipped << header_clipped;
 		for (int64_t r_id = 0; r_id < static_cast<int64_t>(p_cl.size()); ++r_id) {
 			if (positive_only.end() == positive_only.find(r_id)) {
 				continue;
@@ -11156,9 +10982,7 @@ void TEA::count_clipped(
 				start_pos = min(start_pos, positive_entry.value.pos.back());
 			}
 			int64_t end_pos = the_ram_boundary_end - read_length;
-//			if(!negative_entry.value.pos.empty()) {
-//				end_pos = max(end_pos, negative_entry.value.pos[0]);
-//			}
+
 
 			local_reader.SetRegion(chr_ref_id, start_pos, chr_ref_id, end_pos);
 			int64_t mid_point = positive_entry.stop + read_length;
@@ -11169,12 +10993,7 @@ void TEA::count_clipped(
 
 //	cout << "[TEA.count_clipped] process negative only\n";
 	{
-//		string cl_file = cl_prefix + "." + tmp_chr_name + ".n.cluster";
-//		string clipped_file = cl_prefix + "." + tmp_chr_name + ".n.clipped";
-//		ofstream out_cl(cl_file, ios::binary);
-//		ofstream out_clipped(clipped_file, ios::binary);
-//		out_cl << header_cl;
-//		out_clipped << header_clipped;
+
 		for (int64_t r_id = 0; r_id < static_cast<int64_t>(n_cl.size()); ++r_id) {
 			if (negative_only.end() == negative_only.find(r_id)) {
 				continue;
@@ -11191,9 +11010,7 @@ void TEA::count_clipped(
 			int64_t the_ram_boundary_end = negative_entry.stop + read_length;
 
 			int64_t start_pos = the_ram_boundary_start + read_length;
-//			if(!positive_entry.value.pos.empty()) {
-//				start_pos = min(start_pos, positive_entry.value.pos.back());
-//			}
+
 			int64_t end_pos = the_ram_boundary_end - read_length;
 			if (!negative_entry.value.pos.empty()) {
 				end_pos = max(end_pos, negative_entry.value.pos[0]);

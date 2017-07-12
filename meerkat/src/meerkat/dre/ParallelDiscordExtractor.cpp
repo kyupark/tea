@@ -1232,7 +1232,6 @@ void ParallelDiscordExtractor::write_discordants_serial() {
 		}
 	}
 
-
 	/* Use the slow method to read tags so we can get the read group */
 	while (local_reader.LoadNextAlignmentCore(local_alignment_entry)) {
 		++num_in;
