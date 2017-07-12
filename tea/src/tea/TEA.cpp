@@ -1453,7 +1453,7 @@ void TEA::create_contig_two_ram(const string& out_path, const string& in_path) {
 	    	castle::StringUtils::trim(nclipped);
 	    	castle::StringUtils::trim(prammate);
 	    	castle::StringUtils::trim(nrammate);
-	        if (pclipped.size() > 0 && nclipped.size() > 0 && prammate.size() > 0 && nrammate.size() > 0) {
+	        if ( pclipped.size() > 0 && nclipped.size() > 0 && prammate.size() > 0 && nrammate.size() > 0 ) {
 	            g << line << "\n";
 	        }
 	    }
@@ -10986,8 +10986,7 @@ void TEA::count_clipped(
 
 			local_reader.SetRegion(chr_ref_id, start_pos, chr_ref_id, end_pos);
 			int64_t mid_point = positive_entry.stop + read_length;
-			output_clipped_stat(out_p_clipped_filename, out_n_clipped_filename, out_p_mate_rname, out_n_mate_rname, out_cl, out_germline, out_clipped, contig_dir, ref_repeat_interval_tree, stat_results, gene_interval_tree, gene_results, local_reader, the_ram_boundary_start, the_ram_boundary_end,
-					positive_entry, negative_entry, chr, prefixed_chr, read_length, rmasker_filter_margin, gene_margin, mid_point);
+			output_clipped_stat(out_p_clipped_filename, out_n_clipped_filename, out_p_mate_rname, out_n_mate_rname, out_cl, out_germline, out_clipped, contig_dir, ref_repeat_interval_tree, stat_results, gene_interval_tree, gene_results, local_reader, the_ram_boundary_start, the_ram_boundary_end, positive_entry, negative_entry, chr, prefixed_chr, read_length, rmasker_filter_margin, gene_margin, mid_point);
 		}
 	}
 
@@ -11017,8 +11016,7 @@ void TEA::count_clipped(
 			}
 			int64_t mid_point = negative_entry.start;
 			local_reader.SetRegion(chr_ref_id, start_pos, chr_ref_id, end_pos);
-			output_clipped_stat(out_p_clipped_filename, out_n_clipped_filename, out_p_mate_rname, out_n_mate_rname, out_cl, out_germline, out_clipped, contig_dir, ref_repeat_interval_tree, stat_results, gene_interval_tree, gene_results, local_reader, the_ram_boundary_start, the_ram_boundary_end,
-					positive_entry, negative_entry, chr, prefixed_chr, read_length, rmasker_filter_margin, gene_margin, mid_point);
+			output_clipped_stat(out_p_clipped_filename, out_n_clipped_filename, out_p_mate_rname, out_n_mate_rname, out_cl, out_germline, out_clipped, contig_dir, ref_repeat_interval_tree, stat_results, gene_interval_tree, gene_results, local_reader, the_ram_boundary_start, the_ram_boundary_end, positive_entry, negative_entry, chr, prefixed_chr, read_length, rmasker_filter_margin, gene_margin, mid_point);
 		}
 	}
 	local_reader.Close();
@@ -11381,7 +11379,6 @@ void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& ma
 						clipped_pos_qual_trimmed -= n_low;
 					}
 				}
-
 			}
 		}
 
@@ -11742,9 +11739,7 @@ void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& ma
 	n_aligned_clipped_negative = max_pos_freq_negative;
 }
 
-void TEA::output_clipped_stat(ofstream& out_p_clipped_filename, ofstream& out_n_clipped_filename, ofstream& out_p_mate_rname, ofstream& out_n_mate_rname, ofstream& out_cl, ofstream& out_germline, ofstream& out_clipped, const string& contig_dir, RefRepeatIntervalTree& ref_repeat_interval_tree,
-		RefRepeatIntervalVector& stat_results, GeneIntervalTree& gene_interval_tree, GeneIntervalVector& gene_results, BamTools::BamReader& local_reader, const int64_t the_ram_boundary_start, const int64_t the_ram_boundary_end, const RAMIntervalEntry& positive_entry,
-		const RAMIntervalEntry& negative_entry, const string& chr, const string& prefixed_chr, const int64_t read_length, const int64_t rmasker_filter_margin, const int64_t gene_margin, const int64_t mid_point) {
+void TEA::output_clipped_stat(ofstream& out_p_clipped_filename, ofstream& out_n_clipped_filename, ofstream& out_p_mate_rname, ofstream& out_n_mate_rname, ofstream& out_cl, ofstream& out_germline, ofstream& out_clipped, const string& contig_dir, RefRepeatIntervalTree& ref_repeat_interval_tree, RefRepeatIntervalVector& stat_results, GeneIntervalTree& gene_interval_tree, GeneIntervalVector& gene_results, BamTools::BamReader& local_reader, const int64_t the_ram_boundary_start, const int64_t the_ram_boundary_end, const RAMIntervalEntry& positive_entry, const RAMIntervalEntry& negative_entry, const string& chr, const string& prefixed_chr, const int64_t read_length, const int64_t rmasker_filter_margin, const int64_t gene_margin, const int64_t mid_point) {
 	vector<ClippedEntry> clipped_entries;
 	int64_t max_pos_positive = 0;
 	int64_t max_pos_negative = 0;
@@ -12438,10 +12433,7 @@ void TEA::output_mate_fa(boost::unordered_map<string, boost::unordered_map<int8_
 				string a_key = data[4];
 				int64_t a_pos = boost::lexical_cast<int64_t>(data[3]);
 				string file_name_prefix = naive_prefix + "." + tmp_chr_name + "." + data[0] + "." + data[1] + "." + data[2];
-//				const bool debug = ("chr14" == tmp_chr_name) && ("34139887" == data[0]) && ("34140417" == data[1]);
-//				if(debug) {
-//					cout << "[TEA.output_mate_fa] positive mate: " << a_key << ":" << data[2] << "\n";
-//				}
+
 				a_positive_repeat_map[a_key].file_name_prefix = file_name_prefix;
 				a_positive_repeat_map[a_key].pos = a_pos;
 				a_positive_repeat_map[a_key].chr = c;
@@ -12469,10 +12461,7 @@ void TEA::output_mate_fa(boost::unordered_map<string, boost::unordered_map<int8_
 				string a_key = data[4];
 				int64_t a_pos = boost::lexical_cast<int64_t>(data[3]);
 				string file_name_prefix = naive_prefix + "." + tmp_chr_name + "." + data[0] + "." + data[1] + "." + data[2];
-//				const bool debug = ("chr14" == tmp_chr_name) && ("34139887" == data[0]) && ("34140417" == data[1]);
-//				if(debug) {
-//					cout << "[TEA.output_mate_fa] negative mate: " << a_key << ":" << data[2] << "\n";
-//				}
+
 				a_negative_repeat_map[a_key].file_name_prefix = file_name_prefix;
 				a_negative_repeat_map[a_key].pos = a_pos;
 				a_negative_repeat_map[a_key].chr = c;
