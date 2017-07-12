@@ -75,7 +75,7 @@ void TEAOptionParser::show_help() {
 			"       --comp                the comparison results of the .germlime files [" << comp_out << "]\n\n"
 			"Note:                        Please set the tea_base environment to which the TEA is installed. [" << string(getenv("tea_base")) << "]\n"
 			"Contact:                     Euncheon Lim <abysslover@gmail.com>\n";
-	exit(0);
+	exit(1);
 }
 TEAOptionParser::TEAOptionParser() :
 		prefix("-"), aln_param("-l 40 -k 2 -n 3"), samse_param("-n 1000"), ref("hg19"), rasym("ra"), assembler("cap3"),

@@ -2122,7 +2122,7 @@ string BLASTBreakPoints::run_blast(const string blastdir, const vector<string>& 
 	string bltoutfile = blastdir + mpd_id + ".bltout";
 	if(mpd_id.empty()) {
 		cout << "[BLASTBreakPoints.run_blast] bltout file: " << bltoutfile << "\n";
-		exit(0);
+		exit(1);
 	}
 	ofstream QRSEQ(queryfile, ios::binary);
 	auto the_detail = ref_readsdetail.find(name);

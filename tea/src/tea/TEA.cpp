@@ -131,7 +131,7 @@ void TEA::run_rid() {
 	string ref = options.ref;
 	if (ref_support.end() == ref_support.find(ref)) {
 		cout << (boost::format("[TEA.run_rid] The reference %s is not supported\n") % ref).str();
-		exit(0);
+		exit(1);
 	}
 
 	boost::unordered_map<string, pair<string, string>> rannot;
@@ -209,7 +209,7 @@ void TEA::run_rid() {
 	}
 	if (!boost::filesystem::exists(the_first_stat_file)) {
 		cout << "[TEA.run_rid] ERROR:: could not open " << the_first_stat_file << "\n";
-		exit(0);
+		exit(1);
 	}
 
 	{
@@ -422,7 +422,7 @@ void TEA::run_vid() {
 	string ref = options.ref;
 	if (ref_support.end() == ref_support.find(ref)) {
 		cout << (boost::format("The reference %s is not supported\n") % ref).str();
-		exit(0);
+		exit(1);
 	}
 
 	boost::unordered_map<string, pair<string, string>> rannot;
@@ -506,7 +506,7 @@ void TEA::run_vid() {
 	}
 	if (!boost::filesystem::exists(the_first_stat_file)) {
 		cout << "ERROR:: could not open " << the_first_stat_file << "\n";
-		exit(0);
+		exit(1);
 	}
 
 	{
@@ -597,7 +597,7 @@ void TEA::run_uid() {
 	string ref = options.ref;
 	if (ref_support.end() == ref_support.find(ref)) {
 		cout << (boost::format("The reference %s is not supported\n") % ref).str();
-		exit(0);
+		exit(1);
 	}
 
 	boost::unordered_map<string, pair<string, string>> rannot;
@@ -685,7 +685,7 @@ void TEA::run_uid() {
 	}
 	if (!boost::filesystem::exists(the_first_stat_file)) {
 		cout << "ERROR:: could not open " << the_first_stat_file << "\n";
-		exit(0);
+		exit(1);
 	}
 
 	{
@@ -3668,7 +3668,7 @@ void TEA::create_germline_contig_tmp_tmp_filtered_fa(const string& out_path, con
 		if(fso.size() <= 38) {
 			cout << in_path << "\n";
 			cout << line << "\n";
-			exit(0);
+			exit(1);
 		}
 		auto& polyA_tag = fso[33];
 		auto& polyT_tag = fso[34];
@@ -8599,7 +8599,7 @@ void TEA::_generate_cbam_files_mem_alt() {
 								if (n_good_quals >= 5) {
 	//							if(debug) {
 	//								cout << "selected 1\n";
-	//								exit(0);
+	//								exit(1);
 	//							}
 									selected = true;
 	//							if (!(sam_flag & 0x0010)) { // # positive strand mapping
@@ -9325,7 +9325,7 @@ void TEA::_generate_cbam_files_mem_org() {
 							if (n_good_quals >= 5 || 'H' == cigar_front_type ) {
 //							if(debug) {
 //								cout << "selected 1\n";
-//								exit(0);
+//								exit(1);
 //							}
 								selected = true;
 //							if (!(sam_flag & 0x0010)) { // # positive strand mapping
@@ -11072,7 +11072,7 @@ void TEA::count_clipped_v(
 		auto rev_itr = ref_reverse_index.find(chr);
 		if (ref_reverse_index.end() == rev_itr) {
 			cout << "the chromosome name is not the same\n";
-			exit(0);
+			exit(1);
 		}
 
 		string header_cl = "chr\ts\te\tsize\ttsd\tpbp\tnbp\trep.repeat\tfamily\tclass\tram\tpram\tnram\tcr\tpcr\tncr\t"
@@ -12767,6 +12767,7 @@ void TEA::output_mate_fa(boost::unordered_map<string, boost::unordered_map<int8_
 				getline(in_germline, line, '\n');
 				out_germline << line << "\torientation\tpolyA\tpolyT\tpclipped\tnclipped\tprammate\tnrammate\n";
 			}
+
 			while(getline(in_germline, line, '\n')) {
 				castle::StringUtils::c_string_multi_split(line, delim_tab, data);
 				castle::StringUtils::c_string_multi_split(data[9], delim_comma, cols);
