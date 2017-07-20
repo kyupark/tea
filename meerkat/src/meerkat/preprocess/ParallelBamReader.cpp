@@ -3334,38 +3334,7 @@ void ParallelBamReader::output_softclips() {
 //		tasks.push_back([&] {
 		string sam_to_bam_sc_cmd = (boost::format("samtools view -1 -Sb -@ %d -o %s %s") % n_cores % mapped_sc_tmp_bam_name % mapped_sc_sam_name).str();
 		system(sam_to_bam_sc_cmd.c_str());
-//		});
-//		tasks.push_back([&]{
-//			ofstream out_um_sam(mapped_um_sam_name, ios::binary);
-//			string local_mapped_um_name = options.prefix + ".mapped_um.sam.0";
-//			out_um_sam << castle::IOUtils::read_fully(local_mapped_um_name);
-//			for (int64_t block_id = 1; block_id < calculated_n_blocks - 1; ++block_id) {
-//				string str_block_id = boost::lexical_cast<string>(block_id);
-//				string local_mapped_um_name = options.prefix + ".mapped_um.sam." + str_block_id;
-//				if(!options.working_dir.empty()) {
-//					local_mapped_um_name = options.working_prefix + ".mapped_um.sam." + str_block_id;
-//				}
-//				out_um_sam << castle::IOUtils::read_fully(local_mapped_um_name);
-//			}
-//		});
-//		tasks.push_back([&]{
-//			ofstream out_sc_sam(mapped_sc_sam_name, ios::binary);
-//			string local_mapped_sc_name = options.prefix + ".mapped_sc.sam.0";
-//			out_sc_sam << castle::IOUtils::read_fully(local_mapped_sc_name);
-//			for (int64_t block_id = 1; block_id < calculated_n_blocks - 1; ++block_id) {
-//				string str_block_id = boost::lexical_cast<string>(block_id);
-//				string local_mapped_sc_name = options.prefix + ".mapped_sc.sam." + str_block_id;
-//				if(!options.working_dir.empty()) {
-//					local_mapped_sc_name = options.working_prefix + ".mapped_sc.sam." + str_block_id;
-//				}
-//				out_sc_sam << castle::IOUtils::read_fully(local_mapped_sc_name);
-//			}
-//		});
 
-//		castle::ParallelRunner::run_unbalanced_load(n_cores, tasks);
-
-//		string sambamba_merge_um_cmd = (boost::format("sambamba merge -l 1 -t %d %s %s") % n_cores % mapped_um_tmp_name % castle::StringUtils::join(mapped_um_names, " ")).str();
-//		string sambamba_merge_sc_cmd = (boost::format("sambamba merge -l 1 -t %d %s %s") % n_cores % mapped_sc_tmp_name % castle::StringUtils::join(mapped_sc_names, " ")).str();
 		string sambamba_sort_um_cmd = (boost::format("sambamba sort -l 1 -t %d -o %s %s") % n_cores % mapped_um_bam_name % mapped_um_tmp_bam_name).str();
 		string sambamba_sort_sc_cmd = (boost::format("sambamba sort -l 1 -t %d -o %s %s") % n_cores % mapped_sc_bam_name % mapped_sc_tmp_bam_name).str();
 //		system(sambamba_merge_um_cmd.c_str());

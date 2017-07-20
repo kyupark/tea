@@ -13,7 +13,7 @@
 using namespace std;
 
 int main(int argc, char **argv) {
-	cout << "tea main tea-170704-1-removing-cpos \n";
+	cout << "tea main tea-170720-1-clips_left_right_pos_correction \n";
 	setvbuf(stdout, NULL, _IONBF, 0);
 	tea::TEAOptionParser option_parser(argc, argv);
 	castle::TimeChecker checker;
