@@ -9294,10 +9294,15 @@ void TEA::_generate_cbam_files_mem_org() {
 					auto& seq = local_alignment_entry.QueryBases;
 					auto& qual = local_alignment_entry.Qualities;
 					auto& cigar = local_alignment_entry.CigarData;
-					// # clipped in the beginning
+
+
 					auto& cigar_front_type = cigar.front().Type;
+					auto& cigar_back_type = cigar.back().Type;
+
+					clen = 0;
+					// # clipped in the beginning
 					if( !cigar.empty() && ('S' == cigar_front_type || 'H' == cigar_front_type) ) {
-						clen = cigar.back().Length;
+						clen = cigar.front().Length;
 						if (clen >= 5) {
 							int64_t the_qual_sub_str_pos = qual.size() - clen;
 							if (the_qual_sub_str_pos > 0 && 'S' == cigar_front_type) {
@@ -9336,12 +9341,7 @@ void TEA::_generate_cbam_files_mem_org() {
 							}
 							out_raw_sam.SaveSAMAlignment(local_alignment_entry);
 						}
-					}
-					// # clipping in the end
-					clen = 0;
-
-					auto& cigar_back_type = cigar.back().Type;
-					if( !cigar.empty() && ('S' == cigar_back_type || 'H' == cigar_back_type) ) {
+					} else if( !cigar.empty() && ('S' == cigar_back_type || 'H' == cigar_back_type) ) {
 						clen = cigar.back().Length;
 						if (clen >= 5) {
 							int64_t the_qual_sub_str_pos = qual.size() - clen;
@@ -10902,16 +10902,17 @@ void TEA::count_clipped(
 			int64_t the_ram_boundary_start = positive_entry.start;
 			// e column
 			int64_t the_ram_boundary_end = negative_entry.stop + read_length;
-			int64_t start_pos = the_ram_boundary_start + read_length;
+
+			int64_t start_pos = positive_entry.stop - read_length;
 			if (!positive_entry.value.pos.empty()) {
-//				start_pos = min(start_pos, positive_entry.value.pos.back());
 				start_pos = min(start_pos, positive_entry.value.pos.back() - read_length);
 			}
-//			int64_t end_pos = the_ram_boundary_end - read_length;
-			int64_t end_pos = negative_entry.value.pos[0] + read_length;
+
+			int64_t end_pos = negative_entry.start + read_length;
 			if (!negative_entry.value.pos.empty()) {
-				end_pos = max(end_pos, the_ram_boundary_end - read_length);
+				end_pos = max(end_pos, the_ram_boundary_end);
 			}
+
 			const bool debug = (ref_reverse_index["chr2"] == chr_ref_id && the_ram_boundary_start == 31058709 && 31058709 == the_ram_boundary_end);
 			if(debug) {
 				cout << (boost::format("[TEA.count_clipped] pram start: %d, pram end: %d, nram start: %d, nram end: %d\n") % positive_entry.start % positive_entry.stop % negative_entry.start % negative_entry.stop).str();
@@ -11228,7 +11229,8 @@ void TEA::get_clipped_entries(
 		for (int64_t c_id = 0; c_id < (static_cast<int64_t>(cigars.size()) - 1);) {
 			auto& cur_cigar = cigars[c_id];
 			auto& next_cigar = cigars[c_id + 1];
-			if (('M' == cur_cigar.Type && 'M' == next_cigar.Type) || ('M' == cur_cigar.Type && 'I' == next_cigar.Type)) {
+			if (('M' == cur_cigar.Type && 'M' == next_cigar.Type)
+					|| ('M' == cur_cigar.Type && 'I' == next_cigar.Type)) {
 				cur_cigar.Length += next_cigar.Length;
 				next_cigar.Length = 0;
 				cigars.erase(cigars.begin() + (c_id + 1));
@@ -11263,140 +11265,105 @@ void TEA::get_clipped_entries(
 		string clipped_qual;
 		int64_t clipped_pos = local_alignment_entry.Position;
 		int64_t clipped_pos_qual_trimmed = local_alignment_entry.Position;
-		int64_t delta = 0;
 
-		if (local_alignment_entry.IsReverseStrand()) {
-			if(debug) {
-				cout << "[TEA.get_clipped_entries] Rev-0\n";
+		if (('S' == cigars.front().Type || 'H' == cigars.front().Type)) {
+			uint64_t match_idx = 1;
+
+			int64_t cigars_front_length = cigars.front().Length;
+			if ('H' == cigars.front().Type){
+				cigars_front_length = 0;
 			}
-			int64_t n_del = 0;
-			int64_t n_in = 0;
-			for (auto cigar : local_alignment_entry.CigarData) {
-				if ('D' == cigar.Type) {
-					n_del += cigar.Length;
-				} else if ('I' == cigar.Type) {
-					n_in += cigar.Length;
-				}
+
+			if (match_idx < cigars.size() && 'M' == cigars[match_idx].Type) {
+				int64_t match_start = cigars_front_length;
+
+				ref_seq = local_alignment_entry.QueryBases.substr(match_start, cigars[match_idx].Length);
 			}
-			delta = n_del - n_in;
-			if ('S' == cigars.back().Type || 'H' == cigars.back().Type) {
-				if(debug) {
-					cout << "[TEA.get_clipped_entries] Rev-1\n";
-				}
-				int64_t match_idx = cigars.size();
-				match_idx -= 2;
 
-				int64_t cigars_back_length = cigars.back().Length;
-				if('H' == cigars.back().Type) {
-					cigars_back_length = 0;
-				}
+			clipped_seq = local_alignment_entry.QueryBases.substr(0, cigars_front_length);
+			clipped_qual = local_alignment_entry.Qualities.substr(0, cigars_front_length);
+			int64_t n_low = get_number_of_low_qualities_at_end(clipped_qual, options.qcutoff);
+			clipped_pos_qual_trimmed = clipped_pos;
 
-				if (match_idx >= 0 && 'M' == cigars[match_idx].Type) {
-					if(debug) {
-						cout << "[TEA.get_clipped_entries] Rev-2\n";
-					}
-
-					int64_t match_start = local_alignment_entry.QueryBases.size() - (cigars[match_idx].Length + cigars_back_length);
-
-					ref_seq = local_alignment_entry.QueryBases.substr(match_start, cigars[match_idx].Length);
-				}
-				clipped_pos += local_alignment_entry.QueryBases.size() - cigars_back_length + delta;
-				if ('S' == cigars.front().Type) {
-					if(debug) {
-						cout << "[TEA.get_clipped_entries] Rev-3\n";
-					}
-					clipped_pos -= cigars.front().Length;
-				}
-				clipped_seq = local_alignment_entry.QueryBases.substr(local_alignment_entry.QueryBases.size() - cigars_back_length);
-				clipped_qual = local_alignment_entry.Qualities.substr(local_alignment_entry.Qualities.size() - cigars_back_length);
-
-				int64_t n_low = get_number_of_low_qualities_at_begin(clipped_qual, options.qcutoff);
-				++clipped_pos;
-				clipped_pos_qual_trimmed = clipped_pos;
-				if (n_low > 0) {
-					if(debug) {
-						cout << "[TEA.get_clipped_entries] Rev-4\n";
-					}
-					int64_t n_quality_trimmed = local_alignment_entry.QueryBases.size() - cigars_back_length + n_low;
-					clipped_seq_qual_trimmed = local_alignment_entry.QueryBases.substr(n_quality_trimmed);
-					clipped_qual_qual_trimmed = local_alignment_entry.Qualities.substr(n_quality_trimmed);
-					clipped_pos_qual_trimmed += n_low;
-
-				}
+			if (n_low > 0) {
+				int64_t n_quality_trimmed = cigars.front().Length - n_low;
+				clipped_seq_qual_trimmed = local_alignment_entry.QueryBases.substr(0, n_quality_trimmed);
+				clipped_qual_qual_trimmed = local_alignment_entry.Qualities.substr(0, n_quality_trimmed);
+				clipped_pos_qual_trimmed += n_low;
 			}
-		}
-		else {
-			if(debug) {
-				cout << "[TEA.get_clipped_entries] For-0\n";
-			}
-			if ('S' == cigars.front().Type || 'H' == cigars.front().Type) {
-				if(debug) {
-					cout << "[TEA.get_clipped_entries] For-1\n";
-				}
-				uint64_t match_idx = 1;
 
-				int64_t cigars_front_length = cigars.front().Length;
-				if ('H' == cigars.front().Type){
-					cigars_front_length = 0;
-				}
-
-				if (match_idx < cigars.size() && 'M' == cigars[match_idx].Type) {
-					if(debug) {
-						cout << "[TEA.get_clipped_entries] For-2\n";
-					}
-					int64_t match_start = cigars_front_length;
-
-					ref_seq = local_alignment_entry.QueryBases.substr(match_start, cigars[match_idx].Length);
-				}
-
-				if('H' != cigars.front().Type) {
-					clipped_seq = local_alignment_entry.QueryBases.substr(0, cigars_front_length);
-					clipped_qual = local_alignment_entry.Qualities.substr(0, cigars_front_length);
-					int64_t n_low = get_number_of_low_qualities_at_end(clipped_qual, options.qcutoff);
-					clipped_pos_qual_trimmed = clipped_pos;
-					if (n_low > 0) {
-						if(debug) {
-							cout << "[TEA.get_clipped_entries] For-3\n";
-						}
-						int64_t n_quality_trimmed = cigars.front().Length - n_low;
-						clipped_seq_qual_trimmed = local_alignment_entry.QueryBases.substr(0, n_quality_trimmed);
-						clipped_qual_qual_trimmed = local_alignment_entry.Qualities.substr(0, n_quality_trimmed);
-						clipped_pos_qual_trimmed += n_low;
-					}
-				}
-			}
-		}
-
-		ClippedEntry an_entry;
-		an_entry.chr = tmp_chr_name;
-		an_entry.ram_start = the_ram_boundary_start;
-		an_entry.ram_end = the_ram_boundary_end;
-
-		if ((local_alignment_entry.CigarData.front().Type == 'S')
-				|| (local_alignment_entry.CigarData.front().Type == 'H')) {
+			ClippedEntry an_entry;
+			an_entry.chr = tmp_chr_name;
+			an_entry.ram_start = the_ram_boundary_start;
+			an_entry.ram_end = the_ram_boundary_end;
 			an_entry.strand = 1;
-		}
-		else if ((local_alignment_entry.CigarData.back().Type == 'S')
-				|| (local_alignment_entry.CigarData.back().Type == 'H')) {
-			an_entry.strand = -1;
+			set<string> alt_rep;
+			alt_rep.insert(positive_entry.value.rep_repeat.begin(), positive_entry.value.rep_repeat.end());
+			alt_rep.insert(negative_entry.value.rep_repeat.begin(), negative_entry.value.rep_repeat.end());
+			an_entry.rep_repeat = castle::StringUtils::join(alt_rep, ",");
+			an_entry.negative_pos = local_alignment_entry.Position;
+			an_entry.clipped_pos = clipped_pos;
+			an_entry.clipped_pos_qual_trimmed = clipped_pos_qual_trimmed;
+			an_entry.cigar_original = cigar_original;
+			an_entry.cigar_corrected = cigar_corrected;
+			an_entry.read_name = local_alignment_entry.Name;
+			an_entry.ref_seq = ref_seq;
+			an_entry.clipped_seq = clipped_seq;
+			an_entry.clipped_qual = clipped_qual;
+			an_entry.clipped_seq_qual_trimmed = clipped_seq_qual_trimmed;
+			an_entry.clipped_qual_qual_trimmed = clipped_qual_qual_trimmed;
+			clipped_entries.push_back(an_entry);
+
 		}
 
-		set<string> alt_rep;
-		alt_rep.insert(positive_entry.value.rep_repeat.begin(), positive_entry.value.rep_repeat.end());
-		alt_rep.insert(negative_entry.value.rep_repeat.begin(), negative_entry.value.rep_repeat.end());
-		an_entry.rep_repeat = castle::StringUtils::join(alt_rep, ",");
-		an_entry.negative_pos = local_alignment_entry.Position;
-		an_entry.clipped_pos = clipped_pos;
-		an_entry.clipped_pos_qual_trimmed = clipped_pos_qual_trimmed;
-		an_entry.cigar_original = cigar_original;
-		an_entry.cigar_corrected = cigar_corrected;
-		an_entry.read_name = local_alignment_entry.Name;
-		an_entry.ref_seq = ref_seq;
-		an_entry.clipped_seq = clipped_seq;
-		an_entry.clipped_qual = clipped_qual;
-		an_entry.clipped_seq_qual_trimmed = clipped_seq_qual_trimmed;
-		an_entry.clipped_qual_qual_trimmed = clipped_qual_qual_trimmed;
-		clipped_entries.push_back(an_entry);
+		if ( 'S' == cigars.back().Type || 'H' == cigars.back().Type ) {
+
+			uint64_t match_idx = cigars.size() - 2;
+
+			int64_t cigars_back_length = cigars.back().Length;
+			if ('H' == cigars.back().Type){
+				cigars_back_length = 0;
+			}
+
+			if (match_idx >= 0 && 'M' == cigars[match_idx].Type) {
+				int64_t match_start = local_alignment_entry.QueryBases.size() - cigars_back_length - cigars[match_idx].Length;
+				ref_seq = local_alignment_entry.QueryBases.substr(match_start, cigars[match_idx].Length);
+			}
+
+			clipped_seq = local_alignment_entry.QueryBases.substr(local_alignment_entry.QueryBases.size() - cigars_back_length);
+			clipped_qual = local_alignment_entry.Qualities.substr(local_alignment_entry.Qualities.size() - cigars_back_length);
+			clipped_pos_qual_trimmed = clipped_pos + local_alignment_entry.QueryBases.size() - cigars_back_length;
+
+			int64_t n_low = get_number_of_low_qualities_at_end(clipped_qual, options.qcutoff);
+			if (n_low > 0) {
+				int64_t n_quality_trimmed = cigars.back().Length - n_low;
+				clipped_seq_qual_trimmed = local_alignment_entry.QueryBases.substr(n_quality_trimmed);
+				clipped_qual_qual_trimmed = local_alignment_entry.Qualities.substr(n_quality_trimmed);
+			}
+
+			ClippedEntry an_entry;
+			an_entry.chr = tmp_chr_name;
+			an_entry.ram_start = the_ram_boundary_start;
+			an_entry.ram_end = the_ram_boundary_end;
+			an_entry.strand = -1;
+			set<string> alt_rep;
+			alt_rep.insert(positive_entry.value.rep_repeat.begin(), positive_entry.value.rep_repeat.end());
+			alt_rep.insert(negative_entry.value.rep_repeat.begin(), negative_entry.value.rep_repeat.end());
+			an_entry.rep_repeat = castle::StringUtils::join(alt_rep, ",");
+			an_entry.negative_pos = local_alignment_entry.Position;
+			an_entry.clipped_pos = clipped_pos;
+			an_entry.clipped_pos_qual_trimmed = clipped_pos_qual_trimmed;
+			an_entry.cigar_original = cigar_original;
+			an_entry.cigar_corrected = cigar_corrected;
+			an_entry.read_name = local_alignment_entry.Name;
+			an_entry.ref_seq = ref_seq;
+			an_entry.clipped_seq = clipped_seq;
+			an_entry.clipped_qual = clipped_qual;
+			an_entry.clipped_seq_qual_trimmed = clipped_seq_qual_trimmed;
+			an_entry.clipped_qual_qual_trimmed = clipped_qual_qual_trimmed;
+			clipped_entries.push_back(an_entry);
+		}
+
 	}
 
 	map<int64_t, int64_t> pos_frequency_positive;
@@ -11464,7 +11431,8 @@ void TEA::get_clipped_entries(
 		}
 	}
 	if(debug) {
-		cout << (boost::format("[TEA.get_clipped_entries] # pos ties: %d, # neg ties: %d\n") % n_positive_ties % n_negative_ties).str();
+		cout << (boost::format("[TEA.get_clipped_entries] # pos ties: %d, # neg ties: %d\n")
+		% n_positive_ties % n_negative_ties).str();
 	}
 
 	// the bp in forward strand is strongly supported, but not the bp in reverse strand
@@ -11508,7 +11476,7 @@ void TEA::get_clipped_entries(
 					}
 //				}
 			}
-			if(!found_negative_candidate) {
+			if( !found_negative_candidate) {
 				if(debug) {
 					cout << "[TEA.get_clipped_entries] strong pos, weak neg - 3\n";
 				}
