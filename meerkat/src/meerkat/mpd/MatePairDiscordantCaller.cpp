@@ -5,9 +5,20 @@
  *      Author: Euncheon Lim, The Center for Biomedical Informatics, Harvard Medical School, Boston, MA, 02115, USA
  *      Email: euncheon_lim@hms.harvard.edu
  *
+ *   Fix a bug: Jul 12, 2017 by Chong Chu
+ *   In function "call_inter_chromosomal_events", if the data is only based on one chromosome, then the old version will crash.  
+ *   
+ *   Fix a bug: Jul 13, 2017 by Chong Chu
+ *   In function "MatePairDiscordantCaller::call_intra_chromosomal_events":
+ *   Reason: cbps_map[i][ii] is directly called without check whether key exists or not. 
+ *   Solution: Add the following condition before use:
+ *        (cbps_map.find(i)==cbps_map.end() || cbps_map[i].find(ii)==cbps_map[i].end()) //CC: Added to fix the "Segmental fault" bug on 07/13/2017
+ *   Similiar conditions have beed added to "MatePairDiscordantCaller::call_inter_chromosomal_events" function.
+ *
+ *
  *  The original version is written by Lixing Yang
  */
-
+//
 /*
  * MatePairDiscordantCaller.cpp
  *
@@ -59,6 +70,7 @@ void MatePairDiscordantCaller::select_candidate_events_in_clusters_alt() {
 	cout << checker;
 }
 
+
 void MatePairDiscordantCaller::select_discordant_clusters() {
 	string clusterfile = options.prefix + ".clusters";
 	string discclfile = options.prefix + ".discord";
@@ -93,7 +105,7 @@ void MatePairDiscordantCaller::select_discordant_clusters() {
 				cur_boundary_pos += line.size() + 1;
 				string previous_pid;
 				while(getline(in, line, '\n')) {
-					cout << line << "\n";
+//cout << line << "\n";
 					size_t pos = line.find_first_of('\t');
 					string cur_pid = line.substr(0, pos);
 					if(previous_pid.empty()) {
@@ -388,7 +400,7 @@ void MatePairDiscordantCaller::select_discordant_clusters() {
 							}
 							auto& the_local_interval = the_intervals[the_type];
 							for(auto the_id : cluster_entry.second) {
-								castle::StringUtils::c_string_multi_split(the_id, "_", cols);
+								castle::StringUtils::c_string_multi_split(the_id, "~", cols);
 								auto& p_id = cols[0];
 								auto& s_id = cols[1];
 								IntervalEntryType additional_entry;
@@ -559,11 +571,16 @@ void MatePairDiscordantCaller::call_initial_events() {
 	call_smaller_events_among_inter_events(result_mp);
 }
 
+
 void MatePairDiscordantCaller::call_initial_events_serial() {
 	vector<EventEntry> result_mp;    // store all results
 	call_intra_chromosomal_events(result_mp);
+//cout<<"MD: call_intra_chromosomal_events: "<<result_mp.size()<<endl;///////////////////////////////////
 	call_inter_chromosomal_events(result_mp);
+//cout<<"MD: call_inter_chromosomal_events: "<<result_mp.size()<<endl;///////////////////////////////////
 	call_rest_events_alt(result_mp);
+//cout<<"MD: call_rest_events_alt: "<<result_mp.size()<<endl;///////////////////////////////////////////
+
 	call_smaller_events_among_intra_events_alt(result_mp);
 	call_smaller_events_among_inter_events_alt(result_mp);
 }
@@ -578,13 +595,17 @@ void MatePairDiscordantCaller::call_intra_chromosomal_events(vector<EventEntry>&
 	auto& ref_is = options.is;
 	cout << "[MatePairDiscordantCaller.call_intra_chromosomal_events] collect candidate entries\n";
 
+
 	vector<pair<string, string>> ii_lists_id3;
 	vector<pair<string, string>> ii_lists_id1;
+
 	tasks.push_back([&] {
-		const char* underscore = "_";
+		const char* underscore = "~";
 		vector<string> cols;
 		for (auto& pid_entry : cluster_type) {
 			auto& chr = pid_entry.first;
+			if(cluster_type.find(chr) == cluster_type.end() || cluster_type[chr].find(chr)==cluster_type[chr].end())
+				continue;
 			if (cluster_type[chr][chr].end() == cluster_type[chr][chr].find(0) || cluster_type[chr][chr].end() == cluster_type[chr][chr].find(3)) {
 				continue;
 			}
@@ -592,24 +613,25 @@ void MatePairDiscordantCaller::call_intra_chromosomal_events(vector<EventEntry>&
 				castle::StringUtils::c_string_multi_split(id3, underscore, cols);
 				auto i = cols[0];
 				auto ii = cols[1];
-//				cout << "[MatePairDiscordantCaller.call_intra_chromosomal_events] 0: " << id3 << "\n";
 				if (support[i] < options.support_mps || support_f[i] < options.support_mpf) {
 					continue;
 				}
-//				cout << "[MatePairDiscordantCaller.call_intra_chromosomal_events] 1: " << id3 << "\n";
-				if ((0 == cbps_map[i][ii][0] && 0 == cbps_map[i][ii][1]) || (0 == cbps_map[i][ii][2] && 0 == cbps_map[i][ii][3])) {
+				if ((cbps_map.find(i)==cbps_map.end() || cbps_map[i].find(ii)==cbps_map[i].end()) //CC: Added to fix the "Segmental fault" bug on 07/13/2017
+					|| (0 == cbps_map[i][ii][0] && 0 == cbps_map[i][ii][1]) || (0 == cbps_map[i][ii][2] && 0 == cbps_map[i][ii][3])) {
 					continue;
 				}
-//				cout << "[MatePairDiscordantCaller.call_intra_chromosomal_events] 2: " << id3 << "\n";
 				ii_lists_id3.push_back(make_pair(i, ii));
 			}
 		}
 	});
+	
 	tasks.push_back([&] {
-		const char* underscore = "_";
+		const char* underscore = "~";
 		vector<string> cols;
 		for (auto& pid_entry : cluster_type) {
 			auto& chr = pid_entry.first;
+			if(cluster_type.find(chr) == cluster_type.end() || cluster_type[chr].find(chr)==cluster_type[chr].end())
+				continue;
 			if (cluster_type[chr][chr].end() == cluster_type[chr][chr].find(1) || cluster_type[chr][chr].end() == cluster_type[chr][chr].find(2)) {
 				continue;
 			}
@@ -617,17 +639,24 @@ void MatePairDiscordantCaller::call_intra_chromosomal_events(vector<EventEntry>&
 				castle::StringUtils::c_string_multi_split(id1, underscore, cols);
 				auto i = cols[0];
 				auto ii = cols[1];
+
 				if (support[i] < options.support_mps || support_f[i] < options.support_mpf) {
 					continue;
 				}
-				if ((0 == cbps_map[i][ii][0] && 0 == cbps_map[i][ii][1]) || (0 == cbps_map[i][ii][2] && 0 == cbps_map[i][ii][3])) {
+
+				if ((cbps_map.find(i)==cbps_map.end() || cbps_map[i].find(ii)==cbps_map[i].end())//CC: Added to fix the "Segmental fault" bug on 07/13/2017
+					|| (0 == cbps_map[i][ii][0] && 0 == cbps_map[i][ii][1]) || (0 == cbps_map[i][ii][2] && 0 == cbps_map[i][ii][3])) {
 					continue;
 				}
 				ii_lists_id1.push_back(make_pair(i, ii));
 			}
 		}
 	});
+
 	castle::ParallelRunner::run_unbalanced_load(n_cores, tasks);
+
+
+
 // each block looks at 10,000 entries
 	int64_t n_total_entries_id3 = ii_lists_id3.size();
 	cout << (boost::format("[MatePairDiscordantCaller.call_intra_chromosomal_events] start finding intra chromosomal events: id3(%d)\n") % n_total_entries_id3).str();
@@ -692,7 +721,7 @@ void MatePairDiscordantCaller::call_intra_chromosomal_events(vector<EventEntry>&
 					auto& k = an_entry.p_id;
 					auto& kk = an_entry.s_id;
 					if(debug) {
-						cout << "first: " << k << "_" << kk << "\n";
+						cout << "first: " << k << "~" << kk << "\n";
 					}
 					if(support.end() == support.find(k) || support_f.end() == support_f.find(k) ||
 							orientation.end() == orientation.find(i) || orientation[i].end() == orientation[i].find(ii) ||
@@ -721,7 +750,7 @@ void MatePairDiscordantCaller::call_intra_chromosomal_events(vector<EventEntry>&
 						continue;
 					}
 //if(debug) {
-//cout << "second: " << k << "_" << kk << "\n";
+//cout << "second: " << k << "~" << kk << "\n";
 //}
 // deletion with insertion in the same orientation
 // the first two seqid ensures that the entry is an intra-chromosomal event.
@@ -769,9 +798,9 @@ void MatePairDiscordantCaller::call_intra_chromosomal_events(vector<EventEntry>&
 								} else {
 									current_intra_event[cei].type = "del_inssd";
 								}
-								current_intra_event[cei].cluster_id = i + "_"
+								current_intra_event[cei].cluster_id = i + "~"
 								+ ii;
-								current_intra_event[cei].mate_cluster_id = k + "_"
+								current_intra_event[cei].mate_cluster_id = k + "~"
 								+ kk;
 								current_intra_event[cei].n_supports = support[i];
 								current_intra_event[cei].n_mate_support = support[k];
@@ -854,9 +883,9 @@ void MatePairDiscordantCaller::call_intra_chromosomal_events(vector<EventEntry>&
 								} else {
 									current_intra_event[cei].type = "del_inssu";
 								}
-								current_intra_event[cei].cluster_id = i + "_"
+								current_intra_event[cei].cluster_id = i + "~"
 								+ ii;
-								current_intra_event[cei].mate_cluster_id = k + "_"
+								current_intra_event[cei].mate_cluster_id = k + "~"
 								+ kk;
 								current_intra_event[cei].n_supports = support[i];
 								current_intra_event[cei].n_mate_support = support[k];
@@ -1031,7 +1060,7 @@ void MatePairDiscordantCaller::call_intra_chromosomal_events(vector<EventEntry>&
 						auto& k = an_entry.p_id;
 						auto& kk = an_entry.s_id;
 						if(debug) {
-							cout << "inv-1: " << k << "_" << kk << "\n";
+							cout << "inv-1: " << k << "~" << kk << "\n";
 						}
 						if(support.end() == support.find(k) || support_f.end() == support_f.find(k) ||
 								orientation.end() == orientation.find(i) || orientation[i].end() == orientation[i].find(ii) ||
@@ -1091,8 +1120,8 @@ void MatePairDiscordantCaller::call_intra_chromosomal_events(vector<EventEntry>&
 									}
 									current_intra_event[cei].type = "del_invers";
 								}
-								current_intra_event[cei].cluster_id = i + "_" + ii;
-								current_intra_event[cei].mate_cluster_id = k + "_" + kk;
+								current_intra_event[cei].cluster_id = i + "~" + ii;
+								current_intra_event[cei].mate_cluster_id = k + "~" + kk;
 								current_intra_event[cei].n_supports = support[i];
 								current_intra_event[cei].n_mate_support = support[k];
 
@@ -1136,8 +1165,8 @@ void MatePairDiscordantCaller::call_intra_chromosomal_events(vector<EventEntry>&
 								} else {
 									current_intra_event[cei].type = "del_insod";
 								}
-								current_intra_event[cei].cluster_id = i + "_" + ii;
-								current_intra_event[cei].mate_cluster_id = k + "_" + kk;
+								current_intra_event[cei].cluster_id = i + "~" + ii;
+								current_intra_event[cei].mate_cluster_id = k + "~" + kk;
 								current_intra_event[cei].n_supports = support[i];
 								current_intra_event[cei].n_mate_support = support[k];
 
@@ -1182,8 +1211,8 @@ void MatePairDiscordantCaller::call_intra_chromosomal_events(vector<EventEntry>&
 								} else {
 									current_intra_event[cei].type = "del_insou";
 								}
-								current_intra_event[cei].cluster_id = i + "_" + ii;
-								current_intra_event[cei].mate_cluster_id = k + "_" + kk;
+								current_intra_event[cei].cluster_id = i + "~" + ii;
+								current_intra_event[cei].mate_cluster_id = k + "~" + kk;
 								current_intra_event[cei].n_supports = support[i];
 								current_intra_event[cei].n_mate_support = support[k];
 
@@ -1296,7 +1325,7 @@ void MatePairDiscordantCaller::call_intra_chromosomal_events_alt(vector<EventEnt
 	vector<function<void()> > tasks;
 	auto& ref_is = options.is;
 	cout << "[MatePairDiscordantCaller.call_intra_chromosomal_events_alt] collect candidate entries\n";
-	const char* delim_underscore = "_";
+	const char* delim_underscore = "~";
 	vector<string> cols;
 //# intra-chr events
 	IntervalClusterTree local_interval_tree_type_zero(the_intervals[0]);
@@ -1370,8 +1399,8 @@ void MatePairDiscordantCaller::call_intra_chromosomal_events_alt(vector<EventEnt
 								} else {
 									current_intra_event[cei].type = "del_inssd";
 								}
-								current_intra_event[cei].cluster_id = i + "_" + ii;
-								current_intra_event[cei].mate_cluster_id = k + "_" + kk;
+								current_intra_event[cei].cluster_id = i + "~" + ii;
+								current_intra_event[cei].mate_cluster_id = k + "~" + kk;
 								current_intra_event[cei].n_supports = support[i];
 								current_intra_event[cei].n_mate_support = support[k];
 								current_intra_event[cei].ref_id = orientation[i][ii].ref_id;
@@ -1415,8 +1444,8 @@ void MatePairDiscordantCaller::call_intra_chromosomal_events_alt(vector<EventEnt
 								} else {
 									current_intra_event[cei].type = "del_inssu";
 								}
-								current_intra_event[cei].cluster_id = i + "_" + ii;
-								current_intra_event[cei].mate_cluster_id = k + "_" + kk;
+								current_intra_event[cei].cluster_id = i + "~" + ii;
+								current_intra_event[cei].mate_cluster_id = k + "~" + kk;
 								current_intra_event[cei].n_supports = support[i];
 								current_intra_event[cei].n_mate_support = support[k];
 
@@ -1566,8 +1595,8 @@ void MatePairDiscordantCaller::call_intra_chromosomal_events_alt(vector<EventEnt
 								} else {
 									current_intra_event[cei].type = "del_invers";
 								}
-								current_intra_event[cei].cluster_id = i + "_" + ii;
-								current_intra_event[cei].mate_cluster_id = k + "_" + kk;
+								current_intra_event[cei].cluster_id = i + "~" + ii;
+								current_intra_event[cei].mate_cluster_id = k + "~" + kk;
 								current_intra_event[cei].n_supports = support[i];
 								current_intra_event[cei].n_mate_support = support[k];
 
@@ -1611,8 +1640,8 @@ void MatePairDiscordantCaller::call_intra_chromosomal_events_alt(vector<EventEnt
 							} else {
 								current_intra_event[cei].type = "del_insod";
 							}
-							current_intra_event[cei].cluster_id = i + "_" + ii;
-							current_intra_event[cei].mate_cluster_id = k + "_" + kk;
+							current_intra_event[cei].cluster_id = i + "~" + ii;
+							current_intra_event[cei].mate_cluster_id = k + "~" + kk;
 							current_intra_event[cei].n_supports = support[i];
 							current_intra_event[cei].n_mate_support = support[k];
 
@@ -1657,8 +1686,8 @@ void MatePairDiscordantCaller::call_intra_chromosomal_events_alt(vector<EventEnt
 							} else {
 								current_intra_event[cei].type = "del_insou";
 							}
-							current_intra_event[cei].cluster_id = i + "_" + ii;
-							current_intra_event[cei].mate_cluster_id = k + "_" + kk;
+							current_intra_event[cei].cluster_id = i + "~" + ii;
+							current_intra_event[cei].mate_cluster_id = k + "~" + kk;
 							current_intra_event[cei].n_supports = support[i];
 							current_intra_event[cei].n_mate_support = support[k];
 
@@ -1749,6 +1778,7 @@ void MatePairDiscordantCaller::call_intra_chromosomal_events_alt(vector<EventEnt
 	cout << checker;
 }
 
+
 void MatePairDiscordantCaller::call_inter_chromosomal_events(vector<EventEntry>& result_mp) {
 	castle::TimeChecker checker;
 	checker.setTarget("MatePairDiscordantCaller.call_inter_chromosomal_events");
@@ -1756,7 +1786,7 @@ void MatePairDiscordantCaller::call_inter_chromosomal_events(vector<EventEntry>&
 	vector<function<void()> > tasks;
 	cout << "[MatePairDiscordantCaller.call_inter_chromosomal_events] collect candidate entries\n";
 	auto& ref_is = options.is;
-	const char* underscore = "_";
+	const char* underscore = "~";
 	vector<string> cols;
 	vector<pair<string, string>> p_ids;
 	for (auto& chr1_entry : cluster_type) {
@@ -1777,6 +1807,9 @@ void MatePairDiscordantCaller::call_inter_chromosomal_events(vector<EventEntry>&
 						if(cbps_map[i][ii].size() < 4) {
 							cbps_map[i][ii].resize(4);
 						}
+						bool is_key_exist= ((cbps_map.find(i)!=cbps_map.end()) && (cbps_map[i].find(ii)!=cbps_map[i].end()));
+						if(is_key_exist==false)
+							continue;
 						bool is_valid_cbps = (0 == cbps_map[i][ii][0] && 0 == cbps_map[i][ii][1]) || (0 == cbps_map[i][ii][2] && 0 == cbps_map[i][ii][3]);
 						if (is_supporting) {
 							continue;
@@ -1792,6 +1825,9 @@ void MatePairDiscordantCaller::call_inter_chromosomal_events(vector<EventEntry>&
 							cbps_map[i][ii].resize(4);
 						}
 						bool is_supporting = support[i] < options.support_mps || support_f[i] < options.support_mpf;
+						bool is_key_exist= ((cbps_map.find(i)!=cbps_map.end()) && (cbps_map[i].find(ii)!=cbps_map[i].end()));
+						if(is_key_exist==false)
+							continue;
 						bool is_valid_cbps = (0 == cbps_map[i][ii][0] && 0 == cbps_map[i][ii][1]) || (0 == cbps_map[i][ii][2] && 0 == cbps_map[i][ii][3]);
 						if (is_supporting) {
 							continue;
@@ -1806,14 +1842,24 @@ void MatePairDiscordantCaller::call_inter_chromosomal_events(vector<EventEntry>&
 		}
 	}
 	int64_t n_total_entries = p_ids.size();
-	int64_t block_size = (n_total_entries + n_cores - 1) / (double) n_cores;
-	int64_t n_blocks = (n_total_entries + block_size - 1) / (double) block_size;
+	int64_t block_size = 0;
+	int64_t n_blocks = 0;
+
+	/*
+	*Fixed by Simon Chu on 07/12/2017. If there is only one chromosome, then the old version will triggler a bug.
+	*/
+	if(n_total_entries>0){
+		block_size = (n_total_entries + n_cores - 1) / (double) n_cores;
+		n_blocks = (n_total_entries + block_size - 1) / (double) block_size;
+	}
+	
 	vector<vector<EventEntry>> result_mp_lists(n_blocks);
+
 	cout << "[MatePairDiscordantCaller.call_inter_chromosomal_events] start finding inter chromosomal events\n";
 	for (int64_t block_id = 0; block_id < n_blocks; ++block_id) {
 		tasks.push_back([&, block_id] {
 			auto& local_result_mp = result_mp_lists[block_id];
-			const char* underscore = "_";
+			const char* underscore = "~";
 			vector<string> cols;
 			const int64_t n_total_entries = p_ids.size();
 			const int64_t block_size = (n_total_entries + n_cores - 1) / (double)n_cores;
@@ -1904,7 +1950,7 @@ void MatePairDiscordantCaller::call_inter_chromosomal_events(vector<EventEntry>&
 								continue;
 							}
 
-							string dis_id = i + "_" + str_entry_id + "_" + k + "_" + kk;
+							string dis_id = i + "~" + str_entry_id + "~" + k + "~" + kk;
 							StringInt64Pair a_pair_1(dis_id, abs(starts_map[k][kk].first - starts_map[i][str_entry_id].first));
 							StringInt64Pair a_pair_2(dis_id, abs(mstarts_map[k][kk].first - mstarts_map[i][str_entry_id].first));
 							distance1.insert(a_pair_1);
@@ -1938,7 +1984,7 @@ void MatePairDiscordantCaller::call_inter_chromosomal_events(vector<EventEntry>&
 								}
 								continue;
 							}
-							string dis_id = i + "_" + str_entry_id + "_" + k + "_" + kk;
+							string dis_id = i + "~" + str_entry_id + "~" + k + "~" + kk;
 							StringInt64Pair a_pair_1(dis_id, abs(starts_map[k][kk].first - starts_map[i][str_entry_id].first));
 							StringInt64Pair a_pair_2(dis_id, abs(mstarts_map[k][kk].first - mstarts_map[i][str_entry_id].first));
 							distance1.insert(a_pair_1);
@@ -2052,8 +2098,8 @@ void MatePairDiscordantCaller::call_inter_chromosomal_events(vector<EventEntry>&
 									} else {
 										an_entry.type = "del_inso";
 									}
-									an_entry.cluster_id = i + "_" + ii;
-									an_entry.mate_cluster_id = k + "_" + kk;
+									an_entry.cluster_id = i + "~" + ii;
+									an_entry.mate_cluster_id = k + "~" + kk;
 									an_entry.n_supports = support[i];
 									an_entry.n_mate_support = support[k];
 									an_entry.ref_id = orientation[i][ii].ref_id;
@@ -2101,8 +2147,8 @@ void MatePairDiscordantCaller::call_inter_chromosomal_events(vector<EventEntry>&
 									} else {
 										an_entry.type = "del_inso";
 									}
-									an_entry.cluster_id = i + "_" + ii;
-									an_entry.mate_cluster_id = k + "_" + kk;
+									an_entry.cluster_id = i + "~" + ii;
+									an_entry.mate_cluster_id = k + "~" + kk;
 									an_entry.n_supports = support[i];
 									an_entry.n_mate_support = support[k];
 									an_entry.ref_id = orientation[i][ii].mate_ref_id;
@@ -2160,8 +2206,8 @@ void MatePairDiscordantCaller::call_inter_chromosomal_events(vector<EventEntry>&
 									} else {
 										an_entry.type = "del_inss";
 									}
-									an_entry.cluster_id = i + "_" + ii;
-									an_entry.mate_cluster_id = k + "_" + kk;
+									an_entry.cluster_id = i + "~" + ii;
+									an_entry.mate_cluster_id = k + "~" + kk;
 									an_entry.n_supports = support[i];
 									an_entry.n_mate_support = support[k];
 									an_entry.ref_id = orientation[i][ii].ref_id;
@@ -2206,8 +2252,8 @@ void MatePairDiscordantCaller::call_inter_chromosomal_events(vector<EventEntry>&
 									} else {
 										an_entry.type = "del_inss";
 									}
-									an_entry.cluster_id = i + "_" + ii;
-									an_entry.mate_cluster_id = k + "_" + kk;
+									an_entry.cluster_id = i + "~" + ii;
+									an_entry.mate_cluster_id = k + "~" + kk;
 									an_entry.n_supports = support[i];
 									an_entry.n_mate_support = support[k];
 									an_entry.ref_id = orientation[i][ii].mate_ref_id;
@@ -2254,7 +2300,7 @@ void MatePairDiscordantCaller::call_inter_chromosomal_events_serial(vector<Event
 	checker.setTarget("MatePairDiscordantCaller.call_inter_chromosomal_events_serial");
 	checker.start();
 //set<string> used_cluster;
-	const char* underscore = "_";
+	const char* underscore = "~";
 	vector<string> cols;
 	auto& ref_is = options.is;
 
@@ -2313,7 +2359,7 @@ void MatePairDiscordantCaller::call_inter_chromosomal_events_serial(vector<Event
 									continue;
 								}
 
-								string dis_id = i + "_" + str_entry_id + "_" + k + "_" + kk;
+								string dis_id = i + "~" + str_entry_id + "~" + k + "~" + kk;
 								StringInt64Pair a_pair_1(dis_id, abs(starts_map[k][kk].first - starts_map[i][str_entry_id].first));
 								StringInt64Pair a_pair_2(dis_id, abs(mstarts_map[k][kk].first - mstarts_map[i][str_entry_id].first));
 								distance1.insert(a_pair_1);
@@ -2335,7 +2381,7 @@ void MatePairDiscordantCaller::call_inter_chromosomal_events_serial(vector<Event
 								if (i == k) {
 									continue;
 								}
-								string dis_id = i + "_" + str_entry_id + "_" + k + "_" + kk;
+								string dis_id = i + "~" + str_entry_id + "~" + k + "~" + kk;
 								StringInt64Pair a_pair_1(dis_id, abs(starts_map[k][kk].first - starts_map[i][str_entry_id].first));
 								StringInt64Pair a_pair_2(dis_id, abs(mstarts_map[k][kk].first - mstarts_map[i][str_entry_id].first));
 								distance1.insert(a_pair_1);
@@ -2447,8 +2493,8 @@ void MatePairDiscordantCaller::call_inter_chromosomal_events_serial(vector<Event
 										} else {
 											an_entry.type = "del_inso";
 										}
-										an_entry.cluster_id = i + "_" + ii;
-										an_entry.mate_cluster_id = k + "_" + kk;
+										an_entry.cluster_id = i + "~" + ii;
+										an_entry.mate_cluster_id = k + "~" + kk;
 										an_entry.n_supports = support[i];
 										an_entry.n_mate_support = support[k];
 										an_entry.ref_id = orientation[i][ii].ref_id;
@@ -2496,8 +2542,8 @@ void MatePairDiscordantCaller::call_inter_chromosomal_events_serial(vector<Event
 										} else {
 											an_entry.type = "del_inso";
 										}
-										an_entry.cluster_id = i + "_" + ii;
-										an_entry.mate_cluster_id = k + "_" + kk;
+										an_entry.cluster_id = i + "~" + ii;
+										an_entry.mate_cluster_id = k + "~" + kk;
 										an_entry.n_supports = support[i];
 										an_entry.n_mate_support = support[k];
 										an_entry.ref_id = orientation[i][ii].mate_ref_id;
@@ -2555,8 +2601,8 @@ void MatePairDiscordantCaller::call_inter_chromosomal_events_serial(vector<Event
 											}
 											an_entry.type = "del_inss";
 										}
-										an_entry.cluster_id = i + "_" + ii;
-										an_entry.mate_cluster_id = k + "_" + kk;
+										an_entry.cluster_id = i + "~" + ii;
+										an_entry.mate_cluster_id = k + "~" + kk;
 										an_entry.n_supports = support[i];
 										an_entry.n_mate_support = support[k];
 										an_entry.ref_id = orientation[i][ii].ref_id;
@@ -2610,8 +2656,8 @@ void MatePairDiscordantCaller::call_inter_chromosomal_events_serial(vector<Event
 												cout << "inter-13\n";
 											}
 										}
-										an_entry.cluster_id = i + "_" + ii;
-										an_entry.mate_cluster_id = k + "_" + kk;
+										an_entry.cluster_id = i + "~" + ii;
+										an_entry.mate_cluster_id = k + "~" + kk;
 										an_entry.n_supports = support[i];
 										an_entry.n_mate_support = support[k];
 										an_entry.ref_id = orientation[i][ii].mate_ref_id;
@@ -2651,7 +2697,7 @@ void MatePairDiscordantCaller::call_rest_events(vector<EventEntry>& result_mp) {
 	checker.setTarget("MatePairDiscordantCaller.call_rest_events");
 	checker.start();
 //set<string> used_cluster;
-//	const char* underscore = "_";
+//	const char* underscore = "~";
 	vector<string> cols;
 //auto& ref_is = options.is;
 //	set<string> visited;
@@ -3148,12 +3194,12 @@ void MatePairDiscordantCaller::call_smaller_events_among_intra_events(vector<Eve
 		const bool debug = false;
 
 		if (!data.cluster_id.empty() && !data.mate_cluster_id.empty()) {
-			castle::StringUtils::c_string_multi_split(data.cluster_id, "_", cols);
+			castle::StringUtils::c_string_multi_split(data.cluster_id, "~", cols);
 			string i_pid = data.cluster_id;
 			if (!cols.empty()) {
 				i_pid = cols[0];
 			}
-			castle::StringUtils::c_string_multi_split(data.mate_cluster_id, "_", cols);
+			castle::StringUtils::c_string_multi_split(data.mate_cluster_id, "~", cols);
 			string k_pid = data.mate_cluster_id;
 			if (!cols.empty()) {
 				k_pid = cols[0];
@@ -3166,7 +3212,7 @@ void MatePairDiscordantCaller::call_smaller_events_among_intra_events(vector<Eve
 			eventsize[mpai] += abs(data.event_size_1);
 			eventsize[mpai] += abs(data.event_size_2);
 		} else {
-			castle::StringUtils::c_string_multi_split(data.cluster_id, "_", cols);
+			castle::StringUtils::c_string_multi_split(data.cluster_id, "~", cols);
 			string a_pid = data.cluster_id;
 			if (!cols.empty()) {
 				a_pid = cols[0];
@@ -3209,7 +3255,7 @@ void MatePairDiscordantCaller::call_smaller_events_among_intra_events(vector<Eve
 		}
 		for (auto r_id : remove_candidate_ids) {
 			auto& current_event = result_mp[r_id];
-			castle::StringUtils::c_string_multi_split(current_event.cluster_id, "_", cols);
+			castle::StringUtils::c_string_multi_split(current_event.cluster_id, "~", cols);
 			bool debug = string::npos != current_event.cluster_id.find(debug_str) || current_event.mate_cluster_id.find(debug_str);
 //			const bool debug = false;
 
@@ -3387,12 +3433,12 @@ void MatePairDiscordantCaller::call_smaller_events_among_intra_events(vector<Eve
 //			continue;
 //		}
 //		if (!data.cluster_id.empty() && !data.mate_cluster_id.empty()) {
-//			castle::StringUtils::c_string_multi_split(data.cluster_id, "_", cols);
+//			castle::StringUtils::c_string_multi_split(data.cluster_id, "~", cols);
 //			string i_pid = data.cluster_id;
 //			if (!cols.empty()) {
 //				i_pid = cols[0];
 //			}
-//			castle::StringUtils::c_string_multi_split(data.mate_cluster_id, "_", cols);
+//			castle::StringUtils::c_string_multi_split(data.mate_cluster_id, "~", cols);
 //			string k_pid = data.mate_cluster_id;
 //			if (!cols.empty()) {
 //				k_pid = cols[0];
@@ -3431,7 +3477,7 @@ void MatePairDiscordantCaller::call_smaller_events_among_intra_events(vector<Eve
 //				}
 //			}
 //		} else {
-//			castle::StringUtils::c_string_multi_split(data.cluster_id, "_", cols);
+//			castle::StringUtils::c_string_multi_split(data.cluster_id, "~", cols);
 //			string a_pid = data.cluster_id;
 //			if (!cols.empty()) {
 //				a_pid = cols[0];
@@ -3540,12 +3586,12 @@ void MatePairDiscordantCaller::call_smaller_events_among_intra_events_alt(vector
 			continue;
 		}
 		if (!data.cluster_id.empty() && !data.mate_cluster_id.empty()) {
-			castle::StringUtils::c_string_multi_split(data.cluster_id, "_", cols);
+			castle::StringUtils::c_string_multi_split(data.cluster_id, "~", cols);
 			string i_pid = data.cluster_id;
 			if (!cols.empty()) {
 				i_pid = cols[0];
 			}
-			castle::StringUtils::c_string_multi_split(data.mate_cluster_id, "_", cols);
+			castle::StringUtils::c_string_multi_split(data.mate_cluster_id, "~", cols);
 			string k_pid = data.mate_cluster_id;
 			if (!cols.empty()) {
 				k_pid = cols[0];
@@ -3556,7 +3602,7 @@ void MatePairDiscordantCaller::call_smaller_events_among_intra_events_alt(vector
 			eventsize[mpai] += abs(data.event_size_2);
 		} else {
 //			cout << "[MatePairDiscordantCaller.call_smaller_events_among_intra_events_alt] " << data.mpd_pure_str() << "/" << data.sr_str() << "\n";
-			castle::StringUtils::c_string_multi_split(data.cluster_id, "_", cols);
+			castle::StringUtils::c_string_multi_split(data.cluster_id, "~", cols);
 			string a_pid = data.cluster_id;
 			if (!cols.empty()) {
 				a_pid = cols[0];
@@ -3626,12 +3672,12 @@ void MatePairDiscordantCaller::call_smaller_events_among_intra_events_alt(vector
 
 		survived_ids.insert(result_mp[select_id].cluster_id);
 		{
-			castle::StringUtils::c_string_multi_split(result_mp[select_id].cluster_id, "_", cols);
+			castle::StringUtils::c_string_multi_split(result_mp[select_id].cluster_id, "~", cols);
 			string i_pid = result_mp[select_id].cluster_id;
 			if (!cols.empty()) {
 				i_pid = cols[0];
 			}
-			castle::StringUtils::c_string_multi_split(result_mp[select_id].mate_cluster_id, "_", cols);
+			castle::StringUtils::c_string_multi_split(result_mp[select_id].mate_cluster_id, "~", cols);
 			string k_pid = result_mp[select_id].mate_cluster_id;
 			if (!cols.empty()) {
 				k_pid = cols[0];
@@ -3656,7 +3702,7 @@ void MatePairDiscordantCaller::call_smaller_events_among_intra_events_alt(vector
 		}
 		for (auto r_id : remove_candidate_ids) {
 			auto& current_event = result_mp[r_id];
-			castle::StringUtils::c_string_multi_split(current_event.cluster_id, "_", cols);
+			castle::StringUtils::c_string_multi_split(current_event.cluster_id, "~", cols);
 //			const bool debug = string::npos != current_event.cluster_id.find(debug_str) || string::npos != current_event.mate_cluster_id.find(debug_str);
 //			const bool debug = false;
 
@@ -3837,12 +3883,12 @@ void MatePairDiscordantCaller::call_smaller_events_among_intra_events_alt(vector
 //			continue;
 //		}
 //		if (!data.cluster_id.empty() && !data.mate_cluster_id.empty()) {
-//			castle::StringUtils::c_string_multi_split(data.cluster_id, "_", cols);
+//			castle::StringUtils::c_string_multi_split(data.cluster_id, "~", cols);
 //			string i_pid = data.cluster_id;
 //			if (!cols.empty()) {
 //				i_pid = cols[0];
 //			}
-//			castle::StringUtils::c_string_multi_split(data.mate_cluster_id, "_", cols);
+//			castle::StringUtils::c_string_multi_split(data.mate_cluster_id, "~", cols);
 //			string k_pid = data.mate_cluster_id;
 //			if (!cols.empty()) {
 //				k_pid = cols[0];
@@ -3881,7 +3927,7 @@ void MatePairDiscordantCaller::call_smaller_events_among_intra_events_alt(vector
 //				}
 //			}
 //		} else {
-//			castle::StringUtils::c_string_multi_split(data.cluster_id, "_", cols);
+//			castle::StringUtils::c_string_multi_split(data.cluster_id, "~", cols);
 //			string a_pid = data.cluster_id;
 //			if (!cols.empty()) {
 //				a_pid = cols[0];
@@ -3947,12 +3993,12 @@ void MatePairDiscordantCaller::call_smaller_events_among_inter_events(vector<Eve
 			continue;
 		}
 		if (!data.cluster_id.empty() && !data.mate_cluster_id.empty()) {
-			castle::StringUtils::c_string_multi_split(data.cluster_id, "_", cols);
+			castle::StringUtils::c_string_multi_split(data.cluster_id, "~", cols);
 			string i_pid = data.cluster_id;
 			if (!cols.empty()) {
 				i_pid = cols[0];
 			}
-			castle::StringUtils::c_string_multi_split(data.mate_cluster_id, "_", cols);
+			castle::StringUtils::c_string_multi_split(data.mate_cluster_id, "~", cols);
 			string k_pid = data.mate_cluster_id;
 			if (!cols.empty()) {
 				k_pid = cols[0];
@@ -3962,7 +4008,7 @@ void MatePairDiscordantCaller::call_smaller_events_among_inter_events(vector<Eve
 			eventsize[mpei] += abs(data.event_size_1);
 			eventsize[mpei] += abs(data.event_size_2);
 		} else {
-			castle::StringUtils::c_string_multi_split(data.cluster_id, "_", cols);
+			castle::StringUtils::c_string_multi_split(data.cluster_id, "~", cols);
 			string a_pid = data.cluster_id;
 			if (!cols.empty()) {
 				a_pid = cols[0];
@@ -4004,7 +4050,7 @@ void MatePairDiscordantCaller::call_smaller_events_among_inter_events(vector<Eve
 			auto& current_event = result_mp[r_id];
 //my @current_event = split( /\t/, $data{$_} );
 			if (current_event.mate_cluster_id.empty()) {
-				castle::StringUtils::c_string_multi_split(current_event.cluster_id, "_", cols);
+				castle::StringUtils::c_string_multi_split(current_event.cluster_id, "~", cols);
 				string i_pid = current_event.cluster_id;
 				if (!cols.empty()) {
 					i_pid = cols[0];
@@ -4145,12 +4191,12 @@ void MatePairDiscordantCaller::call_smaller_events_among_inter_events_alt(vector
 			continue;
 		}
 		if (!data.cluster_id.empty() && !data.mate_cluster_id.empty()) {
-			castle::StringUtils::c_string_multi_split(data.cluster_id, "_", cols);
+			castle::StringUtils::c_string_multi_split(data.cluster_id, "~", cols);
 			string i_pid = data.cluster_id;
 			if (!cols.empty()) {
 				i_pid = cols[0];
 			}
-			castle::StringUtils::c_string_multi_split(data.mate_cluster_id, "_", cols);
+			castle::StringUtils::c_string_multi_split(data.mate_cluster_id, "~", cols);
 			string k_pid = data.mate_cluster_id;
 			if (!cols.empty()) {
 				k_pid = cols[0];
@@ -4160,7 +4206,7 @@ void MatePairDiscordantCaller::call_smaller_events_among_inter_events_alt(vector
 			eventsize[mpei] += abs(data.event_size_1);
 			eventsize[mpei] += abs(data.event_size_2);
 		} else {
-			castle::StringUtils::c_string_multi_split(data.cluster_id, "_", cols);
+			castle::StringUtils::c_string_multi_split(data.cluster_id, "~", cols);
 			string a_pid = data.cluster_id;
 			if (!cols.empty()) {
 				a_pid = cols[0];
@@ -4212,12 +4258,12 @@ void MatePairDiscordantCaller::call_smaller_events_among_inter_events_alt(vector
 		}
 		survived_ids.insert(result_mp[select_id].cluster_id);
 		{
-			castle::StringUtils::c_string_multi_split(result_mp[select_id].cluster_id, "_", cols);
+			castle::StringUtils::c_string_multi_split(result_mp[select_id].cluster_id, "~", cols);
 			string i_pid = result_mp[select_id].cluster_id;
 			if (!cols.empty()) {
 				i_pid = cols[0];
 			}
-			castle::StringUtils::c_string_multi_split(result_mp[select_id].mate_cluster_id, "_", cols);
+			castle::StringUtils::c_string_multi_split(result_mp[select_id].mate_cluster_id, "~", cols);
 			string k_pid = result_mp[select_id].mate_cluster_id;
 			if (!cols.empty()) {
 				k_pid = cols[0];
@@ -4239,7 +4285,7 @@ void MatePairDiscordantCaller::call_smaller_events_among_inter_events_alt(vector
 			auto& current_event = result_mp[r_id];
 //my @current_event = split( /\t/, $data{$_} );
 			if (current_event.mate_cluster_id.empty()) {
-				castle::StringUtils::c_string_multi_split(current_event.cluster_id, "_", cols);
+				castle::StringUtils::c_string_multi_split(current_event.cluster_id, "~", cols);
 				string i_pid = current_event.cluster_id;
 				if (!cols.empty()) {
 					i_pid = cols[0];

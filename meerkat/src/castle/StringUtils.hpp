@@ -244,9 +244,13 @@ void StringUtils::string_multi_split(std::string& str, char const* delimiters,
 	output.swap(ret_array);
 }
 
+
 template<typename C>
 void StringUtils::c_string_multi_split(const std::string& str,
 		char const* delimiters, C& ret_array) {
+
+//std::cout<<"Test string split function: "<<str<<std::endl; //////////////////////////////////////////////////////////
+
 	ret_array.clear();
 	C output;
 	std::bitset<255> delims;
@@ -254,6 +258,9 @@ void StringUtils::c_string_multi_split(const std::string& str,
 		unsigned char code = *delimiters++;
 		delims[code] = true;
 	}
+
+//std::cout<<"Test string split function: Label 1"<<std::endl; /////////////////////////////////////////////////////////
+
 	str_c_iter beg;
 	bool in_token = false;
 	for (str_c_iter it = str.begin(), end = str.end(); it != end; ++it) {
@@ -267,9 +274,15 @@ void StringUtils::c_string_multi_split(const std::string& str,
 			in_token = true;
 		}
 	}
+
+//std::cout<<"Test string split function: Label 2"<<std::endl; /////////////////////////////////////////////////////////
+
 	if (in_token) {
 		output.push_back(typename C::value_type(beg, str.end()));
 	}
+
+//std::cout<<"Test string split function: Label 3"<<std::endl; /////////////////////////////////////////////////////////
+
 	output.swap(ret_array);
 }
 

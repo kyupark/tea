@@ -84,9 +84,9 @@ int64_t BWACaller::split_FASTQ(const string& file_path_1, const string& file_pat
 			the_pos_2.push_back(cur_pos + 10);
 		});
 	castle::ParallelRunner::run_unbalanced_load(n_cores, tasks);
+	n_blocks_1 = the_pos_1.size() - 1;
 
 	// split actual files
-	n_blocks_1 = the_pos_1.size() - 1;
 	for (int64_t block_id = 0; block_id < n_blocks_1; ++block_id) {
 		tasks.push_back([&, block_id, n_lines] {
 			string str_block_id = boost::lexical_cast<string>(block_id);
@@ -113,7 +113,6 @@ int64_t BWACaller::split_FASTQ(const string& file_path_1, const string& file_pat
 			}
 		});
 	}
-
 	n_blocks_2 = the_pos_2.size() - 1;
 	for (int64_t block_id = 0; block_id < n_blocks_2; ++block_id) {
 		tasks.push_back([&, block_id, n_lines] {
@@ -193,9 +192,9 @@ int64_t BWACaller::split_FASTQ_alt(const string& file_path_1, const string& file
 			the_pos_2.push_back(cur_pos + 10);
 		});
 	castle::ParallelRunner::run_unbalanced_load(n_cores, tasks);
+	n_blocks_1 = the_pos_1.size() - 1;
 
 	// split actual files
-	n_blocks_1 = the_pos_1.size() - 1;
 	for (int64_t block_id = 0; block_id < n_blocks_1; ++block_id) {
 		tasks.push_back([&, block_id, n_lines] {
 			string str_block_id = boost::lexical_cast<string>(block_id);
@@ -250,8 +249,6 @@ int64_t BWACaller::split_FASTQ_alt(const string& file_path_1, const string& file
 		});
 	}
 	castle::ParallelRunner::run_unbalanced_load(n_cores, tasks);
-	cout << (boost::format("[BWACaller.split_FASTQ] # n_blocks_1: %d; n_blocks_2: %d\n") % n_blocks_1 % n_blocks_2).str();
-
 	return n_blocks_1;
 }
 

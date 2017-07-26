@@ -5,6 +5,10 @@
  *      Author: Euncheon Lim, The Center for Biomedical Informatics, Harvard Medical School, Boston, MA, 02115, USA
  *      Email: euncheon_lim@hms.harvard.edu
  *
+ *  Fix two bugs on Jul 12, 2017 by Chong Chu
+ *  In function "collect_variants":     
+ *     First:  If the intra(inter)_chunk_size=0, then "castle::IOUtils::find_skip_points" will be dead loop, and consume lots of memory!
+ *	 Second: inter_n_blocks = inter_file_size / (double) inter_chunk_size; //Old version is divided by  intra_chunk_size.
  *  The original version is written by Lixing Yang
  */
 
@@ -146,7 +150,13 @@ void Mechanism::collect_repeat_data(map<string, vector<RepeatEntry>>& te, map<st
 	castle::ParallelRunner::run_unbalanced_load(n_cores, tasks);
 	cout << checker;
 }
+
 void Mechanism::collect_variants(vector<deque<string>>& variants) {
+
+	castle::TimeChecker checker;
+	checker.setTarget("Mechanism.collect_variants");
+	checker.start();
+	
 	string intra_refine_type = options.prefix + ".intra.refined.typ.sorted";
 	string inter_refine_type = options.prefix + ".inter.refined.typ.sorted";
 	if(!options.working_dir.empty()) {
@@ -155,11 +165,20 @@ void Mechanism::collect_variants(vector<deque<string>>& variants) {
 	}
 	int64_t intra_file_size = castle::IOUtils::get_file_size(intra_refine_type);
 	int64_t intra_chunk_size = intra_file_size / (double) n_cores;
-	int64_t intra_n_blocks = intra_file_size / (double) intra_chunk_size;
+	int64_t intra_n_blocks = 0;
+	if(intra_chunk_size!=0)
+		intra_n_blocks = intra_file_size / (double) intra_chunk_size;
+
+//cout<<"Mechanism.collect_variants: intra chunksize is "<<intra_chunk_size<<endl;
+	
 	vector<uint64_t> intra_skip_points;
-	castle::IOUtils::find_skip_points(intra_skip_points, intra_refine_type, intra_chunk_size, intra_file_size, intra_n_blocks, n_cores);
+	//CC: Added on 07/12/2017. If the intra_chunk_size=0, then will be dead loop, and consume lots of memory!
+	if(intra_chunk_size!=0)
+		castle::IOUtils::find_skip_points(intra_skip_points, intra_refine_type, intra_chunk_size, intra_file_size, intra_n_blocks, n_cores);
 	vector<vector<deque<string>>> intra_blocks(intra_n_blocks);
 	vector<function<void()> > tasks;
+
+	
 	for(int64_t block_id = 0; block_id < intra_n_blocks; ++block_id) {
 		tasks.push_back([&, block_id] {
 		int64_t cur_pos = intra_skip_points[block_id];
@@ -180,17 +199,25 @@ void Mechanism::collect_variants(vector<deque<string>>& variants) {
 				break;
 			}
 		}
-//	}
 	});
 	}
 
 	int64_t inter_file_size = castle::IOUtils::get_file_size(inter_refine_type);
 	int64_t inter_chunk_size = inter_file_size / (double) n_cores;
-	int64_t inter_n_blocks = inter_file_size / (double) intra_chunk_size;
+	int64_t inter_n_blocks = 0;
+	//CC: Fix a bug  "intra_chunk_size" should be "inter_chunk_size"!!!
+	//int64_t inter_n_blocks = inter_file_size / (double) intra_chunk_size; //
+	if(inter_chunk_size!=0)
+		inter_n_blocks = inter_file_size / (double) inter_chunk_size;
+	
+
 	vector<uint64_t> inter_skip_points;
-	castle::IOUtils::find_skip_points(inter_skip_points, inter_refine_type, inter_chunk_size, inter_file_size, inter_n_blocks, n_cores);
+	//CC: Added on 07/12/2017. If the intra_chunk_size=0, then will be dead loop, and consume lots of memory!
+	if(inter_chunk_size!=0)
+		castle::IOUtils::find_skip_points(inter_skip_points, inter_refine_type, inter_chunk_size, inter_file_size, inter_n_blocks, n_cores);
 	vector<vector<deque<string>>> inter_blocks(inter_n_blocks);
 
+	
 	for(int64_t block_id = 0; block_id < inter_n_blocks; ++block_id) {
 		tasks.push_back([&, block_id] {
 			int64_t cur_pos = inter_skip_points[block_id];
@@ -234,8 +261,9 @@ void Mechanism::collect_variants(vector<deque<string>>& variants) {
 //		variants.insert(variants.end(), local_variants.begin(), local_variants.end());
 		move(begin(local_variants), end(local_variants), back_inserter(variants));
 	}
-
+	cout << checker;
 }
+
 
 void Mechanism::call_mechanism(const map<string, vector<RepeatEntry>>& te, const map<string, vector<RepeatEntry>>& sr, vector<deque<string>>& variants) {
 	castle::TimeChecker checker;
@@ -244,7 +272,9 @@ void Mechanism::call_mechanism(const map<string, vector<RepeatEntry>>& te, const
 	vector<function<void()> > tasks;
 //	LOOP:
 	const int64_t max_id = variants.size();
-//	cout << (boost::format("[Mechanism.call_mechanism] # elems: %d\n") % max_id).str();
+
+cout << (boost::format("[Mechanism.call_mechanism] # elems: %d\n") % max_id).str();
+
 	int64_t BLOCK_SIZE = max_id / (double)n_cores;
 	int64_t n_blocks = max_id / (double)BLOCK_SIZE;
 	vector<string> output_file_names(n_blocks);

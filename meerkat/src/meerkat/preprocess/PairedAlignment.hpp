@@ -18,6 +18,11 @@ namespace meerkat {
 		bool should_process;
 		PairedAlignment() :
 				should_process(false) {
+			//CC: add by Chong Chu on 07/19/2017
+			pair_1.QueryBases="";
+			pair_1.Length=0;
+			pair_2.QueryBases="";
+			pair_2.Length=0;
 		}
 		PairedAlignment(const PairedAlignment& b) {
 			pair_1 = b.pair_1;
@@ -43,6 +48,11 @@ namespace meerkat {
 		int64_t id_2;
 		PairedAlignmentWithTwoIds() :
 				id_1(-1), id_2(-1) {
+			//CC: add by Chong Chu on 07/19/2017
+			pair_1.QueryBases="";
+			pair_1.Length=0;
+			pair_2.QueryBases="";
+			pair_2.Length=0;
 		}
 		PairedAlignmentWithTwoIds(const PairedAlignmentWithTwoIds& b) {
 			pair_1 = b.pair_1;

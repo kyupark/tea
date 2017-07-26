@@ -388,6 +388,11 @@ void ParallelBamReader::preprocess() {
 		 *** pass.                                                   ***/
 
 		collect_basic_statistics();
+
+//CC: classify the reads according to their types////////////////////////////////////////
+//CC: For temp statistic now!!!/////////////////////////////////////////////////////
+		//classify_store_reads_in_regions();
+
 		/*** Second run through the file.  We need to output soft     ***
 		 *** clips and their mates simultaneously to different files. ***
 		 *** We use a map to buffer read mates which we know (using   ***
@@ -1235,6 +1240,221 @@ void ParallelBamReader::collect_basic_statistics_alt() {
 	cout << checker;
 }
 
+
+/*
+void ParallelBamReader::create_new_algnmt_without_unique_pairs(){
+	castle::TimeChecker checker;
+	checker.setTarget("ParallelBamReader.create_new_algnmt_without_unique_pairs");
+	checker.start();
+
+	
+	
+	cout << checker;
+}*/
+
+
+//CC: use this function to classify the read pairs (m-u, m-c) in each region, and output them.
+//In this way, don't need to keep them in memory in the following steps.
+//Assume: Both reads in the pair have the same name in the alignment.
+void ParallelBamReader::classify_store_reads_in_regions(){
+	castle::TimeChecker checker;
+	checker.setTarget("ParallelBamReader.classify_store_read_by_region");
+	checker.start();
+
+	//CC: added for temporary usage
+	int64_t cnt_mc=0;//count for the map, mate clip pairs
+	int64_t cnt_mu=0;//count for the map, mate unmap pairs
+	
+	string a_path(options.fname);
+	string an_index_path;
+	get_bai_index_path(a_path, an_index_path); //CC: does this generate the index file if absent????????????????????
+
+	int64_t calculated_n_blocks = unmapped_included_blocks.size();
+	vector<function<void()> > tasks;
+	/*
+	vector<BAMStatistics> local_BAMStatistics(calculated_n_blocks - 1);
+	vector<vector<uint64_t> > local_quality_sample_spaces(calculated_n_blocks - 1);
+	vector<vector<string> > local_softclips(calculated_n_blocks - 1);
+	
+	string done_vector(calculated_n_blocks - 1, 'U');
+	set<string> block_boundary_strs;
+	if (verbose) {
+		for (auto itr = unmapped_included_blocks.begin(); unmapped_included_blocks.end() != itr; ++itr) {
+			block_boundary_strs.insert((boost::format("%s %d-%d %d") % itr->read_name % itr->ref_id % itr->pos % itr->aln_flag).str());
+		}
+	}
+	vector<string> read_groups;*/
+
+	//CC: save the counted pairs of each block
+	vector<int> local_mc_cnt_statistic(calculated_n_blocks - 1);
+	vector<int> local_mu_cnt_statistic(calculated_n_blocks - 1);
+	vector<int> local_mm_cnt_statistic(calculated_n_blocks - 1);
+	
+	for (int64_t block_id = 0; block_id < calculated_n_blocks - 1; ++block_id) {
+		tasks.push_back([&, block_id] {
+			BamTools::BamReader local_reader;
+			if (!local_reader.Open(a_path, an_index_path)) {
+				return;
+			}
+			int64_t num_total = 0;
+			int64_t num_map_unmapped = 0;
+			int64_t num_map_clipped = 0;
+			int64_t num_normal_pair = 0;
+			int64_t max_read_len = 0;
+			int bps = min(options.big_s_bps, options.frag_size);
+
+			
+			//CC: define a local map<readId, alignment>, and check within the region there are satisfied pairs.
+			//CC: here "satisfied" mean, the pairs are map-unmap, map-clip pairs, but within the region.
+			//CC: Also, the normal map-map pairs, should also be filtered out.
+			map<string, BamTools::BamAlignment> local_alignment_map;
+			
+			
+			BamTools::BamAlignment local_alignment_entry;
+			vector<uint64_t> local_quality_sample_space(255);
+			int32_t the_current_ref_id = unmapped_included_blocks[block_id].ref_id;
+			int32_t the_current_ref_pos = unmapped_included_blocks[block_id].pos;
+
+			int32_t the_next_ref_id = unmapped_included_blocks[block_id + 1].ref_id;
+			int32_t the_next_ref_pos = unmapped_included_blocks[block_id + 1].pos;
+			string str_block_id = boost::lexical_cast<string>(block_id);
+
+			string the_next_block_read_name = unmapped_included_blocks[block_id + 1].read_name;
+
+			int64_t the_current_ref_offset = unmapped_included_blocks[block_id].offset;
+			int64_t the_next_ref_offset = unmapped_included_blocks[block_id + 1].offset;
+			auto& m_bgzf = local_reader.GetBGZF();
+			if(0 != block_id) {
+				if(!m_bgzf.Seek(the_current_ref_offset)) {
+					local_reader.Close();
+					return;
+				}
+			}
+			int64_t cur_offset = m_bgzf.Tell();
+			int64_t prev_offset = cur_offset;
+			
+			while (local_reader.LoadNextAlignmentWithName(local_alignment_entry)) {
+//[CC]: every time need to check the position, can directly use the function 
+//SetRegion (const int &leftRefID, const int &leftPosition, const int &rightRefID, const int &rightPosition)
+//in the BAMtools API?????????????????????????????????????????????????????????????????????????????????????????
+				cur_offset = m_bgzf.Tell();
+				if(prev_offset >= the_next_ref_offset) {
+					break;
+				}
+				
+				prev_offset = cur_offset;
+
+				
+				//witness_qualities(local_alignment_entry, local_quality_sample_space);
+
+				/* UM+UM pairs and singleton UMs aren't interesting */
+				if(!local_alignment_entry.IsMapped() && (!local_alignment_entry.IsMateMapped()
+								|| !local_alignment_entry.IsPaired())) {					
+					continue;
+				}
+
+				/* Save the names of interesting read pairs.  "Interesting"
+				 * is defined as: (1) the mate is mapped and (2) either this
+				 * read contains a "big" S operation or is unmapped. */
+				/* S can only occur in the first or last cigar op */
+//				bool extract = ReadGroup::isBigS(local_alignment_entry, local_alignment_entry.CigarData.front(), bps)
+//				|| ReadGroup::isBigS(local_alignment_entry, local_alignment_entry.CigarData.back(), bps) || !local_alignment_entry.IsMapped();
+
+				bool bpair_within_region=false;//
+				if (local_alignment_map.find(local_alignment_entry.Name)!=local_alignment_map.end()){
+					bpair_within_region=true;
+				}
+					
+				//CC:  three situations:
+				//1. Both unique mapped, normal insert size, fully mapped, then the pair is filtered out.
+				//2. One fully mapped, the other clipped. The pair will be recorded in (m,c) pair.
+				//3. One fully mapped, the other unmapped. The pair will be recorded in (m, u) pair
+				if(bpair_within_region){
+					//Both reads of a pair are within the same region.
+					bool bfirst_clip=ReadGroup::isBigS(local_alignment_entry, local_alignment_entry.CigarData.front(), bps)
+							|| ReadGroup::isBigS(local_alignment_entry, local_alignment_entry.CigarData.back(), bps);
+
+					BamTools::BamAlignment local_mate_alignment=local_alignment_map[local_alignment_entry.Name];
+					bool bsecond_clip= ReadGroup::isBigS(local_mate_alignment, local_mate_alignment.CigarData.front(), bps)
+							|| ReadGroup::isBigS(local_mate_alignment, local_mate_alignment.CigarData.back(), bps);
+					if (bfirst_clip || bsecond_clip) {
+						//Either of the read is clipped, we need to record this
+						//But for both clipped, need to save infor for the re-align step???????????????????
+						string a_key = local_alignment_entry.Name + boost::lexical_cast<string>(ReadGroup::getMateNumber(local_alignment_entry));
+
+						//the_local_softclips.push_back(a_key);
+						//++num_clipped;
+						num_map_clipped++;
+//CC: Need to save into files before erease
+						
+						local_alignment_map.erase(local_alignment_entry.Name);
+					}
+					else{
+						bool bnormal=false;
+						//check mapping quality
+						//For temp use: set mapping quality threshold to 45
+						bool bunique=(local_alignment_entry.MapQuality>=45) && (local_mate_alignment.MapQuality>=45);
+
+						//also check whether discordant or not
+						if(bunique && local_alignment_entry.IsProperPair())
+							bnormal=true;
+
+						if(bnormal==true){
+							num_normal_pair++;
+							local_alignment_map.erase(local_alignment_entry.Name);
+						}
+						else{
+//CC: need to save into files 
+							
+						}
+							
+					}
+
+					
+				}
+				else if(local_alignment_entry.IsMapped() && !local_alignment_entry.IsMateMapped()){
+				//read mapped, and it's mate is unmapped
+					num_map_unmapped++;
+//CC: Need to save into files
+					//local_alignment_map.erase(local_alignment_entry.Name);	
+
+				}
+				else{
+					//the first read in the pair
+					local_alignment_map[local_alignment_entry.Name]=local_alignment_entry;
+				}
+				
+			}
+
+			local_reader.Close();
+
+			local_mc_cnt_statistic[block_id]=num_map_clipped;
+			local_mu_cnt_statistic[block_id]=num_map_unmapped;
+			local_mm_cnt_statistic[block_id]=num_normal_pair;
+			
+						
+		});
+	}
+// sometimes the unaligned reads are in the last portion of BAM file, hence
+// changing the order.
+//	swap(tasks[0], tasks.back());
+	castle::ParallelRunner::run_unbalanced_load(n_cores, tasks);
+
+	//now calculate the total number of (m,m), (c,m) and (u,m) pairs
+	int64_t total_mm=0, total_mc=0, total_mu=0;
+	for (int64_t block_id = 0; block_id < calculated_n_blocks - 1; ++block_id) {		
+		total_mm+=local_mm_cnt_statistic[block_id];
+		total_mc+=local_mc_cnt_statistic[block_id];
+		total_mu+=local_mu_cnt_statistic[block_id];
+	}
+	cout<<"FLAG:!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"<<endl;
+	cout<<total_mm<<" "<<total_mc<<" "<<total_mu<<endl;
+	cout<<"FLAG:!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"<<endl;
+	
+}
+
+
+
 void ParallelBamReader::output_blacklist_file() {
 	if (boost::filesystem::exists(options.blistname)) {
 		return;
@@ -1790,6 +2010,10 @@ void ParallelBamReader::find_quality_standard_and_max_read_length(vector<uint64_
 	qenc = best;
 	cout << checker;
 }
+
+//CC: This function can merged with other function that go through all the alignments
+//CC: Mark ----------------------------------------------------------------------------------------------------------
+
 void ParallelBamReader::output_unmapped() {
 	if (boost::filesystem::exists(options.umfname)) {
 		return;
@@ -2218,21 +2442,11 @@ void ParallelBamReader::output_softclips() {
 				if (!local_reader.Open(a_path, an_index_path)) {
 					return;
 				}
-//				if(1 != block_id){
-//					return;
-//				}
-//				if(225 != block_id && 20 != block_id) {
-//					return;
-//				}
+
 					int64_t num_total = 0;
 					int64_t local_clipped_rejected = 0;
 					int64_t local_unmapped_rejected = 0;
-//					int32_t the_current_ref_id = unmapped_included_blocks[block_id].ref_id;
-//					int32_t the_current_ref_pos = unmapped_included_blocks[block_id].pos;
-//
-//					int32_t the_next_ref_id = unmapped_included_blocks[block_id + 1].ref_id;
-//					int32_t the_next_ref_pos = unmapped_included_blocks[block_id + 1].pos;
-//					uint32_t the_next_aln_flag = unmapped_included_blocks[block_id + 1].aln_flag;
+
 					string the_next_block_read_name = unmapped_included_blocks[block_id + 1].read_name;
 
 					//int bps = min(options.big_s_bps, options.frag_size);
@@ -2249,23 +2463,15 @@ void ParallelBamReader::output_softclips() {
 						}
 					}
 
-//					bool jump_success = local_reader.Jump(unmapped_included_blocks[block_id].ref_id, unmapped_included_blocks[block_id].jump_pos);
-//					if(!jump_success) {
-//						cout << (boost::format("[ParallelBamReader.output_softclips] (Jump fail) Block-%d (%d/%d)-(%d/%d)\n")
-//								% block_id % the_current_ref_id % the_current_ref_pos
-//								% the_next_ref_id % the_next_ref_pos).str();
-//						local_reader.Close();
-//						return;
-//					}
-//					if(verbose) {
-//						cout << (boost::format("[ParallelBamReader.output_softclips] (start) Block-%d (%d/%d)-(%d/%d)\n")
-//								% block_id % the_current_ref_id % the_current_ref_pos
-//								% the_next_ref_id % the_next_ref_pos).str();
-//					}
 					string rg_name;
 					BamTools::BamAlignment local_alignment_entry;
-
+ 
 					ReadGroup rg;
+
+					//CC: Temporarily buffer to save the two reads (or one) clipped reads (or mate) in this block
+					//CC: So if both reads of a pair are within the block, they will be processed, and removed from the buffer;
+					//CC: If only one of the read is in the block, then the buffer will be merged (for all blocks) after processing.
+					
 					auto& local_albuf = albuf_lists[block_id];
 					auto& local_chist = chist_lists[block_id];
 					const int frag_size_doubled = options.frag_size << 1;
@@ -2320,29 +2526,9 @@ void ParallelBamReader::output_softclips() {
 					}
 					int64_t cur_offset = m_bgzf.Tell();
 					int64_t prev_offset = cur_offset;
-//					if(cur_offset != the_current_ref_offset) {
-//						cout << (boost::format("[ParallelBamReader.output_softclips] block-%d (start) offset: jump: %d, calc: %d\n")
-//								% block_id % cur_offset % the_current_ref_offset).str();
-//					}
 
-					while (local_reader.LoadNextAlignmentCore(local_alignment_entry)) {
 
-//						if(verbose && 0 == num_total) {
-//							string a_block_boundary_str = (boost::format("%s %d-%d %d")
-//									% local_alignment_entry.Name % local_alignment_entry.RefID % local_alignment_entry.Position
-//									% local_alignment_entry.AlignmentFlag).str();
-//							cout << (boost::format("[ParallelBamReader.output_softclips] (first) Block-%d %s\n")
-//									% block_id % a_block_boundary_str).str();
-//						}
-
-//						if(local_alignment_entry.RefID == the_next_ref_id
-//								&& local_alignment_entry.Position == the_next_ref_pos
-//								&& local_alignment_entry.AlignmentFlag == the_next_aln_flag
-//								&& local_alignment_entry.Name == the_next_block_read_name
-//						) {
-//							break;
-//						}
-//						auto& cur_name = local_alignment_entry.Name;
+					while (local_reader.LoadNextAlignmentCore(local_alignment_entry)) {				
 						const bool debug = false;
 //						const bool debug = cur_name == target_key;
 						cur_offset = m_bgzf.Tell();
@@ -2350,29 +2536,26 @@ void ParallelBamReader::output_softclips() {
 							break;
 						}
 						prev_offset = cur_offset;
-//						bool debug = string::npos != local_alignment_entry.Name.find("ST-E00104:502:HFJN5CCXX:7:2122:32400:13527");
-//						if(the_next_ref_id == decoy_ref_id && local_alignment_entry.RefID == decoy_ref_id) {
-//							break;
-//						}
+
 						++num_total;
 						if(!local_alignment_entry.GetReadGroup(rg_name)) {
 							rg_name = "none";
 						}
-//						if((decoy_ref_id == local_alignment_entry.RefID || decoy_ref_id == local_alignment_entry.MateRefID)) {
-//							continue;
-//						}
 
+						//CC: Here may not need to check "resolved"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 						if(black_listed.end() != black_listed.find(rg_name) || resolved.end() != resolved.find(local_alignment_entry.Name)) {
 							continue;
 						}
 						if(debug) {
 							cout << "[ParallelBamReader.output_softclips] pass blacklisted\n";
 						}
-						if(!local_alignment_entry.IsMapped()) {
+						if(!local_alignment_entry.IsMapped()) {//CC: For unmapped reads.
 							if(debug) {
 								cout << "[ParallelBamReader.output_softclips] unmapped\n";
 							}
+
 							ReadGroup::trim_read(local_alignment_entry, options.q, qenc);
+
 							if (local_alignment_entry.Length >= frag_size_doubled) {
 								if(debug) {
 									cout << "[ParallelBamReader.output_softclips] larger than frag_size_doubled\n";
@@ -2385,7 +2568,8 @@ void ParallelBamReader::output_softclips() {
 							} else {
 								++local_unmapped_rejected;
 							}
-						}
+						}	
+
 						/* 2. Handle UU pairs */
 						if (!local_alignment_entry.IsMapped() && !local_alignment_entry.IsMateMapped() && options.processUU) {
 							if(debug) {
@@ -2393,6 +2577,7 @@ void ParallelBamReader::output_softclips() {
 							}
 							continue;
 						}
+
 						/* 3a. Hardclipped reads aren't interesting.  In the new BWA-MEM,
 						 * softclipped read records are often accompanied by a hard clipped
 						 * record, resulting in 3 reads belonging to the same read pair to be
@@ -2407,17 +2592,24 @@ void ParallelBamReader::output_softclips() {
 							}
 							continue;
 						}
+
+						/*
+						CC: Secondary alignments are not interested. ///////////////Is this the reason????????????????????????
+						*/
+						//if(local_alignment_entry.IsPrimaryAlignment()==false)
+						//	continue;
+						
 						/* 3. Handle mapped+[softclipped|unmapped] read pairs */
 //						int mate_num = 1;
+						//CC: "softclips" saves the read name of the mate read for al the unmapped and clipped reads
+//						
+
+						/* 3. Handle mapped+[softclipped|unmapped] read pairs */
 						auto it = softclips.find(local_alignment_entry.Name+"1");
 						if(it == softclips.end()) {
 							it = softclips.find(local_alignment_entry.Name+"2");
-//							mate_num = 2;
 						}
 
-//						if(debug) {
-//							cout << "here-5\n";
-//						}
 						if (it != softclips.end()) {
 							if(debug) {
 								cout << "[ParallelBamReader.output_softclips] has softclip entry\n";
@@ -2504,8 +2696,6 @@ void ParallelBamReader::output_softclips() {
 									}
 									int8_t rep_mate = local_map[1].Length >= local_map[2].Length ? 1 : 2;
 
-	//								ReadGroup::isBigS(local_alignment_entry, local_alignment_entry.CigarData.front(), bps);
-	//								ReadGroup::isBigS(local_alignment_entry, local_alignment_entry.CigarData.back(), bps))
 
 									if (!local_alignment_entry.IsMapped() && mate.IsMapped()) {
 										local_chist.add(ReadGroup::getMateNumber(local_alignment_entry) == rep_mate ? local_alignment_entry : mate);
@@ -2605,8 +2795,8 @@ void ParallelBamReader::output_softclips() {
 													mapped_sc_file.SaveSAMAlignment(local_albuf[local_alignment_entry.Name][1]);
 												}
 											}
-										}
-									} else {
+										}//CC: End of both mapped  "if (local_alignment_entry.IsMapped() && mate.IsMapped())"
+									} else {//CC: If one of the read is unmapped, then go to this condition.
 										if (!rg.recordUMAltNoRG(local_alignment_entry, mate, options.big_s_bps, options.n_cutoff)) {
 											if(debug) {
 												cout << "[ParallelBamReader.output_softclips] not recorded UM\n";
@@ -2623,12 +2813,19 @@ void ParallelBamReader::output_softclips() {
 											mapped_um_file.SaveSAMAlignment(local_albuf[local_alignment_entry.Name][1]);
 										}
 									}
+//CC: Acutally, we don't need to check this!///////////////////////////////////////////////////////////////////////////////////////////////////////
 									resolved.insert(local_alignment_entry.Name);
+									
+//CC: Problem here:
+//CC: This doesn't release the memory at once. ////////////////////////////////////////////////////////////////////////////////////////////////////
+
 									local_albuf.erase(local_alignment_entry.Name);
-								}
-							}
-						}
-					}
+								}//end of "if(local_albuf[local_alignment_entry.Name][0].QueryBases.size() > 0 && loca..."
+							}//endl of "else"
+						}//end of if (!it==softclips.end()) 
+					}//end of while()
+
+
 					local_reader.Close();
 					if (options.generate_mapped_sc_um_file) {
 						mapped_sc_file.Close();
@@ -2636,13 +2833,7 @@ void ParallelBamReader::output_softclips() {
 					}
 					clipped_rejected_list[block_id] = local_clipped_rejected;
 					unmapped_rejected_list[block_id] = local_unmapped_rejected;
-//					if(prev_offset != the_next_ref_offset) {
-//						cout << (boost::format("[ParallelBamReader.output_softclips] block-%d (last) offset: jump: prev(%d) cur(%d), calc: %d\n") % block_id % prev_offset % cur_offset % the_next_ref_offset).str();
-//					}
-
 					done_vector[block_id] = 'D';
-//					cout << (boost::format("[ParallelBamReader.output_softclips] (last) Block-%d: al_buf(%d)\n")
-//							% block_id % local_albuf.size()).str();
 
 					if(verbose) {
 						string a_block_boundary_str = (boost::format("%s %d-%d %d (%d)")
@@ -2659,10 +2850,6 @@ void ParallelBamReader::output_softclips() {
 				});
 		}
 
-//		int64_t limit_swap = min(static_cast<int64_t>(10), static_cast<int64_t>(tasks.size()));
-//		for (int64_t t_id = 0; t_id < limit_swap; ++t_id) {
-//			swap(tasks[t_id], *(tasks.rbegin() + t_id));
-//		}
 
 		castle::ParallelRunner::run_unbalanced_load(n_cores, tasks);
 
@@ -2672,9 +2859,13 @@ void ParallelBamReader::output_softclips() {
 			clipped_rejected += clipped_rejected_list[block_id];
 		}
 
+		//CC(07/18/2017): This step is to merge the remaining reads in each block;
+		//CC(07/18/2017): (Note:if two reads in a pair are in different blocks, then they will be kept in each block seperately before merging).
 		for (int64_t block_id = 0; block_id < calculated_n_blocks - 1; ++block_id) {
 			auto& local_albuf = albuf_lists[block_id];
-			for (auto itr_aln = local_albuf.begin(); local_albuf.end() != itr_aln; ++itr_aln) {
+			for (auto itr_aln = local_albuf.begin(); local_albuf.end() != itr_aln; ++itr_aln) {				
+
+				//CC: don't need to first check whether key eixst or not? Yes, the [] operation will create the key if not exist								
 				if(paired_alns[itr_aln->first].pair_1.QueryBases.size() < itr_aln->second[0].QueryBases.size()) {
 					paired_alns[itr_aln->first].pair_1 = itr_aln->second[0];
 					paired_alns[itr_aln->first].id_1 = block_id;
@@ -2684,10 +2875,12 @@ void ParallelBamReader::output_softclips() {
 					paired_alns[itr_aln->first].id_2 = block_id;
 				}
 			}
-			local_albuf.clear();
+//CC: Note here doesn't release the memory at once!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+			local_albuf.clear();	
 		}
 		cout << (boost::format("[ParallelBamReader.output_softclips] # uncommitted: %d\n") % paired_alns.size()).str();
 	}
+
 	{
 		vector<shared_ptr<ofstream>> clipfiles;
 		vector<shared_ptr<ofstream>> split1files;
@@ -2709,15 +2902,7 @@ void ParallelBamReader::output_softclips() {
 		strstreams_split1.reserve(calculated_n_blocks - 1);
 		strstreams_split2.reserve(calculated_n_blocks - 1);
 
-//		const int frag_size_doubled = options.frag_size << 1;
-		BamTools::BamReader local_reader;
-		if (!local_reader.Open(a_path, an_index_path)) {
-			return;
-		}
-//		const RefVector& refnames = local_reader.GetReferenceData();
-
 		// write additional entries to clipfile, split1 file and split2 files
-
 		for (int64_t block_id = 0; block_id < calculated_n_blocks - 1; ++block_id) {
 			string str_block_id = boost::lexical_cast<string>(block_id);
 			string clipfile_name(options.clipname + "." + str_block_id);
@@ -2730,26 +2915,24 @@ void ParallelBamReader::output_softclips() {
 			strstreams_split1.push_back(make_shared<stringstream>());
 			strstreams_split2.push_back(make_shared<stringstream>());
 		}
-		local_reader.Close();
+		
 		string rg_name;
-		//int frag_size_doubled = options.frag_size << 1;
-//		int bps = min(options.big_s_bps, options.frag_size);
 		ReadGroup rg;
 
 
+		bool b_no_buffer=true;
+		bool b_end_of_alns=false;
+		
 		auto pair_aln_itr = paired_alns.begin();
-
-		while (paired_alns.end() != pair_aln_itr) {
-			//for (auto pair_aln_itr = paired_alns.begin();
-			//paired_alns.end() != pair_aln_itr; ++pair_aln_itr) {
-			if (-1 == pair_aln_itr->second.id_1 || -1 == pair_aln_itr->second.id_2) {
+		while (paired_alns.end() != pair_aln_itr) {	
+			if (b_end_of_alns==false && (-1 == pair_aln_itr->second.id_1 || -1 == pair_aln_itr->second.id_2)) {
 				++pair_aln_itr;
 				continue;
 			}
-
+			
 			int64_t writing_block_id = max(pair_aln_itr->second.id_1, pair_aln_itr->second.id_2);
+			
 			auto& local_alignment_entry = (writing_block_id == pair_aln_itr->second.id_1) ? pair_aln_itr->second.pair_1 : pair_aln_itr->second.pair_2;
-//			const bool debug = local_alignment_entry.Name == target_key;
 			const bool debug = false;
 			if (!local_alignment_entry.GetReadGroup(rg_name)) {
 				rg_name = "none";
@@ -2773,11 +2956,9 @@ void ParallelBamReader::output_softclips() {
 			}
 
 			auto& mate = (writing_block_id == pair_aln_itr->second.id_1) ? pair_aln_itr->second.pair_2 : pair_aln_itr->second.pair_1;
-//			int mate_num = 1;
 			auto it = softclips.find(local_alignment_entry.Name + "1");
 			if (softclips.end() == it) {
 				it = softclips.find(local_alignment_entry.Name + "2");
-//				mate_num = 2;
 			}
 			if (softclips.end() == it) {
 				++pair_aln_itr;
@@ -2786,21 +2967,17 @@ void ParallelBamReader::output_softclips() {
 				}
 				continue;
 			}
-			//bool debug = ("ST-E00104:502:HFJN5CCXX:7:2118:2615:30527"
-			//== local_alignment_entry.Name);
 
 			stringstream clipfile;
 			stringstream split1;
 			stringstream split2;
-//			ofstream& clipfile = *clipfiles[writing_block_id].get();
-//			ofstream& split1 = *split1files[writing_block_id].get();
-//			ofstream& split2 = *split2files[writing_block_id].get();
 
 			BamAlignment untrimmed_alignment_entry = local_alignment_entry;
 			BamAlignment untrimmed_mate = mate;
 			ReadGroup::trim_read(local_alignment_entry, options.q, qenc);
 			ReadGroup::trim_read(mate, options.q, qenc);
 			boost::unordered_map<int8_t, CigarOp> local_map;
+
 
 			if(local_alignment_entry.CigarData.size() > 0) {
 				int8_t local_mate_num = local_alignment_entry.IsFirstMate() ? 1 : 2;
@@ -2847,19 +3024,11 @@ void ParallelBamReader::output_softclips() {
 					}
 				}
 			}
-			int8_t rep_mate = local_map[1].Length >= local_map[2].Length ? 1 : 2;
-//			uint32_t max_soft_clipped_len = 0;
-//			for(auto& an_op : local_map) {
-//				if(an_op.second.Length > max_soft_clipped_len) {
-//					rep_mate = an_op.first;
-//					max_soft_clipped_len = an_op.second.Length;
-//				}
-//			}
 
+			int8_t rep_mate = local_map[1].Length >= local_map[2].Length ? 1 : 2;
 			if (!(local_alignment_entry.IsMapped() && mate.IsMapped())) {
 				chist.add(ReadGroup::getMateNumber(local_alignment_entry) == rep_mate ? local_alignment_entry : mate);
 			}
-
 
 			if (local_alignment_entry.IsMapped() && mate.IsMapped()) {
 				if(debug) {
@@ -2874,6 +3043,7 @@ void ParallelBamReader::output_softclips() {
 				n_local_amb += count(local_right.QueryBases.begin(), local_right.QueryBases.end(), 'N');
 				BamAlignment mate_left = ReadGroup::snip(mate, 0, options.frag_size);
 				BamAlignment mate_right = ReadGroup::snip(mate, mate.Length - options.frag_size, options.frag_size);
+								
 				size_t n_mate_amb = count(mate_left.QueryBases.begin(), mate_left.QueryBases.end(), 'N');
 				n_mate_amb += count(mate_right.QueryBases.begin(), mate_right.QueryBases.end(), 'N');
 				if(rep_mate == local_mate_num && n_local_amb > static_cast<size_t>(options.n_cutoff)) {
@@ -2882,6 +3052,9 @@ void ParallelBamReader::output_softclips() {
 					rep_mate = local_mate_num;
 				}
 				chist.add(ReadGroup::getMateNumber(local_alignment_entry) == rep_mate ? local_alignment_entry : mate);
+
+				//CC: Reads will be splited and write to stream when call function "recordSCAltNoRG"
+				//CC: Cannot wholy understand the following code although 
 				if (!rg.recordSCAltNoRG(ReadGroup::getMateNumber(local_alignment_entry) == rep_mate ? local_alignment_entry : mate,
 						ReadGroup::getMateNumber(local_alignment_entry) == rep_mate ? mate : local_alignment_entry, rep_mate, clipfile, split1, split2, options.big_s_bps, options.frag_size, options.n_cutoff)) {
 					++clipped_rejected;
@@ -2895,18 +3068,36 @@ void ParallelBamReader::output_softclips() {
 				}
 			}
 			++pair_aln_itr;
+
+
 			string clip_str = clipfile.str();
 			string split1_str = split1.str();
 			string split2_str = split2.str();
+
 			stringstream& clipfile_mem = *strstreams_clip[writing_block_id].get();
 			stringstream& split1_mem = *strstreams_split1[writing_block_id].get();
 			stringstream& split2_mem = *strstreams_split2[writing_block_id].get();
+
 			clip_buf_sizes[writing_block_id] += clip_str.size();
 			split1_buf_sizes[writing_block_id] += split1_str.size();
 			split2_buf_sizes[writing_block_id] += split2_str.size();
 			clipfile_mem << clip_str;
 			split1_mem << split1_str;
 			split2_mem << split2_str;
+
+//-------CC:For temporary usage-----------------------------------------------------------------------------------------------------------
+			ofstream& the_clipfile = *clipfiles[writing_block_id].get();
+			the_clipfile << clipfile_mem.str();
+			clipfile_mem.str(string());
+			ofstream& the_split1_file = *split1files[writing_block_id].get();
+			the_split1_file << split1_mem.str();
+			split1_mem.str(string());
+			ofstream& the_split2_file = *split2files[writing_block_id].get();
+			the_split2_file << split2_mem.str();
+			split2_mem.str(string());
+			
+//CC: possible reason for these buffer??????????????????????????????????????????????????????????????????????????????????????????
+			/*
 			if (clip_buf_sizes[writing_block_id] > castle::IOUtils::SMALL_WRITE_BUFFER_SIZE) {
 				ofstream& the_clipfile = *clipfiles[writing_block_id].get();
 				the_clipfile << clipfile_mem.str();
@@ -2919,36 +3110,56 @@ void ParallelBamReader::output_softclips() {
 				split1_mem.str(string());
 				split1_buf_sizes[writing_block_id] = 0;
 			}
-			if (split1_buf_sizes[writing_block_id] > castle::IOUtils::SMALL_WRITE_BUFFER_SIZE) {
+			
+			//if (split1_buf_sizes[writing_block_id] > castle::IOUtils::SMALL_WRITE_BUFFER_SIZE) {
+			//CC: change from "split1_buf_sizes" to "split2_buf_sizes" 07/19/2017//////////////////////////////////////
+			//CC: Is this right?????????????????????????????????????????????????????????????????????
+			if (split2_buf_sizes[writing_block_id] > castle::IOUtils::SMALL_WRITE_BUFFER_SIZE) {
 				ofstream& the_split2_file = *split2files[writing_block_id].get();
 				the_split2_file << split2_mem.str();
 				split2_mem.str(string());
 				split2_buf_sizes[writing_block_id] = 0;
-			}
+			}*/
+
 		}
+				
+				
 		for (int64_t block_id = 0; block_id < calculated_n_blocks - 1; ++block_id) {
 			string str_block_id = boost::lexical_cast<string>(block_id);
 			stringstream& clipfile_mem = *strstreams_clip[block_id].get();
 			stringstream& split1_mem = *strstreams_split1[block_id].get();
 			stringstream& split2_mem = *strstreams_split2[block_id].get();
-			string clip_str = clipfile_mem.str();
+
+			string clip_str = clipfile_mem.str();		
 			string split1_str = split1_mem.str();
 			string split2_str = split2_mem.str();
-
+			
 			if (!clip_str.empty()) {
 				ofstream& the_clipfile = *clipfiles[block_id].get();
-				the_clipfile << clip_str;
+				the_clipfile << clip_str;				
 			}
 			if (!split1_str.empty()) {
 				ofstream& the_split1_file = *split1files[block_id].get();
-				the_split1_file << split1_str;
+				the_split1_file << split1_str;				
 			}
 			if (!split2_str.empty()) {
 				ofstream& the_split2_file = *split2files[block_id].get();
 				the_split2_file << split2_str;
 			}
 		}
+
+		//CC: close the files//////////////////////////////////////////
+		for (int64_t block_id = 0; block_id < calculated_n_blocks - 1; ++block_id) {
+			clipfiles[block_id]->close();
+			split1files[block_id]->close();
+			split2files[block_id]->close();
+		}
+		clipfiles.clear();
+		split1files.clear();
+		split2files.clear();
 	}
+
+
 
 	{
 		// write additional entries to mapped_sc and mapped_um
@@ -2996,7 +3207,6 @@ void ParallelBamReader::output_softclips() {
 		//int frag_size_doubled = options.frag_size << 1;
 //		int bps = min(options.big_s_bps, options.frag_size);
 		ReadGroup rg;
-
 		auto pair_aln_itr = paired_alns.begin();
 		while (paired_alns.end() != pair_aln_itr) {
 			//for (auto pair_aln_itr = paired_alns.begin();
@@ -3122,10 +3332,12 @@ void ParallelBamReader::output_softclips() {
 
 				BamAlignment local_left = ReadGroup::snip(local_alignment_entry, 0, options.frag_size);
 				BamAlignment local_right = ReadGroup::snip(local_alignment_entry, local_alignment_entry.Length - options.frag_size, options.frag_size);
+
 				size_t n_local_amb = count(local_left.QueryBases.begin(), local_left.QueryBases.end(), 'N');
 				n_local_amb += count(local_right.QueryBases.begin(), local_right.QueryBases.end(), 'N');
 				BamAlignment mate_left = ReadGroup::snip(mate, 0, options.frag_size);
 				BamAlignment mate_right = ReadGroup::snip(mate, mate.Length - options.frag_size, options.frag_size);
+
 				size_t n_mate_amb = count(mate_left.QueryBases.begin(), mate_left.QueryBases.end(), 'N');
 				n_mate_amb += count(mate_right.QueryBases.begin(), mate_right.QueryBases.end(), 'N');
 				if(rep_mate == local_mate_num && n_local_amb > static_cast<size_t>(options.n_cutoff)) {
@@ -3209,7 +3421,9 @@ void ParallelBamReader::output_softclips() {
 			pair_aln_itr = paired_alns.erase(pair_aln_itr);
 		}
 	}
-	{
+
+
+	{//CC: Merge the soft-clip files
 		vector<string> file_names;
 		for (int64_t block_id = 0; block_id < calculated_n_blocks - 1; ++block_id) {
 			string str_block_id = boost::lexical_cast<string>(block_id);
@@ -3218,7 +3432,7 @@ void ParallelBamReader::output_softclips() {
 		}
 		castle::IOUtils::plain_file_compress_and_merge(options.clipname, file_names, n_cores, true);
 	}
-	{
+	{//CC: Merge the split 1 files
 		vector<string> file_names;
 		for (int64_t block_id = 0; block_id < calculated_n_blocks - 1; ++block_id) {
 			string str_block_id = boost::lexical_cast<string>(block_id);
@@ -3228,7 +3442,7 @@ void ParallelBamReader::output_softclips() {
 		// the partial files will be used in the alg stage.
 		castle::IOUtils::plain_file_compress_and_merge(options.split1name, file_names, n_cores, true);
 	}
-	{
+	{//CC: Merge the split 2 files
 		vector<string> file_names;
 		for (int64_t block_id = 0; block_id < calculated_n_blocks - 1; ++block_id) {
 			string str_block_id = boost::lexical_cast<string>(block_id);
@@ -3334,7 +3548,38 @@ void ParallelBamReader::output_softclips() {
 //		tasks.push_back([&] {
 		string sam_to_bam_sc_cmd = (boost::format("samtools view -1 -Sb -@ %d -o %s %s") % n_cores % mapped_sc_tmp_bam_name % mapped_sc_sam_name).str();
 		system(sam_to_bam_sc_cmd.c_str());
+//		});
+//		tasks.push_back([&]{
+//			ofstream out_um_sam(mapped_um_sam_name, ios::binary);
+//			string local_mapped_um_name = options.prefix + ".mapped_um.sam.0";
+//			out_um_sam << castle::IOUtils::read_fully(local_mapped_um_name);
+//			for (int64_t block_id = 1; block_id < calculated_n_blocks - 1; ++block_id) {
+//				string str_block_id = boost::lexical_cast<string>(block_id);
+//				string local_mapped_um_name = options.prefix + ".mapped_um.sam." + str_block_id;
+//				if(!options.working_dir.empty()) {
+//					local_mapped_um_name = options.working_prefix + ".mapped_um.sam." + str_block_id;
+//				}
+//				out_um_sam << castle::IOUtils::read_fully(local_mapped_um_name);
+//			}
+//		});
+//		tasks.push_back([&]{
+//			ofstream out_sc_sam(mapped_sc_sam_name, ios::binary);
+//			string local_mapped_sc_name = options.prefix + ".mapped_sc.sam.0";
+//			out_sc_sam << castle::IOUtils::read_fully(local_mapped_sc_name);
+//			for (int64_t block_id = 1; block_id < calculated_n_blocks - 1; ++block_id) {
+//				string str_block_id = boost::lexical_cast<string>(block_id);
+//				string local_mapped_sc_name = options.prefix + ".mapped_sc.sam." + str_block_id;
+//				if(!options.working_dir.empty()) {
+//					local_mapped_sc_name = options.working_prefix + ".mapped_sc.sam." + str_block_id;
+//				}
+//				out_sc_sam << castle::IOUtils::read_fully(local_mapped_sc_name);
+//			}
+//		});
 
+//		castle::ParallelRunner::run_unbalanced_load(n_cores, tasks);
+
+//		string sambamba_merge_um_cmd = (boost::format("sambamba merge -l 1 -t %d %s %s") % n_cores % mapped_um_tmp_name % castle::StringUtils::join(mapped_um_names, " ")).str();
+//		string sambamba_merge_sc_cmd = (boost::format("sambamba merge -l 1 -t %d %s %s") % n_cores % mapped_sc_tmp_name % castle::StringUtils::join(mapped_sc_names, " ")).str();
 		string sambamba_sort_um_cmd = (boost::format("sambamba sort -l 1 -t %d -o %s %s") % n_cores % mapped_um_bam_name % mapped_um_tmp_bam_name).str();
 		string sambamba_sort_sc_cmd = (boost::format("sambamba sort -l 1 -t %d -o %s %s") % n_cores % mapped_sc_bam_name % mapped_sc_tmp_bam_name).str();
 //		system(sambamba_merge_um_cmd.c_str());
@@ -3452,15 +3697,15 @@ void ParallelBamReader::output_read_groups_alt() {
 			vector<shared_ptr<ofstream>> read_groups_f2;
 
 			for(uint64_t rg_id = 0; rg_id < read_groups.size(); ++rg_id) {
-				string rgname = read_groups[rg_id];
-				string filename_1 = options.prefix + "/" + rgname + "_1."
+				string name = read_groups[rg_id];
+				string filename_1 = options.prefix + "/" + name + "_1."
 				+ str_block_id + ".fq";
-				string filename_2 = options.prefix + "/" + rgname + "_2."
+				string filename_2 = options.prefix + "/" + name + "_2."
 				+ str_block_id + ".fq";
 				if(!options.working_dir.empty()) {
-					filename_1 = options.working_prefix + "/" + rgname + "_1."
+					filename_1 = options.working_prefix + "/" + name + "_1."
 					+ str_block_id + ".fq";
-					filename_2 = options.working_prefix + "/" + rgname + "_2."
+					filename_2 = options.working_prefix + "/" + name + "_2."
 					+ str_block_id + ".fq";
 				}
 				read_groups_f1.push_back(
@@ -3811,7 +4056,6 @@ void ParallelBamReader::output_read_groups_alt() {
 		});
 	}
 	castle::ParallelRunner::run_unbalanced_load(n_cores, tasks);
-
 //	for (uint64_t rg_id = 0; rg_id < read_groups.size(); ++rg_id) {
 //		tasks.push_back([&, rg_id, calculated_n_blocks] {
 //			string rg_name = read_groups[rg_id];
@@ -3856,7 +4100,7 @@ void ParallelBamReader::output_read_groups_alt() {
 //			boost::filesystem::remove(filename_2);
 //		}
 //	});
-//	castle::ParallelRunner::run_unbalanced_load(n_cores, tasks);
+	castle::ParallelRunner::run_unbalanced_load(n_cores, tasks);
 	cout << checker;
 }
 
@@ -4261,6 +4505,9 @@ void ParallelBamReader::align_clipped_reads() {
 //			cl_tmp_sam = options.working_prefix + "/" + rgname + ".tmp.sam";
 			cl_sam = options.working_prefix + "/" + rgname + ".sam";
 		}
+
+//CC: Potential issue: Hard code here !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 		string aln_param = "-l 40 -k 2";
 		string sampe_param = (boost::format("-P -N %d") % options.alt_map_max).str();
 		BWACaller bc;

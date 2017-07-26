@@ -69,7 +69,7 @@ void OutputFilter::filter_intra_chromosomal_events() {
 		int64_t max_id = min(static_cast<int64_t>(cl_ids.size()), static_cast<int64_t>(2));
 		for (int64_t c_id = 0; c_id < max_id; ++c_id) {
 			auto& a_cl = cl_ids[c_id];
-			auto a_pos = a_cl.rfind("_");
+			auto a_pos = a_cl.rfind("~");
 			if (string::npos != a_pos) {
 				a_cl = a_cl.substr(0, a_pos);
 			}
@@ -255,7 +255,7 @@ void OutputFilter::filter_intra_chromosomal_events() {
 		}
 		castle::StringUtils::c_string_multi_split(the_events[i], delim_tab, dataa);
 		dataa.erase(dataa.begin() + 1, dataa.begin() + 3);
-		naive_events[i] = castle::StringUtils::join(dataa, "__");
+		naive_events[i] = castle::StringUtils::join(dataa, "~");
 	}
 	for (int64_t i = 0; i <= ftai; ++i) {
 		if(the_events.end() == the_events.find(i)) {
@@ -263,7 +263,7 @@ void OutputFilter::filter_intra_chromosomal_events() {
 		}
 //		castle::StringUtils::c_string_multi_split(the_events[i], delim_tab, dataa);
 //		dataa.erase(dataa.begin() + 1, dataa.begin() + 3);
-//		string stringa = castle::StringUtils::join(dataa, "__");
+//		string stringa = castle::StringUtils::join(dataa, "~");
 		string& stringa = naive_events[i];
 		for (int64_t j = 0; j <= ftai; ++j) {
 			if (i == j || the_events.end() == the_events.find(j)) {
@@ -272,7 +272,7 @@ void OutputFilter::filter_intra_chromosomal_events() {
 
 //			castle::StringUtils::c_string_multi_split(the_events[j], delim_tab, datab);
 //			datab.erase(datab.begin() + 1, datab.begin() + 3);
-//			string stringb = castle::StringUtils::join(datab, "__");
+//			string stringb = castle::StringUtils::join(datab, "~");
 			string& stringb = naive_events[j];
 			if (stringa == stringb) {
 				the_events.erase(j);
@@ -327,7 +327,7 @@ void OutputFilter::filter_inter_chromosomal_events() {
 		if (cl_ids.size() > 1) {
 			for (int64_t c_id = 0; c_id < 2; ++c_id) {
 				auto& a_cl = cl_ids[c_id];
-				auto a_pos = a_cl.rfind("_");
+				auto a_pos = a_cl.rfind("~");
 				if (string::npos != a_pos) {
 					a_cl = a_cl.substr(0, a_pos);
 				}
@@ -352,7 +352,7 @@ void OutputFilter::filter_inter_chromosomal_events() {
 
 		} else if (1 == cl_ids.size()) {
 			auto& a_cl = cl_ids[0];
-			auto a_pos = a_cl.rfind("_");
+			auto a_pos = a_cl.rfind("~");
 			if (string::npos != a_pos) {
 				a_cl = a_cl.substr(0, a_pos);
 			}
@@ -458,7 +458,7 @@ void OutputFilter::filter_inter_chromosomal_events() {
 		}
 		castle::StringUtils::c_string_multi_split(the_events[i], delim_tab, dataa);
 		dataa.erase(dataa.begin() + 1, dataa.begin() + 3);
-		naive_events[i] = castle::StringUtils::join(dataa, "__");
+		naive_events[i] = castle::StringUtils::join(dataa, "~");
 	}
 	for (int64_t i = 0; i <= ftei; ++i) {
 		if(the_events.end() == the_events.find(i)) {

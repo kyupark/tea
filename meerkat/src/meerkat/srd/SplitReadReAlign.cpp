@@ -26,7 +26,6 @@ void SplitReadReAlign::set_option_parser(const castle::OptionParser& the_options
 	n_cores = options.n_cores;
 }
 
-
 void SplitReadReAlign::align_split_reads() {
 	map<string, map<int8_t, int32_t>> bp_weight;
 	map<string, map<string, string>> intra_regions;
@@ -35,9 +34,10 @@ void SplitReadReAlign::align_split_reads() {
 	set<string> cluster_exist;
 	collect_intra_regions(bp_weight, intra_regions, cluster_exist);
 	collect_inter_regions(bp_weight, inter_regions, cluster_exist);
-//	write_intra_regions(bp_weight, intra_regions, cluster_exist);
-//	write_inter_regions(bp_weight, inter_regions, cluster_exist);
-//	prepare_split_alignment();
+	
+	//write_intra_regions(bp_weight, intra_regions, cluster_exist); //CC: uncomment 07/12/17
+	//write_inter_regions(bp_weight, inter_regions, cluster_exist); //CC: uncomment 07/12/17
+	//prepare_split_alignment(); //CC: uncomment 07/12/17
 //	prepare_split_alignment_single();
 //	collect_misaligned_reads(alg_mis, bp_weight);
 	collect_misaligned_reads_serial(alg_mis, bp_weight);
@@ -171,6 +171,8 @@ void SplitReadReAlign::align_split_reads_par() {
 
 	prepare_split_alignment();
 	remove_and_merge_temporary_alignment_files();
+
+
 //	#	adjust pair end mapping for mis-aligned reads
 //	#	%alg_mis: mis-aligned reads
 //	#	$alg_mis{readname}[0]: read id mis-aligned
@@ -178,6 +180,7 @@ void SplitReadReAlign::align_split_reads_par() {
 	boost::unordered_map<string, map<int8_t, string>> alg_mis;
 //	collect_misaligned_reads_serial_alt(alg_mis, bp_weight);
 	collect_misaligned_reads_par(alg_mis, bp_weight);
+
 //	adjust_misaligned_reads_serial_alt(alg_mis);
 	adjust_misaligned_reads_par(alg_mis);
 
@@ -219,10 +222,11 @@ void SplitReadReAlign::collect_intra_regions_serial(boost::unordered_map<string,
 //		#print "$data[1]\t$data[7]\n";
 		castle::StringUtils::c_string_multi_split(data[1], delim_slash, cl);
 		for(auto& a_cl : cl) {
-			if(string::npos == a_cl.find("_0")) {
-				a_cl = a_cl + "_0";
+			if(string::npos == a_cl.find("~0")) {
+				a_cl = a_cl + "~0";
 			}
 		}
+		
 //		if(string::npos != data[1].find("73269")) {
 //			cout << "[SplitReadReAlign.collect_intra_regions_serial] " << line << "\n";
 //		}
@@ -238,8 +242,8 @@ void SplitReadReAlign::collect_intra_regions_serial(boost::unordered_map<string,
 			position2 = position2 + delta;
 			position3 = position3 - delta;
 			position4 = position4 + delta;
-			string name = data[3] + "__" + boost::lexical_cast<string>(position1) + "__" + boost::lexical_cast<string>(position2) + "__" + data[3]
-								+ "__" + boost::lexical_cast<string>(position3) + "__" + boost::lexical_cast<string>(position4) + "__0";
+			string name = data[3] + "~" + boost::lexical_cast<string>(position1) + "~" + boost::lexical_cast<string>(position2) + "~" + data[3]
+								+ "~" + boost::lexical_cast<string>(position3) + "~" + boost::lexical_cast<string>(position4) + "~0";
 			bp_weight[name][0] = 1;
 			bp_weight[name][1] = 4;
 			if (cluster_exist.end() == cluster_exist.find(cl[0])) {
@@ -258,8 +262,8 @@ void SplitReadReAlign::collect_intra_regions_serial(boost::unordered_map<string,
 			positiona3 = positiona3 - delta;
 			positiona4 = positiona4 + delta;
 
-			string namea = data[3] + "__" + boost::lexical_cast<string>(positiona1) + "__" + boost::lexical_cast<string>(positiona2) + "__" + data[3]
-					+ "__" + boost::lexical_cast<string>(positiona3) + "__" + boost::lexical_cast<string>(positiona4) + "__0";
+			string namea = data[3] + "~" + boost::lexical_cast<string>(positiona1) + "~" + boost::lexical_cast<string>(positiona2) + "~" + data[3]
+					+ "~" + boost::lexical_cast<string>(positiona3) + "~" + boost::lexical_cast<string>(positiona4) + "~0";
 			bp_weight[namea][0] = 2;
 			bp_weight[namea][1] = 3;
 
@@ -274,8 +278,8 @@ void SplitReadReAlign::collect_intra_regions_serial(boost::unordered_map<string,
 			positionb3 = positionb3 - delta;
 			positionb4 = positionb4 + delta;
 
-			string nameb = data[3] + "__" + boost::lexical_cast<string>(positionb1) + "__" + boost::lexical_cast<string>(positionb2) + "__" + data[3]
-					+ "__" + boost::lexical_cast<string>(positionb3) + "__" + boost::lexical_cast<string>(positionb4) + "__0";
+			string nameb = data[3] + "~" + boost::lexical_cast<string>(positionb1) + "~" + boost::lexical_cast<string>(positionb2) + "~" + data[3]
+					+ "~" + boost::lexical_cast<string>(positionb3) + "~" + boost::lexical_cast<string>(positionb4) + "~0";
 			bp_weight[nameb][0] = 1;
 			bp_weight[nameb][1] = 4;
 			if (cluster_exist.end() == cluster_exist.find(cl[0])) {
@@ -297,8 +301,8 @@ void SplitReadReAlign::collect_intra_regions_serial(boost::unordered_map<string,
 			positiona2 = positiona2 + delta;
 			positiona3 = positiona3 - delta;
 			positiona4 = positiona4 + delta;
-			string namea = data[3] + "__" + boost::lexical_cast<string>(positiona1) + "__" + boost::lexical_cast<string>(positiona2) + "__" + data[3]
-								+ "__" + boost::lexical_cast<string>(positiona3) + "__" + boost::lexical_cast<string>(positiona4) + "__1";
+			string namea = data[3] + "~" + boost::lexical_cast<string>(positiona1) + "~" + boost::lexical_cast<string>(positiona2) + "~" + data[3]
+								+ "~" + boost::lexical_cast<string>(positiona3) + "~" + boost::lexical_cast<string>(positiona4) + "~1";
 
 			castle::StringUtils::c_string_multi_split(data[13], delim_colon, positionb);
 			int64_t positionb1 = boost::lexical_cast<int64_t>(positionb[0]);
@@ -311,8 +315,8 @@ void SplitReadReAlign::collect_intra_regions_serial(boost::unordered_map<string,
 			positionb3 = positionb3 - delta;
 			positionb4 = positionb4 + delta;
 
-			string nameb = data[3] + "__" + boost::lexical_cast<string>(positionb1) + "__" + boost::lexical_cast<string>(positionb2) + "__" + data[3]
-								+ "__" + boost::lexical_cast<string>(positionb3) + "__" + boost::lexical_cast<string>(positionb4) + "__1";
+			string nameb = data[3] + "~" + boost::lexical_cast<string>(positionb1) + "~" + boost::lexical_cast<string>(positionb2) + "~" + data[3]
+								+ "~" + boost::lexical_cast<string>(positionb3) + "~" + boost::lexical_cast<string>(positionb4) + "~1";
 			if (string::npos != data[0].find("insod")) {
 				bp_weight[namea][0] = 1;
 				bp_weight[namea][1] = 3;
@@ -343,8 +347,8 @@ void SplitReadReAlign::collect_intra_regions_serial(boost::unordered_map<string,
 			positiona2 = positiona2 + delta;
 			positiona3 = positiona3 - delta;
 			positiona4 = positiona4 + delta;
-			string namea = data[3] + "__" + boost::lexical_cast<string>(positiona1) + "__" + boost::lexical_cast<string>(positiona2) + "__" + data[3]
-								+ "__" + boost::lexical_cast<string>(positiona3) + "__" + boost::lexical_cast<string>(positiona4) + "__1";
+			string namea = data[3] + "~" + boost::lexical_cast<string>(positiona1) + "~" + boost::lexical_cast<string>(positiona2) + "~" + data[3]
+								+ "~" + boost::lexical_cast<string>(positiona3) + "~" + boost::lexical_cast<string>(positiona4) + "~1";
 
 			castle::StringUtils::c_string_multi_split(data[11], delim_colon, positionb);
 			int64_t positionb1 = boost::lexical_cast<int64_t>(positionb[0]);
@@ -356,8 +360,8 @@ void SplitReadReAlign::collect_intra_regions_serial(boost::unordered_map<string,
 			positionb2 = positionb2 + delta;
 			positionb3 = positionb3 - delta;
 			positionb4 = positionb4 + delta;
-			string nameb = data[3] + "__" + boost::lexical_cast<string>(positionb1) + "__" + boost::lexical_cast<string>(positionb2) + "__" + //
-					data[3] + "__" + boost::lexical_cast<string>(positionb3) + "__" + boost::lexical_cast<string>(positionb4) + "__1";
+			string nameb = data[3] + "~" + boost::lexical_cast<string>(positionb1) + "~" + boost::lexical_cast<string>(positionb2) + "~" + //
+					data[3] + "~" + boost::lexical_cast<string>(positionb3) + "~" + boost::lexical_cast<string>(positionb4) + "~1";
 			if (!(covered(positiona1, positiona2, positionb1, positionb2) && covered(positiona3, positiona4, positionb3, positionb4))) {
 				bp_weight[namea][0] = 1;
 				bp_weight[namea][1] = 3;
@@ -383,8 +387,8 @@ void SplitReadReAlign::collect_intra_regions_serial(boost::unordered_map<string,
 			position2 = position2 + delta;
 			position3 = position3 - delta;
 			position4 = position4 + delta;
-			string name = data[3] + "__" + boost::lexical_cast<string>(position1) + "__" + boost::lexical_cast<string>(position2) + "__" + data[3]
-					+ "__" + boost::lexical_cast<string>(position3) + "__" + boost::lexical_cast<string>(position4) + "__0";
+			string name = data[3] + "~" + boost::lexical_cast<string>(position1) + "~" + boost::lexical_cast<string>(position2) + "~" + data[3]
+					+ "~" + boost::lexical_cast<string>(position3) + "~" + boost::lexical_cast<string>(position4) + "~0";
 			bp_weight[name][0] = 2;
 			bp_weight[name][1] = 3;
 			if (cluster_exist.end() == cluster_exist.find(cl[0])) {
@@ -402,8 +406,8 @@ void SplitReadReAlign::collect_intra_regions_serial(boost::unordered_map<string,
 			position2 = position2 + delta;
 			position3 = position3 - delta;
 			position4 = position4 + delta;
-			string name = data[3] + "__" + boost::lexical_cast<string>(position1) + "__" + boost::lexical_cast<string>(position2) + "__" + data[3]
-					+ "__" + boost::lexical_cast<string>(position3) + "__" + boost::lexical_cast<string>(position4) + "__1";
+			string name = data[3] + "~" + boost::lexical_cast<string>(position1) + "~" + boost::lexical_cast<string>(position2) + "~" + data[3]
+					+ "~" + boost::lexical_cast<string>(position3) + "~" + boost::lexical_cast<string>(position4) + "~1";
 			bp_weight[name][0] = 1;
 			bp_weight[name][1] = 3;
 			if (cluster_exist.end() == cluster_exist.find(cl[0])) {
@@ -421,8 +425,8 @@ void SplitReadReAlign::collect_intra_regions_serial(boost::unordered_map<string,
 			position2 = position2 + delta;
 			position3 = position3 - delta;
 			position4 = position4 + delta;
-			string name = data[3] + "__" + boost::lexical_cast<string>(position1) + "__" + boost::lexical_cast<string>(position2) + "__" + data[3]
-					+ "__" + boost::lexical_cast<string>(position3) + "__" + boost::lexical_cast<string>(position4) + "__1";
+			string name = data[3] + "~" + boost::lexical_cast<string>(position1) + "~" + boost::lexical_cast<string>(position2) + "~" + data[3]
+					+ "~" + boost::lexical_cast<string>(position3) + "~" + boost::lexical_cast<string>(position4) + "~1";
 			bp_weight[name][0] = 2;
 			bp_weight[name][1] = 4;
 			if (cluster_exist.end() == cluster_exist.find(cl[0])) {
@@ -463,8 +467,8 @@ void SplitReadReAlign::collect_intra_regions(map<string, map<int8_t, int32_t>>& 
 		}
 		castle::StringUtils::c_string_multi_split(data[1], delim_slash, cl);
 		for(auto& a_cl : cl) {
-			if(string::npos == a_cl.find("_0")) {
-				a_cl += "_0";
+			if(string::npos == a_cl.find("~0")) {
+				a_cl += "~0";
 			}
 		}
 //		const bool debug = data[1] == "14904_0" || data[1] == "4446_0/11983_0";
@@ -527,8 +531,8 @@ void SplitReadReAlign::collect_intra_regions(map<string, map<int8_t, int32_t>>& 
 
 
 		if ("del" == data[0]) {
-			string name = ref_id + "__" + boost::lexical_cast<string>(positiona1) + "__" + boost::lexical_cast<string>(positiona2) + "__" + ref_id
-					+ "__" + boost::lexical_cast<string>(positiona3) + "__" + boost::lexical_cast<string>(positiona4) + "__0";
+			string name = ref_id + "~" + boost::lexical_cast<string>(positiona1) + "~" + boost::lexical_cast<string>(positiona2) + "~" + ref_id
+					+ "~" + boost::lexical_cast<string>(positiona3) + "~" + boost::lexical_cast<string>(positiona4) + "~0";
 			bp_weight[name][0] = 1;
 			bp_weight[name][1] = 4;
 			if (cluster_exist.end() == cluster_exist.find(cl[0])) {
@@ -536,18 +540,18 @@ void SplitReadReAlign::collect_intra_regions(map<string, map<int8_t, int32_t>>& 
 				cluster_exist.insert(cl[0]);
 			}
 		} else if (string::npos != data[0].find("inss")) {
-			string namea = ref_id + "__" + boost::lexical_cast<string>(positiona1) + "__" + boost::lexical_cast<string>(positiona2) + "__" + ref_id
-					+ "__" + boost::lexical_cast<string>(positiona3) + "__" + boost::lexical_cast<string>(positiona4) + "__0";
+			string namea = ref_id + "~" + boost::lexical_cast<string>(positiona1) + "~" + boost::lexical_cast<string>(positiona2) + "~" + ref_id
+					+ "~" + boost::lexical_cast<string>(positiona3) + "~" + boost::lexical_cast<string>(positiona4) + "~0";
 			bp_weight[namea][0] = 2;
 			bp_weight[namea][1] = 3;
 
-			string nameb = ref_id + "__" + boost::lexical_cast<string>(positionb1) + "__" + boost::lexical_cast<string>(positionb2) + "__" + ref_id
-					+ "__" + boost::lexical_cast<string>(positionb3) + "__" + boost::lexical_cast<string>(positionb4) + "__0";
+			string nameb = ref_id + "~" + boost::lexical_cast<string>(positionb1) + "~" + boost::lexical_cast<string>(positionb2) + "~" + ref_id
+					+ "~" + boost::lexical_cast<string>(positionb3) + "~" + boost::lexical_cast<string>(positionb4) + "~0";
 			bp_weight[nameb][0] = 1;
 			bp_weight[nameb][1] = 4;
 
-//			string namec = ref_id + "__" + boost::lexical_cast<string>(positionb1) + "__" + boost::lexical_cast<string>(positiona2) + "__" + ref_id
-//					+ "__" + boost::lexical_cast<string>(positionb3) + "__" + boost::lexical_cast<string>(positiona4) + "__0";
+//			string namec = ref_id + "~" + boost::lexical_cast<string>(positionb1) + "~" + boost::lexical_cast<string>(positiona2) + "~" + ref_id
+//					+ "~" + boost::lexical_cast<string>(positionb3) + "~" + boost::lexical_cast<string>(positiona4) + "~0";
 //
 //			bp_weight[namec][0] = 1;
 //			bp_weight[namec][1] = 4;
@@ -568,11 +572,11 @@ void SplitReadReAlign::collect_intra_regions(map<string, map<int8_t, int32_t>>& 
 			}
 
 		} else if (string::npos != data[0].find("inso")) {
-			string namea = ref_id + "__" + boost::lexical_cast<string>(positiona1) + "__" + boost::lexical_cast<string>(positiona2) + "__" + ref_id
-					+ "__" + boost::lexical_cast<string>(positiona3) + "__" + boost::lexical_cast<string>(positiona4) + "__1";
+			string namea = ref_id + "~" + boost::lexical_cast<string>(positiona1) + "~" + boost::lexical_cast<string>(positiona2) + "~" + ref_id
+					+ "~" + boost::lexical_cast<string>(positiona3) + "~" + boost::lexical_cast<string>(positiona4) + "~1";
 
-			string nameb = ref_id + "__" + boost::lexical_cast<string>(positionb1) + "__" + boost::lexical_cast<string>(positionb2) + "__" + ref_id
-					+ "__" + boost::lexical_cast<string>(positionb3) + "__" + boost::lexical_cast<string>(positionb4) + "__1";
+			string nameb = ref_id + "~" + boost::lexical_cast<string>(positionb1) + "~" + boost::lexical_cast<string>(positionb2) + "~" + ref_id
+					+ "~" + boost::lexical_cast<string>(positionb3) + "~" + boost::lexical_cast<string>(positionb4) + "~1";
 
 			if (string::npos != data[0].find("insod")) {
 				bp_weight[namea][0] = 1;
@@ -604,10 +608,10 @@ void SplitReadReAlign::collect_intra_regions(map<string, map<int8_t, int32_t>>& 
 				cluster_exist.insert(cl[1]);
 			}
 		} else if ("invers" == data[0] || "del_invers" == data[0]) {
-			string namea = ref_id + "__" + boost::lexical_cast<string>(positiona1) + "__" + boost::lexical_cast<string>(positiona2) + "__" + ref_id
-					+ "__" + boost::lexical_cast<string>(positiona3) + "__" + boost::lexical_cast<string>(positiona4) + "__1";
-			string nameb = ref_id + "__" + boost::lexical_cast<string>(positionb1) + "__" + boost::lexical_cast<string>(positionb2) + "__" + //
-					ref_id + "__" + boost::lexical_cast<string>(positionb3) + "__" + boost::lexical_cast<string>(positionb4) + "__1";
+			string namea = ref_id + "~" + boost::lexical_cast<string>(positiona1) + "~" + boost::lexical_cast<string>(positiona2) + "~" + ref_id
+					+ "~" + boost::lexical_cast<string>(positiona3) + "~" + boost::lexical_cast<string>(positiona4) + "~1";
+			string nameb = ref_id + "~" + boost::lexical_cast<string>(positionb1) + "~" + boost::lexical_cast<string>(positionb2) + "~" + //
+					ref_id + "~" + boost::lexical_cast<string>(positionb3) + "~" + boost::lexical_cast<string>(positionb4) + "~1";
 			if (!(covered(positiona1, positiona2, positionb1, positionb2) && covered(positiona3, positiona4, positionb3, positionb4))) {
 				bp_weight[namea][0] = 1;
 				bp_weight[namea][1] = 3;
@@ -623,8 +627,8 @@ void SplitReadReAlign::collect_intra_regions(map<string, map<int8_t, int32_t>>& 
 				cluster_exist.insert(cl[1]);
 			}
 		} else if ("tandem_dup" == data[0]) {
-			string name = ref_id + "__" + boost::lexical_cast<string>(positiona1) + "__" + boost::lexical_cast<string>(positiona2) + "__" + ref_id
-					+ "__" + boost::lexical_cast<string>(positiona3) + "__" + boost::lexical_cast<string>(positiona4) + "__0";
+			string name = ref_id + "~" + boost::lexical_cast<string>(positiona1) + "~" + boost::lexical_cast<string>(positiona2) + "~" + ref_id
+					+ "~" + boost::lexical_cast<string>(positiona3) + "~" + boost::lexical_cast<string>(positiona4) + "~0";
 			bp_weight[name][0] = 2;
 			bp_weight[name][1] = 3;
 			if(debug) {
@@ -635,8 +639,8 @@ void SplitReadReAlign::collect_intra_regions(map<string, map<int8_t, int32_t>>& 
 				cluster_exist.insert(cl[0]);
 			}
 		} else if ("invers_f" == data[0]) {
-			string name = ref_id + "__" + boost::lexical_cast<string>(positiona1) + "__" + boost::lexical_cast<string>(positiona2) + "__" + ref_id
-					+ "__" + boost::lexical_cast<string>(positiona3) + "__" + boost::lexical_cast<string>(positiona4) + "__1";
+			string name = ref_id + "~" + boost::lexical_cast<string>(positiona1) + "~" + boost::lexical_cast<string>(positiona2) + "~" + ref_id
+					+ "~" + boost::lexical_cast<string>(positiona3) + "~" + boost::lexical_cast<string>(positiona4) + "~1";
 			bp_weight[name][0] = 1;
 			bp_weight[name][1] = 3;
 			if (cluster_exist.end() == cluster_exist.find(cl[0])) {
@@ -644,8 +648,8 @@ void SplitReadReAlign::collect_intra_regions(map<string, map<int8_t, int32_t>>& 
 				cluster_exist.insert(cl[0]);
 			}
 		} else if ("invers_r" == data[0]) {
-			string name = ref_id + "__" + boost::lexical_cast<string>(positiona1) + "__" + boost::lexical_cast<string>(positiona2) + "__" + ref_id
-					+ "__" + boost::lexical_cast<string>(positiona3) + "__" + boost::lexical_cast<string>(positiona4) + "__1";
+			string name = ref_id + "~" + boost::lexical_cast<string>(positiona1) + "~" + boost::lexical_cast<string>(positiona2) + "~" + ref_id
+					+ "~" + boost::lexical_cast<string>(positiona3) + "~" + boost::lexical_cast<string>(positiona4) + "~1";
 			bp_weight[name][0] = 2;
 			bp_weight[name][1] = 4;
 			if (cluster_exist.end() == cluster_exist.find(cl[0])) {
@@ -724,8 +728,8 @@ void SplitReadReAlign::collect_inter_regions_serial(boost::unordered_map<string,
 
 		castle::StringUtils::c_string_multi_split(data[1], delim_slash, cl);
 		for(auto& a_cl : cl) {
-			if(string::npos == a_cl.find("_0")) {
-				a_cl = a_cl + "_0";
+			if(string::npos == a_cl.find("~0")) {
+				a_cl = a_cl + "~0";
 			}
 		}
 		if (string::npos != data[0].find("inss")) {
@@ -739,8 +743,8 @@ void SplitReadReAlign::collect_inter_regions_serial(boost::unordered_map<string,
 			positiona2 = positiona2 + delta;
 			positiona3 = positiona3 - delta;
 			positiona4 = positiona4 + delta;
-			string namea = data[3] + "__" + boost::lexical_cast<string>(positiona1) + "__" + boost::lexical_cast<string>(positiona2) + "__" + data[7]
-								+ "__" + boost::lexical_cast<string>(positiona3) + "__" + boost::lexical_cast<string>(positiona4) + "__0";
+			string namea = data[3] + "~" + boost::lexical_cast<string>(positiona1) + "~" + boost::lexical_cast<string>(positiona2) + "~" + data[7]
+								+ "~" + boost::lexical_cast<string>(positiona3) + "~" + boost::lexical_cast<string>(positiona4) + "~0";
 			bp_weight[namea][0] = 2;
 			bp_weight[namea][1] = 3;
 
@@ -754,8 +758,8 @@ void SplitReadReAlign::collect_inter_regions_serial(boost::unordered_map<string,
 			positionb2 = positionb2 + delta;
 			positionb3 = positionb3 - delta;
 			positionb4 = positionb4 + delta;
-			string nameb = data[3] + "__" + boost::lexical_cast<string>(positionb1) + "__" + boost::lexical_cast<string>(positionb2) + "__" + //
-					data[7] + "__" + boost::lexical_cast<string>(positionb3) + "__" + boost::lexical_cast<string>(positionb4) + "__0";
+			string nameb = data[3] + "~" + boost::lexical_cast<string>(positionb1) + "~" + boost::lexical_cast<string>(positionb2) + "~" + //
+					data[7] + "~" + boost::lexical_cast<string>(positionb3) + "~" + boost::lexical_cast<string>(positionb4) + "~0";
 			bp_weight[nameb][0] = 1;
 			bp_weight[nameb][1] = 4;
 			if(cluster_exist.end() == cluster_exist.find(cl[0])) {
@@ -777,10 +781,10 @@ void SplitReadReAlign::collect_inter_regions_serial(boost::unordered_map<string,
 			positiona2 = positiona2 + delta;
 			positiona3 = positiona3 - delta;
 			positiona4 = positiona4 + delta;
-			string namea = data[3] + "__" + boost::lexical_cast<string>(positiona1) + "__"
-					+ boost::lexical_cast<string>(positiona2) + "__"
-					+ data[7] + "__" + boost::lexical_cast<string>(positiona3) + "__"
-					+ boost::lexical_cast<string>(positiona4) + "__1";
+			string namea = data[3] + "~" + boost::lexical_cast<string>(positiona1) + "~"
+					+ boost::lexical_cast<string>(positiona2) + "~"
+					+ data[7] + "~" + boost::lexical_cast<string>(positiona3) + "~"
+					+ boost::lexical_cast<string>(positiona4) + "~1";
 			bp_weight[namea][0] = 2;
 			bp_weight[namea][1] = 3;
 
@@ -795,10 +799,10 @@ void SplitReadReAlign::collect_inter_regions_serial(boost::unordered_map<string,
 			positionb3 = positionb3 - delta;
 			positionb4 = positionb4 + delta;
 
-			string nameb = data[3] + "__" + boost::lexical_cast<string>(positionb1) + "__" +
-			boost::lexical_cast<string>(positionb2) + "__" + data[7] + "__" +
-			boost::lexical_cast<string>(positionb3) + "__" +
-			boost::lexical_cast<string>(positionb4) + "__1";
+			string nameb = data[3] + "~" + boost::lexical_cast<string>(positionb1) + "~" +
+			boost::lexical_cast<string>(positionb2) + "~" + data[7] + "~" +
+			boost::lexical_cast<string>(positionb3) + "~" +
+			boost::lexical_cast<string>(positionb4) + "~1";
 			bp_weight[nameb][0] = 1;
 			bp_weight[nameb][1] = 4;
 			if(cluster_exist.end() == cluster_exist.find(cl[0])) {
@@ -823,10 +827,10 @@ void SplitReadReAlign::collect_inter_regions_serial(boost::unordered_map<string,
 			position3 = position3 - delta;
 			position4 = position4 + delta;
 			if("1" == the_strand && "-1" == the_mate_strand) {
-				string name = data[3] + "__" + boost::lexical_cast<string>(position1) + "__" +
-				boost::lexical_cast<string>(position2) + "__" + data[6] + "__" +
-				boost::lexical_cast<string>(position3) + "__" +
-				boost::lexical_cast<string>(position4) + "__0";
+				string name = data[3] + "~" + boost::lexical_cast<string>(position1) + "~" +
+				boost::lexical_cast<string>(position2) + "~" + data[6] + "~" +
+				boost::lexical_cast<string>(position3) + "~" +
+				boost::lexical_cast<string>(position4) + "~0";
 				bp_weight[name][0] = 1;
 				bp_weight[name][1] = 4;
 				if(cluster_exist.end() == cluster_exist.find(cl[0])) {
@@ -834,10 +838,10 @@ void SplitReadReAlign::collect_inter_regions_serial(boost::unordered_map<string,
 					cluster_exist.insert(cl[0]);
 				}
 			} else if("-1" == the_strand && "1" == the_mate_strand) {
-				string name = data[3] + "__" + boost::lexical_cast<string>(position1) + "__" +
-				boost::lexical_cast<string>(position2) + "__" + data[6] + "__" +
-				boost::lexical_cast<string>(position3) + "__" +
-				boost::lexical_cast<string>(position4) + "__0";
+				string name = data[3] + "~" + boost::lexical_cast<string>(position1) + "~" +
+				boost::lexical_cast<string>(position2) + "~" + data[6] + "~" +
+				boost::lexical_cast<string>(position3) + "~" +
+				boost::lexical_cast<string>(position4) + "~0";
 				bp_weight[name][0] = 2;
 				bp_weight[name][1] = 3;
 				if(cluster_exist.end() == cluster_exist.find(cl[0])) {
@@ -845,10 +849,10 @@ void SplitReadReAlign::collect_inter_regions_serial(boost::unordered_map<string,
 					cluster_exist.insert(cl[0]);
 				}
 			} else if("1" == the_strand && "1" == the_mate_strand) {
-				string name = data[3] + "__" + boost::lexical_cast<string>(position1) + "__" +
-				boost::lexical_cast<string>(position2) + "__" + data[6] + "__" +
-				boost::lexical_cast<string>(position3) + "__" +
-				boost::lexical_cast<string>(position4) + "__1";
+				string name = data[3] + "~" + boost::lexical_cast<string>(position1) + "~" +
+				boost::lexical_cast<string>(position2) + "~" + data[6] + "~" +
+				boost::lexical_cast<string>(position3) + "~" +
+				boost::lexical_cast<string>(position4) + "~1";
 				bp_weight[name][0] = 1;
 				bp_weight[name][1] = 3;
 				if(cluster_exist.end() == cluster_exist.find(cl[0])) {
@@ -856,10 +860,10 @@ void SplitReadReAlign::collect_inter_regions_serial(boost::unordered_map<string,
 					cluster_exist.insert(cl[0]);
 				}
 			} else if("-1" == the_strand && "-1" == the_mate_strand) {
-				string name = data[3] + "__" + boost::lexical_cast<string>(position1) + "__" +
-				boost::lexical_cast<string>(position2) + "__" + data[6] + "__" +
-				boost::lexical_cast<string>(position3) + "__" +
-				boost::lexical_cast<string>(position4) + "__1";
+				string name = data[3] + "~" + boost::lexical_cast<string>(position1) + "~" +
+				boost::lexical_cast<string>(position2) + "~" + data[6] + "~" +
+				boost::lexical_cast<string>(position3) + "~" +
+				boost::lexical_cast<string>(position4) + "~1";
 				bp_weight[name][0] = 2;
 				bp_weight[name][1] = 4;
 				if(cluster_exist.end() == cluster_exist.find(cl[0])) {
@@ -905,8 +909,8 @@ void SplitReadReAlign::collect_inter_regions(map<string, map<int8_t, int32_t>>& 
 		}
 		castle::StringUtils::c_string_multi_split(data[1], delim_slash, cl);
 		for(auto& a_cl : cl) {
-			if(string::npos == a_cl.find("_0")) {
-				a_cl += "_0";
+			if(string::npos == a_cl.find("~0")) {
+				a_cl += "~0";
 			}
 		}
 		int64_t positiona1 = 0;
@@ -978,18 +982,18 @@ void SplitReadReAlign::collect_inter_regions(map<string, map<int8_t, int32_t>>& 
 		positionb4 = max(static_cast<int64_t>(0), positionb4);
 
 		if (string::npos != data[0].find("inss")) {
-			string namea = ref_id + "__" + boost::lexical_cast<string>(positiona1) + "__" +
-			boost::lexical_cast<string>(positiona2) + "__" +
-			mate_ref_id + "__" +
-			boost::lexical_cast<string>(positiona3) + "__" +
-			boost::lexical_cast<string>(positiona4) + "__0";
+			string namea = ref_id + "~" + boost::lexical_cast<string>(positiona1) + "~" +
+			boost::lexical_cast<string>(positiona2) + "~" +
+			mate_ref_id + "~" +
+			boost::lexical_cast<string>(positiona3) + "~" +
+			boost::lexical_cast<string>(positiona4) + "~0";
 			bp_weight[namea][0] = 2;
 			bp_weight[namea][1] = 3;
 
-			string nameb = ref_id + "__" + boost::lexical_cast<string>(positionb1) + "__" +
-			boost::lexical_cast<string>(positionb2) + "__" + mate_ref_id + "__" +
-			boost::lexical_cast<string>(positionb3) + "__" +
-			boost::lexical_cast<string>(positionb4) + "__0";
+			string nameb = ref_id + "~" + boost::lexical_cast<string>(positionb1) + "~" +
+			boost::lexical_cast<string>(positionb2) + "~" + mate_ref_id + "~" +
+			boost::lexical_cast<string>(positionb3) + "~" +
+			boost::lexical_cast<string>(positionb4) + "~0";
 			bp_weight[nameb][0] = 1;
 			bp_weight[nameb][1] = 4;
 			if(cluster_exist.end() == cluster_exist.find(cl[0])) {
@@ -1001,16 +1005,16 @@ void SplitReadReAlign::collect_inter_regions(map<string, map<int8_t, int32_t>>& 
 				cluster_exist.insert(cl[1]);
 			}
 		} else if (string::npos != data[0].find("inso")) {
-			string namea = ref_id + "__" + boost::lexical_cast<string>(positiona1) + "__"
-					+ boost::lexical_cast<string>(positiona2) + "__"
-					+ mate_ref_id + "__" + boost::lexical_cast<string>(positiona3) + "__"
-					+ boost::lexical_cast<string>(positiona4) + "__1";
+			string namea = ref_id + "~" + boost::lexical_cast<string>(positiona1) + "~"
+					+ boost::lexical_cast<string>(positiona2) + "~"
+					+ mate_ref_id + "~" + boost::lexical_cast<string>(positiona3) + "~"
+					+ boost::lexical_cast<string>(positiona4) + "~1";
 			bp_weight[namea][0] = 2;
 			bp_weight[namea][1] = 3;
-			string nameb = ref_id + "__" + boost::lexical_cast<string>(positionb1) + "__" +
-			boost::lexical_cast<string>(positionb2) + "__" + mate_ref_id + "__" +
-			boost::lexical_cast<string>(positionb3) + "__" +
-			boost::lexical_cast<string>(positionb4) + "__1";
+			string nameb = ref_id + "~" + boost::lexical_cast<string>(positionb1) + "~" +
+			boost::lexical_cast<string>(positionb2) + "~" + mate_ref_id + "~" +
+			boost::lexical_cast<string>(positionb3) + "~" +
+			boost::lexical_cast<string>(positionb4) + "~1";
 			bp_weight[nameb][0] = 1;
 			bp_weight[nameb][1] = 4;
 			if(debug) {
@@ -1052,10 +1056,10 @@ void SplitReadReAlign::collect_inter_regions(map<string, map<int8_t, int32_t>>& 
 //				position3 -= (ref_is["rlu"]["selected"] - options.cut_sr + 10);
 //				position4 += (ref_is["rlu"]["selected"] - options.cut_sr + 10);
 
-				string name = ref_id + "__" + boost::lexical_cast<string>(positiona1) + "__" +
-				boost::lexical_cast<string>(positiona2) + "__" + mate_ref_id + "__" +
-				boost::lexical_cast<string>(positiona3) + "__" +
-				boost::lexical_cast<string>(positiona4) + "__0";
+				string name = ref_id + "~" + boost::lexical_cast<string>(positiona1) + "~" +
+				boost::lexical_cast<string>(positiona2) + "~" + mate_ref_id + "~" +
+				boost::lexical_cast<string>(positiona3) + "~" +
+				boost::lexical_cast<string>(positiona4) + "~0";
 				bp_weight[name][0] = 1;
 				bp_weight[name][1] = 4;
 				if(cluster_exist.end() == cluster_exist.find(cl[0])) {
@@ -1072,10 +1076,10 @@ void SplitReadReAlign::collect_inter_regions(map<string, map<int8_t, int32_t>>& 
 //				position2 += (ref_is["rlu"]["selected"] - options.cut_sr + 10);
 //				position3 -= (ref_is["rlu"]["selected"] - options.cut_sr + 10);
 //				position4 += (ref_is["rlu"]["selected"] - options.cut_sr + 10);
-				string name = ref_id + "__" + boost::lexical_cast<string>(positiona1) + "__" +
-				boost::lexical_cast<string>(positiona2) + "__" + mate_ref_id + "__" +
-				boost::lexical_cast<string>(positiona3) + "__" +
-				boost::lexical_cast<string>(positiona4) + "__0";
+				string name = ref_id + "~" + boost::lexical_cast<string>(positiona1) + "~" +
+				boost::lexical_cast<string>(positiona2) + "~" + mate_ref_id + "~" +
+				boost::lexical_cast<string>(positiona3) + "~" +
+				boost::lexical_cast<string>(positiona4) + "~0";
 				bp_weight[name][0] = 2;
 				bp_weight[name][1] = 3;
 				if(cluster_exist.end() == cluster_exist.find(cl[0])) {
@@ -1093,10 +1097,10 @@ void SplitReadReAlign::collect_inter_regions(map<string, map<int8_t, int32_t>>& 
 //				position2 += (ref_is["rlu"]["selected"] - options.cut_sr + 10);
 //				position3 -= (ref_is["rlu"]["selected"] - options.cut_sr + 10);
 //				position4 += (ref_is["rlu"]["selected"] - options.cut_sr + 10);
-				string name = ref_id + "__" + boost::lexical_cast<string>(positiona1) + "__" +
-				boost::lexical_cast<string>(positiona2) + "__" + mate_ref_id + "__" +
-				boost::lexical_cast<string>(positiona3) + "__" +
-				boost::lexical_cast<string>(positiona4) + "__1";
+				string name = ref_id + "~" + boost::lexical_cast<string>(positiona1) + "~" +
+				boost::lexical_cast<string>(positiona2) + "~" + mate_ref_id + "~" +
+				boost::lexical_cast<string>(positiona3) + "~" +
+				boost::lexical_cast<string>(positiona4) + "~1";
 				bp_weight[name][0] = 1;
 				bp_weight[name][1] = 3;
 				if(cluster_exist.end() == cluster_exist.find(cl[0])) {
@@ -1114,10 +1118,10 @@ void SplitReadReAlign::collect_inter_regions(map<string, map<int8_t, int32_t>>& 
 //				position2 += (ref_is["rlu"]["selected"] - options.cut_sr + 10);
 //				position3 -= (ref_is["rlu"]["selected"] - options.cut_sr + 10);
 //				position4 += (ref_is["rlu"]["selected"] - options.cut_sr + 10);
-				string name = ref_id + "__" + boost::lexical_cast<string>(positiona1) + "__" +
-				boost::lexical_cast<string>(positiona2) + "__" + mate_ref_id + "__" +
-				boost::lexical_cast<string>(positiona3) + "__" +
-				boost::lexical_cast<string>(positiona4) + "__1";
+				string name = ref_id + "~" + boost::lexical_cast<string>(positiona1) + "~" +
+				boost::lexical_cast<string>(positiona2) + "~" + mate_ref_id + "~" +
+				boost::lexical_cast<string>(positiona3) + "~" +
+				boost::lexical_cast<string>(positiona4) + "~1";
 				bp_weight[name][0] = 2;
 				bp_weight[name][1] = 4;
 				if(cluster_exist.end() == cluster_exist.find(cl[0])) {
@@ -1128,6 +1132,7 @@ void SplitReadReAlign::collect_inter_regions(map<string, map<int8_t, int32_t>>& 
 		}
 	}
 }
+
 
 void SplitReadReAlign::write_intra_regions_serial(boost::unordered_map<string, map<int8_t, int32_t>>& bp_weight, boost::unordered_map<string, map<string, string>>& intra_regions, boost::unordered_set<string>& cluster_exist) {
 	castle::TimeChecker checker;
@@ -1176,7 +1181,7 @@ void SplitReadReAlign::write_intra_regions_serial(boost::unordered_map<string, m
 
 	vector<string> positiona;
 	vector<string> positionb;
-	const char* delim_double_underscore = "__";
+	const char* delim_double_underscore = "~";
 	vector<int64_t> temp1;
 	vector<int64_t> temp2;
 	vector<int64_t> temp_merge;
@@ -1211,7 +1216,7 @@ void SplitReadReAlign::write_intra_regions_serial(boost::unordered_map<string, m
 					temp_merge.push_back(temp1[3]);
 					temp_merge.push_back(temp1[4]);
 					sort(temp_merge.begin(), temp_merge.end());
-					intra_regions[chr][key] = data[0] + "__" + boost::lexical_cast<string>(temp_merge[0]) + "__" + boost::lexical_cast<string>(temp_merge.back());
+					intra_regions[chr][key] = data[0] + "~" + boost::lexical_cast<string>(temp_merge[0]) + "~" + boost::lexical_cast<string>(temp_merge.back());
 //					#print STDERR "@data\n$regions{a}{$chr}{$key}\n";
 				}
 			}
@@ -1257,13 +1262,13 @@ void SplitReadReAlign::write_intra_regions_serial(boost::unordered_map<string, m
 								string newkey = key1 + "/" + key2;
 
 								if (data1[6] == data2[6]) {
-									intra_regions[chr][newkey] = data1[0] + "__" + boost::lexical_cast<string>(temp1[0]) + "__"
-											+ boost::lexical_cast<string>(temp1.back()) + "__" + data1[3] + "__" + boost::lexical_cast<string>(temp2[0])
-											+ "__" + boost::lexical_cast<string>(temp2.back()) + "__" + data1[6];
+									intra_regions[chr][newkey] = data1[0] + "~" + boost::lexical_cast<string>(temp1[0]) + "~"
+											+ boost::lexical_cast<string>(temp1.back()) + "~" + data1[3] + "~" + boost::lexical_cast<string>(temp2[0])
+											+ "~" + boost::lexical_cast<string>(temp2.back()) + "~" + data1[6];
 								} else {
-									intra_regions[chr][newkey] = data1[0] + "__" + boost::lexical_cast<string>(temp1[0]) + "__"
-											+ boost::lexical_cast<string>(temp1.back()) + "__" + data1[3] + "__" + boost::lexical_cast<string>(temp2[0])
-											+ "__" + boost::lexical_cast<string>(temp2.back()) + "__10";
+									intra_regions[chr][newkey] = data1[0] + "~" + boost::lexical_cast<string>(temp1[0]) + "~"
+											+ boost::lexical_cast<string>(temp1.back()) + "~" + data1[3] + "~" + boost::lexical_cast<string>(temp2[0])
+											+ "~" + boost::lexical_cast<string>(temp2.back()) + "~10";
 								}
 //					   #print STDERR "@data1\n@data2\n$regions{a}{$chr}{$newkey}\n";
 //								next_ma = true;
@@ -1282,9 +1287,9 @@ void SplitReadReAlign::write_intra_regions_serial(boost::unordered_map<string, m
 								removed_keys.insert(key1);
 								removed_keys.insert(key2);
 								string newkey = key1 + "/" + key2;
-								intra_regions[chr][newkey] = data1[0] + "__" + boost::lexical_cast<string>(temp1[0]) + "__"
-								+ boost::lexical_cast<string>(temp1.back()) + "__" + data1[3] + "__" + data1[4]
-								+ "__" + data1[5] + "__" + data1[6];
+								intra_regions[chr][newkey] = data1[0] + "~" + boost::lexical_cast<string>(temp1[0]) + "~"
+								+ boost::lexical_cast<string>(temp1.back()) + "~" + data1[3] + "~" + data1[4]
+								+ "~" + data1[5] + "~" + data1[6];
 //					   #print STDERR "@data1\n@data2\n$regions{a}{$chr}{$newkey}\n";
 //								next_ma = true;
 								break;
@@ -1301,8 +1306,8 @@ void SplitReadReAlign::write_intra_regions_serial(boost::unordered_map<string, m
 								removed_keys.insert(key1);
 								removed_keys.insert(key2);
 								string newkey = key1 + "/" + key2;
-								intra_regions[chr][newkey] = data1[0] + "__" + data1[1] + "__" + data1[2] + "__" + data1[3] + "__"
-										+ boost::lexical_cast<string>(temp1[0]) + "__" + boost::lexical_cast<string>(temp1.back()) + "__" + data1[6];
+								intra_regions[chr][newkey] = data1[0] + "~" + data1[1] + "~" + data1[2] + "~" + data1[3] + "~"
+										+ boost::lexical_cast<string>(temp1[0]) + "~" + boost::lexical_cast<string>(temp1.back()) + "~" + data1[6];
 //								delete $regions{a}{$chr}{$key1};
 //								delete $regions{a}{$chr}{$key2};
 
@@ -1323,8 +1328,8 @@ void SplitReadReAlign::write_intra_regions_serial(boost::unordered_map<string, m
 								removed_keys.insert(key1);
 								removed_keys.insert(key2);
 								string newkey = key1 + "/" + key2;
-								intra_regions[chr][newkey] = data2[0] + "__" + boost::lexical_cast<string>(temp1[0]) + "__"
-								+ boost::lexical_cast<string>(temp1.back()) + "__" + data2[3] + "__" + data2[4] + "__" + data2[5] + "__"
+								intra_regions[chr][newkey] = data2[0] + "~" + boost::lexical_cast<string>(temp1[0]) + "~"
+								+ boost::lexical_cast<string>(temp1.back()) + "~" + data2[3] + "~" + data2[4] + "~" + data2[5] + "~"
 								+ data2[6];
 //								delete $regions{a}{$chr}{$key1};
 //								delete $regions{a}{$chr}{$key2};
@@ -1345,8 +1350,8 @@ void SplitReadReAlign::write_intra_regions_serial(boost::unordered_map<string, m
 								removed_keys.insert(key1);
 								removed_keys.insert(key2);
 								string newkey = key1 + "/" + key2;
-								intra_regions[chr][newkey] = data2[0] + "__" + data2[1] + "__" + data2[2] + "__" + data2[3] + "__"
-										+ boost::lexical_cast<string>(temp1[0]) + "__" + boost::lexical_cast<string>(temp1.back()) + "__" + data2[6];
+								intra_regions[chr][newkey] = data2[0] + "~" + data2[1] + "~" + data2[2] + "~" + data2[3] + "~"
+										+ boost::lexical_cast<string>(temp1[0]) + "~" + boost::lexical_cast<string>(temp1.back()) + "~" + data2[6];
 //								delete $regions{a}{$chr}{$key1};
 //								delete $regions{a}{$chr}{$key2};
 
@@ -1367,7 +1372,7 @@ void SplitReadReAlign::write_intra_regions_serial(boost::unordered_map<string, m
 								removed_keys.insert(key1);
 								removed_keys.insert(key2);
 								string newkey = key1 + "/" + key2;
-								intra_regions[chr][newkey] = data1[0] + "__" + boost::lexical_cast<string>(temp1[0]) + "__" +  boost::lexical_cast<string>(temp1.back());
+								intra_regions[chr][newkey] = data1[0] + "~" + boost::lexical_cast<string>(temp1[0]) + "~" +  boost::lexical_cast<string>(temp1.back());
 //								delete $regions{a}{$chr}{$key1};
 //								delete $regions{a}{$chr}{$key2};
 //								my $newkey = $key1 . '/' . $key2;
@@ -1414,6 +1419,7 @@ void SplitReadReAlign::write_intra_regions_serial(boost::unordered_map<string, m
 	}
 	cout << checker;
 }
+
 void SplitReadReAlign::write_intra_regions(boost::unordered_map<string, map<int8_t, int32_t>>& bp_weight, boost::unordered_map<string, map<string, string>>& intra_regions,
 		boost::unordered_set<string>& cluster_exist) {
 	castle::TimeChecker checker;
@@ -1428,7 +1434,7 @@ void SplitReadReAlign::write_intra_regions(boost::unordered_map<string, map<int8
 //string faifile = options.prefix + ".bp.fasta.fai";
 //int64_t sr_insertsize = 2 * options.cut_sr + 100;
 //auto& ref_is = options.is;
-	const char* delim_double_underscore = "__";
+	const char* delim_double_underscore = "~";
 //# merge overlapping regions
 	vector<string> data;
 	vector<string> data1;
@@ -1449,7 +1455,7 @@ void SplitReadReAlign::write_intra_regions(boost::unordered_map<string, map<int8
 	IndexedFasta fai(options.reference_path.c_str());
 	for (auto& chr_entry : intra_regions) {
 		auto chr = chr_entry.first;
-//cout << "create key chr: " << chr << "\n";
+//cout << "create key chr: " << chr << "\n";      
 		for (auto& key_entry : chr_entry.second) {
 			auto& key = key_entry.first;
 			if (removed_entries.end() != removed_entries.find(key) || merged_no_matched_entries.end() != merged_no_matched_entries.find(key)) {
@@ -1477,7 +1483,7 @@ void SplitReadReAlign::write_intra_regions(boost::unordered_map<string, map<int8
 				temp.push_back(temp2[0]);
 				temp.push_back(temp2.back());
 				sort(temp.begin(), temp.end());
-				intra_regions[chr][key] = data[0] + "__" + boost::lexical_cast<string>(temp[0]) + "__" + boost::lexical_cast<string>(temp.back());
+				intra_regions[chr][key] = data[0] + "~" + boost::lexical_cast<string>(temp[0]) + "~" + boost::lexical_cast<string>(temp.back());
 				merged_entries.insert(key);
 				IntervalEntryType additional_entry;
 				additional_entry.p_id = key;
@@ -1526,7 +1532,7 @@ void SplitReadReAlign::write_intra_regions(boost::unordered_map<string, map<int8
 				if (covered(temp[0], temp[1], temp[2], temp[3])) {
 					merge = true;
 					sort(temp.begin(), temp.end());
-					intra_regions[chr][key] = data[0] + "__" + boost::lexical_cast<string>(temp[0]) + "__" + boost::lexical_cast<string>(temp.back());
+					intra_regions[chr][key] = data[0] + "~" + boost::lexical_cast<string>(temp[0]) + "~" + boost::lexical_cast<string>(temp.back());
 					IntervalEntryType additional_entry;
 					additional_entry.p_id = key;
 					IntervalEntry entry(temp[0], temp.back(), additional_entry);
@@ -1644,9 +1650,9 @@ cout << "temp2: " << data1[4] << "/" << data1[5] << "/" << data2[4] << "/" << da
 								if(debug) {
 									cout << "case 1-a: " << newkey << "\n";
 								}
-								intra_regions[chr][newkey] = data1[0] + "__" + boost::lexical_cast<string>(temp1[0]) + "__"
-										+ boost::lexical_cast<string>(temp1.back()) + "__" + data1[3] + "__" + boost::lexical_cast<string>(temp2[0])
-										+ "__" + boost::lexical_cast<string>(temp2.back()) + "__" + data1[6];
+								intra_regions[chr][newkey] = data1[0] + "~" + boost::lexical_cast<string>(temp1[0]) + "~"
+										+ boost::lexical_cast<string>(temp1.back()) + "~" + data1[3] + "~" + boost::lexical_cast<string>(temp2[0])
+										+ "~" + boost::lexical_cast<string>(temp2.back()) + "~" + data1[6];
 								IntervalEntryType additional_entry;
 								additional_entry.p_id = newkey;
 								IntervalEntry entry(temp1[0], temp1.back(), additional_entry);
@@ -1657,9 +1663,9 @@ cout << "temp2: " << data1[4] << "/" << data1[5] << "/" << data2[4] << "/" << da
 								if(debug) {
 									cout << "case 1-b: " << newkey << "\n";
 								}
-								intra_regions[chr][newkey] = data1[0] + "__" + boost::lexical_cast<string>(temp1[0]) + "__"
-										+ boost::lexical_cast<string>(temp1.back()) + "__" + data1[3] + "__" + boost::lexical_cast<string>(temp2[0])
-										+ "__" + boost::lexical_cast<string>(temp2.back()) + "__10";
+								intra_regions[chr][newkey] = data1[0] + "~" + boost::lexical_cast<string>(temp1[0]) + "~"
+										+ boost::lexical_cast<string>(temp1.back()) + "~" + data1[3] + "~" + boost::lexical_cast<string>(temp2[0])
+										+ "~" + boost::lexical_cast<string>(temp2.back()) + "~10";
 								IntervalEntryType additional_entry;
 								additional_entry.p_id = newkey;
 								IntervalEntry entry(temp1[0], temp1.back(), additional_entry);
@@ -1691,8 +1697,8 @@ cout << "case 2\n";
 							removed_entries.insert(key1);
 							removed_entries.insert(key2);
 							string newkey = key1 + "/" + key2;
-							intra_regions[chr][newkey] = data1[0] + "__" + boost::lexical_cast<string>(temp[0]) + "__"
-									+ boost::lexical_cast<string>(temp.back()) + "__" + data1[3] + "__" + data1[4] + "__" + data1[5] + "__"
+							intra_regions[chr][newkey] = data1[0] + "~" + boost::lexical_cast<string>(temp[0]) + "~"
+									+ boost::lexical_cast<string>(temp.back()) + "~" + data1[3] + "~" + data1[4] + "~" + data1[5] + "~"
 									+ data1[6];
 							if(debug) {
 								cout << "case 2-a: " << newkey << "\n";
@@ -1718,8 +1724,8 @@ cout << "case 2\n";
 							if(debug) {
 								cout << "case 2-b: " << newkey << "\n";
 							}
-							intra_regions[chr][newkey] = data1[0] + "__" + data1[1] + "__" + data1[2] + "__" + data1[3] + "__"
-									+ boost::lexical_cast<string>(temp[0]) + "__" + boost::lexical_cast<string>(temp.back()) + "__" + data1[6];
+							intra_regions[chr][newkey] = data1[0] + "~" + data1[1] + "~" + data1[2] + "~" + data1[3] + "~"
+									+ boost::lexical_cast<string>(temp[0]) + "~" + boost::lexical_cast<string>(temp.back()) + "~" + data1[6];
 							IntervalEntryType additional_entry;
 							additional_entry.p_id = newkey;
 							IntervalEntry entry(temp[0], temp.back(), additional_entry);
@@ -1751,8 +1757,8 @@ cout << "case 3\n";
 							if(debug) {
 								cout << "case 3-a: " << newkey << "\n";
 							}
-							intra_regions[chr][newkey] = data1[0] + "__" + boost::lexical_cast<string>(temp[0]) + "__"
-									+ boost::lexical_cast<string>(temp.back()) + "__" + data1[3] + "__" + data1[4] + "__" + data1[5] + "__"
+							intra_regions[chr][newkey] = data1[0] + "~" + boost::lexical_cast<string>(temp[0]) + "~"
+									+ boost::lexical_cast<string>(temp.back()) + "~" + data1[3] + "~" + data1[4] + "~" + data1[5] + "~"
 									+ data1[6];
 							IntervalEntryType additional_entry;
 							additional_entry.p_id = newkey;
@@ -1775,8 +1781,8 @@ cout << "case 3\n";
 							if(debug) {
 								cout << "case 3-b: " << newkey << "\n";
 							}
-							intra_regions[chr][newkey] = data1[0] + "__" + data1[1] + "__" + data1[2] + "__" + data1[3] + "__"
-									+ boost::lexical_cast<string>(temp[0]) + "__" + boost::lexical_cast<string>(temp.back()) + "__" + data1[6];
+							intra_regions[chr][newkey] = data1[0] + "~" + data1[1] + "~" + data1[2] + "~" + data1[3] + "~"
+									+ boost::lexical_cast<string>(temp[0]) + "~" + boost::lexical_cast<string>(temp.back()) + "~" + data1[6];
 							IntervalEntryType additional_entry;
 							additional_entry.p_id = newkey;
 							IntervalEntry entry(temp[0], temp.back(), additional_entry);
@@ -1808,8 +1814,8 @@ cout << "case 4-1\n";
 							removed_entries.insert(key2);
 							string newkey = key1 + "/" + key2;
 
-							intra_regions[chr][newkey] = data2[0] + "__" + boost::lexical_cast<string>(temp[0]) + "__"
-									+ boost::lexical_cast<string>(temp.back()) + "__" + data2[3] + "__" + data2[4] + "__" + data2[5] + "__"
+							intra_regions[chr][newkey] = data2[0] + "~" + boost::lexical_cast<string>(temp[0]) + "~"
+									+ boost::lexical_cast<string>(temp.back()) + "~" + data2[3] + "~" + data2[4] + "~" + data2[5] + "~"
 									+ data2[6];
 							if(debug) {
 								cout << "case 4-a: " << newkey << " " << intra_regions[chr][newkey] << "\n";
@@ -1836,8 +1842,8 @@ cout << "case 4-1\n";
 							if(debug) {
 								cout << "case 4-b: " << newkey << "\n";
 							}
-							intra_regions[chr][newkey] = data2[0] + "__" + data2[1] + "__" + data2[2] + "__" + data2[3] + "__"
-									+ boost::lexical_cast<string>(temp[0]) + "__" + boost::lexical_cast<string>(temp.back()) + "__" + data2[6];
+							intra_regions[chr][newkey] = data2[0] + "~" + data2[1] + "~" + data2[2] + "~" + data2[3] + "~"
+									+ boost::lexical_cast<string>(temp[0]) + "~" + boost::lexical_cast<string>(temp.back()) + "~" + data2[6];
 							IntervalEntryType additional_entry;
 							additional_entry.p_id = newkey;
 							IntervalEntry entry(temp[0], temp.back(), additional_entry);
@@ -1869,7 +1875,7 @@ cout << "case 5\n";
 							if(debug) {
 								cout << "case 5-a: " << newkey << "\n";
 							}
-							intra_regions[chr][newkey] = data1[0] + "__" + boost::lexical_cast<string>(temp[0]) + "__"
+							intra_regions[chr][newkey] = data1[0] + "~" + boost::lexical_cast<string>(temp[0]) + "~"
 									+ boost::lexical_cast<string>(temp.back());
 							IntervalEntryType additional_entry;
 							additional_entry.p_id = newkey;
@@ -1894,7 +1900,7 @@ cout << "case 5\n";
 //removed_entries.insert(key1);
 //removed_entries.insert(key2);
 //string newkey = key1 + "/" + key2;
-//intra_regions[chr][newkey] = data2[0] + "__" + data2[1] + "__" + data2[2] + "__" + data2[3] + "__" + boost::lexical_cast<string>(temp[0]) + "__" + boost::lexical_cast<string>(temp.back()) + "__" + data2[6];
+//intra_regions[chr][newkey] = data2[0] + "~" + data2[1] + "~" + data2[2] + "~" + data2[3] + "~" + boost::lexical_cast<string>(temp[0]) + "~" + boost::lexical_cast<string>(temp.back()) + "~" + data2[6];
 //next_ma = true;
 //break;
 //}
@@ -1988,7 +1994,7 @@ void SplitReadReAlign::write_inter_regions_serial(boost::unordered_map<string, m
 //string faifile = options.prefix + ".bp.fasta.fai";
 //int64_t sr_insertsize = 2 * options.cut_sr + 100;
 //auto& ref_is = options.is;
-	const char* delim_double_underscore = "__";
+	const char* delim_double_underscore = "~";
 //# merge overlapping regions
 	vector<string> data;
 	vector<string> data1;
@@ -2054,17 +2060,17 @@ void SplitReadReAlign::write_inter_regions_serial(boost::unordered_map<string, m
 	//							my $newkey = $key1 . '/' . $key2;
 
 								if (data1[6] == data2[6]) {
-									inter_regions[chr1][chr2][newkey] = data1[0] + "__" + boost::lexical_cast<string>(temp1[0]) + "__"
-									+ boost::lexical_cast<string>(temp1.back()) + "__" + data1[3] + "__" +
-									boost::lexical_cast<string>(temp2[0]) + "__" + boost::lexical_cast<string>(temp2.back()) + "__"
+									inter_regions[chr1][chr2][newkey] = data1[0] + "~" + boost::lexical_cast<string>(temp1[0]) + "~"
+									+ boost::lexical_cast<string>(temp1.back()) + "~" + data1[3] + "~" +
+									boost::lexical_cast<string>(temp2[0]) + "~" + boost::lexical_cast<string>(temp2.back()) + "~"
 									+ data1[6];
 								} else {
-									inter_regions[chr1][chr2][newkey] = data1[0] + "__"
-									+ boost::lexical_cast<string>(temp1[0]) + "__"
-									+ boost::lexical_cast<string>(temp1.back()) + "__"
-									+ data1[3] + "__"
-									+ boost::lexical_cast<string>(temp2[0]) + "__"
-									+ boost::lexical_cast<string>(temp2.back()) + "__10";
+									inter_regions[chr1][chr2][newkey] = data1[0] + "~"
+									+ boost::lexical_cast<string>(temp1[0]) + "~"
+									+ boost::lexical_cast<string>(temp1.back()) + "~"
+									+ data1[3] + "~"
+									+ boost::lexical_cast<string>(temp2[0]) + "~"
+									+ boost::lexical_cast<string>(temp2.back()) + "~10";
 								}
 
 	//		   #print STDERR "@data1\n@data2\n$regions{e}{$chr1}{$chr2}{$newkey}\n";
@@ -2117,7 +2123,7 @@ void SplitReadReAlign::write_inter_regions(boost::unordered_map<string, map<int8
 		fafile = options.working_prefix + ".bp.fasta";
 		bpinfofile = options.working_prefix + ".bp.info";
 	}
-	const char* delim_double_underscore = "__";
+	const char* delim_double_underscore = "~";
 	vector<string> data;
 	vector<string> data1;
 	vector<string> data2;
@@ -2176,7 +2182,7 @@ void SplitReadReAlign::write_inter_regions(boost::unordered_map<string, map<int8
 //  MI:
 				for (auto& key1_entry : inter_regions[chr1][chr2]) {
 					auto& key1 = key1_entry.first;
-					string combined_key_1 = chr1 + "_" + chr2 + "_" + key1;
+					string combined_key_1 = chr1 + "~" + chr2 + "~" + key1;
 					if(removed_entries.end() != removed_entries.find(combined_key_1)) {
 						continue;
 					}
@@ -2201,7 +2207,7 @@ void SplitReadReAlign::write_inter_regions(boost::unordered_map<string, map<int8
 						if(key1 == key2) {
 							continue;
 						}
-						string combined_key_2 = chr1 + "_" + chr2 + "_" + key2;
+						string combined_key_2 = chr1 + "~" + chr2 + "~" + key2;
 						if(removed_entries.end() != removed_entries.find(combined_key_2)) {
 							continue;
 						}
@@ -2244,17 +2250,17 @@ void SplitReadReAlign::write_inter_regions(boost::unordered_map<string, map<int8
 
 							try {
 							if (data1[6] == data2[6]) {
-								inter_regions[chr1][chr2][newkey] = data1[0] + "__" + boost::lexical_cast<string>(temp1[0]) + "__"
-								+ boost::lexical_cast<string>(temp1.back()) + "__" + data1[3] + "__" +
-								boost::lexical_cast<string>(temp2[0]) + "__" + boost::lexical_cast<string>(temp2.back()) + "__"
+								inter_regions[chr1][chr2][newkey] = data1[0] + "~" + boost::lexical_cast<string>(temp1[0]) + "~"
+								+ boost::lexical_cast<string>(temp1.back()) + "~" + data1[3] + "~" +
+								boost::lexical_cast<string>(temp2[0]) + "~" + boost::lexical_cast<string>(temp2.back()) + "~"
 								+ data1[6];
 							} else {
-								inter_regions[chr1][chr2][newkey] = data1[0] + "__"
-								+ boost::lexical_cast<string>(temp1[0]) + "__"
-								+ boost::lexical_cast<string>(temp1.back()) + "__"
-								+ data1[3] + "__"
-								+ boost::lexical_cast<string>(temp2[0]) + "__"
-								+ boost::lexical_cast<string>(temp2.back()) + "__10";
+								inter_regions[chr1][chr2][newkey] = data1[0] + "~"
+								+ boost::lexical_cast<string>(temp1[0]) + "~"
+								+ boost::lexical_cast<string>(temp1.back()) + "~"
+								+ data1[3] + "~"
+								+ boost::lexical_cast<string>(temp2[0]) + "~"
+								+ boost::lexical_cast<string>(temp2.back()) + "~10";
 							}
 							} catch(exception& ex) {
 								cout << "write_inter_regions: here-3: " << combined_key_2 << ", " << key1_entry.second << "\n";
@@ -2438,6 +2444,7 @@ void SplitReadReAlign::prepare_split_alignment() {
 	cout << checker;
 }
 
+
 void SplitReadReAlign::prepare_split_alignment_single() {
 	castle::TimeChecker checker;
 	checker.setTarget("SplitReadReAlign.prepare_split_alignment_serial");
@@ -2477,6 +2484,7 @@ void SplitReadReAlign::prepare_split_alignment_single() {
 
 	cout << checker;
 }
+
 
 void SplitReadReAlign::remove_and_merge_temporary_alignment_files() {
 	vector<function<void()> > tasks;
@@ -2595,7 +2603,7 @@ void SplitReadReAlign::collect_misaligned_reads(boost::unordered_map<string, map
 				vector<string> p;
 				vector<string> match_cols;
 				const char* delim_tab = "\t";
-				const char* delim_underscore = "_";
+				const char* delim_underscore = "~";
 				const char* delim_semiconlon = ";";
 				const char* delim_comma = ",";
 				const string white_spaces = " \t\r\n";
@@ -2992,7 +3000,7 @@ void SplitReadReAlign::collect_misaligned_reads_serial(boost::unordered_map<stri
 		vector<string> p;
 		vector<string> match_cols;
 		const char* delim_tab = "\t";
-		const char* delim_underscore = "_";
+		const char* delim_underscore = "~";
 		const char* delim_semiconlon = ";";
 		const char* delim_comma = ",";
 		const string white_spaces = " \t\r\n";
@@ -3384,7 +3392,7 @@ void SplitReadReAlign::collect_misaligned_reads_serial_alt(boost::unordered_map<
 	vector<string> p;
 	vector<string> match_cols;
 	const char* delim_tab = "\t";
-	const char* delim_underscore = "_";
+	const char* delim_underscore = "~";
 	const char* delim_semiconlon = ";";
 	const char* delim_comma = ",";
 	const string white_spaces = " \t\r\n";
@@ -3797,6 +3805,8 @@ void SplitReadReAlign::collect_misaligned_reads_par(boost::unordered_map<string,
 	checker.setTarget("SplitReadReAlign.collect_misaligned_reads_par");
 	checker.start();
 
+//CC: let's change the delim from "_" to "a different one"
+//CC: Otherwise it will cause problems
 
 	string sr_rawsam = options.prefix + ".sr.raw.sam";
 	if(!options.working_dir.empty()) {
@@ -3808,13 +3818,11 @@ void SplitReadReAlign::collect_misaligned_reads_par(boost::unordered_map<string,
 	int64_t local_n_blocks = max_index / (double) chunk_size;
 
 	vector<uint64_t> skip_points;
-
 	vector<boost::unordered_map<string, map<int8_t, string>>> alg_mis_lists(local_n_blocks);
 
 //	castle::IOUtils::find_skip_points(skip_points, sr_rawsam, chunk_size, max_index, local_n_blocks, n_cores);
 	{
 		skip_points.resize(local_n_blocks + 1);
-
 		vector<function<void()> > tasks;
 		for (uint32_t id = 0; id < local_n_blocks - 1; ++id) {
 			tasks.push_back([&, id, local_n_blocks, chunk_size, max_index] {
@@ -3846,6 +3854,7 @@ void SplitReadReAlign::collect_misaligned_reads_par(boost::unordered_map<string,
 	}
 	vector<function<void()> > tasks;
 
+
 	for (uint32_t block_id = 0; block_id < local_n_blocks; ++block_id) {
 		tasks.push_back([&, block_id] {
 //			int64_t n_processed = 0;
@@ -3861,7 +3870,7 @@ void SplitReadReAlign::collect_misaligned_reads_par(boost::unordered_map<string,
 			vector<string> p;
 			vector<string> match_cols;
 			const char* delim_tab = "\t";
-			const char* delim_underscore = "_";
+			const char* delim_underscore = "~";
 			const char* delim_semiconlon = ";";
 			const char* delim_comma = ",";
 			const string white_spaces = " \t\r\n";
@@ -3872,6 +3881,7 @@ void SplitReadReAlign::collect_misaligned_reads_par(boost::unordered_map<string,
 			if(0 != block_id) {
 				in.seekg(cur_pos, ios::beg);
 			}
+
 			while(getline(in, line, '\n')) {
 				cur_pos += line.size() + 1;
 
@@ -3879,6 +3889,7 @@ void SplitReadReAlign::collect_misaligned_reads_par(boost::unordered_map<string,
 					continue;
 				}
 				castle::StringUtils::c_string_multi_split(line, delim_tab, data);
+
 
 		//		const bool debug = "ST-E00104:502:HFJN5CCXX:4:1206:6421:54453_151" == data[0];
 				const bool debug = false;
@@ -3895,9 +3906,13 @@ void SplitReadReAlign::collect_misaligned_reads_par(boost::unordered_map<string,
 		//		cout << line << "\n";
 
 				castle::StringUtils::c_string_multi_split(data[0], delim_underscore, first_cols);
+//cout<<"Test: "<<data[0]<<" "<<delim_underscore<<" "<<first_cols[0]<<endl;
+
 				string readlength_str = first_cols[first_cols.size() - 1];
 				int64_t readlength = boost::lexical_cast<int64_t>(readlength_str);
 				auto the_xa_z_pos = line.find(the_xa_z_pattern);
+				
+
 				if ("=" != data[6] && data.size() > 11 && string::npos != the_xa_z_pos) {
 					if(debug) {
 						cout << "[SplitReadReAlign.collect_misaligned_reads_par] here-0\n";
@@ -3945,6 +3960,9 @@ void SplitReadReAlign::collect_misaligned_reads_par(boost::unordered_map<string,
 							select_p = boost::lexical_cast<int64_t>(alt_map_cols[1].substr(1));
 							continue;
 						}
+						
+						//CC: Problem happens here, if chromsome id has "_" inside. Then will mess up the value.
+						//CC: For example "chrUn_JTFH01000929v1_decoy__178__757__1"
 						castle::StringUtils::c_string_multi_split(select_chr, delim_underscore, p);
 						vector<int64_t> value_p;
 						// dummy value
@@ -4124,6 +4142,7 @@ void SplitReadReAlign::collect_misaligned_reads_par(boost::unordered_map<string,
 						if(p.size() > 4) {
 							if(debug) {
 								cout << "[SplitReadReAlign.collect_misaligned_reads_par] here-29\n";
+//cout<<p[1]<<" "<<p[2]<<" "<<p[3]<<" "<<p[4]<<"\n"; /////////////////////////////////////////////////////////////////////
 							}
 							value_p.push_back(boost::lexical_cast<int64_t>(p[1]));
 							value_p.push_back(boost::lexical_cast<int64_t>(p[2]));
@@ -4268,6 +4287,8 @@ void SplitReadReAlign::collect_misaligned_reads_par(boost::unordered_map<string,
 			}
 		});
 	}
+	
+
 	castle::ParallelRunner::run_unbalanced_load(n_cores, tasks);
 	//vector<boost::unordered_map<string, map<int8_t, string>>> alg_mis_lists(local_n_blocks);
 	// should overwrite previous values
@@ -4726,7 +4747,7 @@ void SplitReadReAlign::adjust_misaligned_reads_serial_alt(boost::unordered_map<s
 
 //	vector<string> match_cols;
 //	const char* delim_tab = "\t";
-//	const char* delim_underscore = "_";
+//	const char* delim_underscore = "~";
 //	const char* delim_semiconlon = ";";
 	const char* delim_comma = ",";
 //	const string white_spaces = " \t\r\n";
@@ -4947,7 +4968,7 @@ void SplitReadReAlign::adjust_misaligned_reads_par(const boost::unordered_map<st
 			vector<string> p;
 			vector<string> match_cols;
 			const char* delim_tab = "\t";
-//			const char* delim_underscore = "_";
+//			const char* delim_underscore = "~";
 //			const char* delim_semiconlon = ";";
 			const char* delim_comma = ",";
 			const string white_spaces = " \t\r\n";

@@ -218,7 +218,7 @@ inline void MatePairDiscordantCaller::determine_a_cluster(ofstream& out, vector<
 				- starts_map[lastpid][lastsid].second;
 			}
 
-			string p_s_id = lastpid + "_" + lastsid;
+			string p_s_id = lastpid + "~" + lastsid;
 			cluster_type[orientation[lastpid][lastsid].ref_id][orientation[lastpid][lastsid].mate_ref_id][0].push_back(
 			p_s_id);
 			if(verbose) {
@@ -263,7 +263,7 @@ inline void MatePairDiscordantCaller::determine_a_cluster(ofstream& out, vector<
 			if (orientation[lastpid][lastsid].ref_id == orientation[lastpid][lastsid].mate_ref_id) {
 				size = mstarts_map[lastpid][lastsid].second - starts_map[lastpid][lastsid].second;
 			}
-			string p_s_id = lastpid + "_" + lastsid;
+			string p_s_id = lastpid + "~" + lastsid;
 			cluster_type[orientation[lastpid][lastsid].ref_id][orientation[lastpid][lastsid].mate_ref_id][1].push_back(p_s_id);
 			if(-1 == size) {
 				out << (boost::format(
@@ -298,7 +298,7 @@ inline void MatePairDiscordantCaller::determine_a_cluster(ofstream& out, vector<
 			if (orientation[lastpid][lastsid].ref_id == orientation[lastpid][lastsid].mate_ref_id) {
 				size = mstarts_map[lastpid][lastsid].first - starts_map[lastpid][lastsid].first;
 			}
-			string p_s_id = lastpid + "_" + lastsid;
+			string p_s_id = lastpid + "~" + lastsid;
 			cluster_type[orientation[lastpid][lastsid].ref_id][orientation[lastpid][lastsid].mate_ref_id][2].push_back(p_s_id);
 			if(-1 == size) {
 				out << (boost::format(
@@ -330,7 +330,7 @@ inline void MatePairDiscordantCaller::determine_a_cluster(ofstream& out, vector<
 				size = mstarts_map[lastpid][lastsid].second
 				- starts_map[lastpid][lastsid].first;
 			}
-			string p_s_id = lastpid + "_" + lastsid;
+			string p_s_id = lastpid + "~" + lastsid;
 			if(debug) {
 				cout << "strand type : 3: " << p_s_id << ":" << orientation[lastpid][lastsid].ref_id << "/" << orientation[lastpid][lastsid].mate_ref_id << "\n";
 			}

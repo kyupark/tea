@@ -239,7 +239,7 @@ void BLASTBreakPoints::collect_read_name_sequence_map(boost::unordered_map<strin
 //					local_reads_detail[a_cluster_name_itr->second][readname] = line;
 //					//		#print "readslist{readname}\treadname\treadsdetail{readslist{readname}}{readname}\n";
 //				} else {
-				readname += "_" + boost::lexical_cast<string>(length);
+				readname += "~" + boost::lexical_cast<string>(length);
 				auto an_alt_cluster_name_itr = readslist.find(readname);
 				if (readslist.end() != an_alt_cluster_name_itr) {
 //					if(0 == block_id) {
@@ -291,7 +291,7 @@ void BLASTBreakPoints::collect_read_name_sequence_map_alt(boost::unordered_map<s
 		// get sequence
 		getline(UMFQRF, line, '\n');
 		int64_t length = line.size();
-		readname += "_" + boost::lexical_cast<string>(length);
+		readname += "~" + boost::lexical_cast<string>(length);
 		auto a_cluster_name_itr = readslist.find(readname);
 		if (readslist.end() != a_cluster_name_itr) {
 			a_reads_detail[a_cluster_name_itr->second][readname] = line;
@@ -507,7 +507,7 @@ void BLASTBreakPoints::write_del(const string& blast_dir, ofstream& INTRAREFINE,
 		cout << "del here-0-a: positions: " << position1 << "/" << position2 << "/" << position3 << "/" << position4 << "/" << "\n";
 	}
 	string seq;
-	string name = ref_id + "__" + cur_start_str + "__" + ref_id + "__" + cur_end_str;
+	string name = ref_id + "~" + cur_start_str + "~" + ref_id + "~" + cur_end_str;
 	int64_t left_bound_blast = 0;
 	int64_t right_bound_blast = 0;
 	bool is_covered = covered(position1, position2, position3, position4);
@@ -614,7 +614,7 @@ void BLASTBreakPoints::write_inssu(const string& blast_dir, ofstream& INTRAREFIN
 		//cout << "inssu here-3: seq_size: " << seq.size() << "\n";
 	}
 	//cout << "inssu here-4\n";
-	string name = ref_id + "__" + cur_start_str + "__" + ref_id + "__" + cur_mate_start_str;
+	string name = ref_id + "~" + cur_start_str + "~" + ref_id + "~" + cur_mate_start_str;
 	//cout << "inssu here-5\n";
 	string bltoutfile = run_blast(blast_dir, data, mpd_id[0], name, seq, readsdetail, false);
 	//cout << "inssu here-6\n";
@@ -671,7 +671,7 @@ void BLASTBreakPoints::write_inssu(const string& blast_dir, ofstream& INTRAREFIN
 		seq += fai.fetch_1_system(ref_id, position3, position4);
 		//cout << "inssu here-17: seq_size: " << seq.size() << "\n";
 	}
-	name = ref_id + "__" + cur_end_str + "__" + ref_id + "__" + cur_mate_end_str;
+	name = ref_id + "~" + cur_end_str + "~" + ref_id + "~" + cur_mate_end_str;
 	if (mpd_id.size() > 1) {
 		bltoutfile = run_blast(blast_dir, data, mpd_id[1], name, seq, readsdetail, false);
 	} else {
@@ -760,7 +760,7 @@ void BLASTBreakPoints::write_inssd(const string& blast_dir, ofstream& INTRAREFIN
 		seq += n;
 		seq += fai.fetch_1_system(ref_id, position3, position4);
 	}
-	name = ref_id + "__" + cur_start_str + "__" + ref_id + "__" + cur_mate_start_str;
+	name = ref_id + "~" + cur_start_str + "~" + ref_id + "~" + cur_mate_start_str;
 	if (mpd_id.size() > 1) {
 		//cout << "inssd here-2\n";
 		bltoutfile = run_blast(blast_dir, data, mpd_id[1], name, seq, readsdetail, true);
@@ -815,7 +815,7 @@ void BLASTBreakPoints::write_inssd(const string& blast_dir, ofstream& INTRAREFIN
 		seq += n;
 		seq += fai.fetch_1_system(ref_id, position3, position4);
 	}
-	name = ref_id + "__" + cur_end_str + "__" + ref_id + "__" + cur_mate_end_str;
+	name = ref_id + "~" + cur_end_str + "~" + ref_id + "~" + cur_mate_end_str;
 	bltoutfile = run_blast(blast_dir, data, mpd_id[0], name, seq, readsdetail, true);
 //		my (ref_bps, ref_bps2, left_bound_blast2, right_bound_blast2);
 	ref_bps.clear();
@@ -902,7 +902,7 @@ void BLASTBreakPoints::write_insou(const string& blast_dir, ofstream& INTRAREFIN
 		seq += n;
 		seq += fai.fetch_1_system(ref_id, position4, position3);
 	}
-	string name = ref_id + "__" + cur_start_str + "__" + ref_id + "__" + cur_mate_end_str;
+	string name = ref_id + "~" + cur_start_str + "~" + ref_id + "~" + cur_mate_end_str;
 	string bltoutfile = run_blast(blast_dir, data, mpd_id[0], name, seq, readsdetail, false);
 	parse_blast(ref_bps, ref_bps2, bltoutfile, readslist, readsdetail);
 	left_bound_blast1 = position1 + ref_bps[0] - 1;
@@ -947,7 +947,7 @@ void BLASTBreakPoints::write_insou(const string& blast_dir, ofstream& INTRAREFIN
 		seq += n;
 		seq += fai.fetch_1_system(ref_id, position4, position3);
 	}
-	name = ref_id + "__" + cur_end_str + "__" + ref_id + "__" + cur_mate_start_str;
+	name = ref_id + "~" + cur_end_str + "~" + ref_id + "~" + cur_mate_start_str;
 	if (mpd_id.size() > 1) {
 		//cout << "insou here-9\n";
 		bltoutfile = run_blast(blast_dir, data, mpd_id[1], name, seq, readsdetail, false);
@@ -1049,7 +1049,7 @@ void BLASTBreakPoints::write_insod(const string& blast_dir, ofstream& INTRAREFIN
 		seq += n;
 		seq += fai.fetch_1_system(ref_id, position4, position3);
 	}
-	string name = ref_id + "__" + cur_start_str + "__" + ref_id + "__" + cur_mate_end_str;
+	string name = ref_id + "~" + cur_start_str + "~" + ref_id + "~" + cur_mate_end_str;
 	string bltoutfile = run_blast(blast_dir, data, mpd_id[0], name, seq, readsdetail, true);
 	parse_blast(ref_bps, ref_bps2, bltoutfile, readslist, readsdetail);
 	//cout << "insod here-2\n";
@@ -1098,7 +1098,7 @@ void BLASTBreakPoints::write_insod(const string& blast_dir, ofstream& INTRAREFIN
 		seq += n;
 		seq += fai.fetch_1_system(ref_id, position4, position3);
 	}
-	name = ref_id + "__" + cur_end_str + "__" + ref_id + "__" + cur_mate_start_str;
+	name = ref_id + "~" + cur_end_str + "~" + ref_id + "~" + cur_mate_start_str;
 	if (mpd_id.size() > 1) {
 		//cout << "insod here-11\n";
 		bltoutfile = run_blast(blast_dir, data, mpd_id[1], name, seq, readsdetail, true);
@@ -1192,7 +1192,7 @@ void BLASTBreakPoints::write_invers(const string& blast_dir, ofstream& INTRAREFI
 		seq += n;
 		seq += fai.fetch_1_system(ref_id, position4, position3);
 	}
-	string name = ref_id + "__" + cur_start_str + "__" + ref_id + "__" + cur_end_str;
+	string name = ref_id + "~" + cur_start_str + "~" + ref_id + "~" + cur_end_str;
 	string bltoutfile = run_blast(blast_dir, data, mpd_id[0], name, seq, readsdetail, true);
 	vector<int64_t> ref_bps;
 	vector<int64_t> ref_bps2;
@@ -1301,7 +1301,7 @@ void BLASTBreakPoints::write_del_invers(const string& blast_dir, ofstream& INTRA
 		seq += n;
 		seq += fai.fetch_1_system(ref_id, position4, position3);
 	}
-	string name = ref_id + "__" + cur_start_str + "__" + ref_id + "__" + cur_mate_end_str;
+	string name = ref_id + "~" + cur_start_str + "~" + ref_id + "~" + cur_mate_end_str;
 	string bltoutfile = run_blast(blast_dir, data, mpd_id[0], name, seq, readsdetail, true);
 	parse_blast(ref_bps, ref_bps2, bltoutfile, readslist, readsdetail);
 	//cout << "del invers here-2\n";
@@ -1348,7 +1348,7 @@ void BLASTBreakPoints::write_del_invers(const string& blast_dir, ofstream& INTRA
 		seq += n;
 		seq += fai.fetch_1_system(ref_id, position4, position3);
 	}
-	name = ref_id + "__" + cur_end_str + "__" + ref_id + "__" + cur_mate_start_str;
+	name = ref_id + "~" + cur_end_str + "~" + ref_id + "~" + cur_mate_start_str;
 	if (mpd_id.size() > 1) {
 		//cout << "del invers here-11\n";
 		bltoutfile = run_blast(blast_dir, data, mpd_id[1], name, seq, readsdetail, true);
@@ -1475,7 +1475,7 @@ void BLASTBreakPoints::write_tandem_dup(const string& blast_dir, ofstream& INTRA
 		seq += n;
 		seq += fai.fetch_1_system(ref_id, position3, position4);
 	}
-	string name = ref_id + "__" + cur_start_str + "__" + ref_id + "__" + cur_end_str;
+	string name = ref_id + "~" + cur_start_str + "~" + ref_id + "~" + cur_end_str;
 	string bltoutfile = run_blast(blast_dir, data, mpd_id[0], name, seq, readsdetail, true);
 //		my (ref_bps, ref_bps2, left_bound_blast, right_bound_blast);
 
@@ -1534,7 +1534,7 @@ void BLASTBreakPoints::write_invers_f(const string& blast_dir, ofstream& INTRARE
 		seq += n;
 		seq += fai.fetch_1_system(ref_id, position4, position3);
 	}
-	string name = ref_id + "__" + cur_start_str + "__" + ref_id + "__" + cur_end_str;
+	string name = ref_id + "~" + cur_start_str + "~" + ref_id + "~" + cur_end_str;
 	string bltoutfile = run_blast(blast_dir, data, mpd_id[0], name, seq, readsdetail, true);
 	parse_blast(ref_bps, ref_bps2, bltoutfile, readslist, readsdetail);
 	//cout << "invers_f here-2\n";
@@ -1594,7 +1594,7 @@ void BLASTBreakPoints::write_invers_r(const string& blast_dir, ofstream& INTRARE
 		seq += n;
 		seq += fai.fetch_1_system(ref_id, position4, position3);
 	}
-	string name = ref_id + "__" + cur_start_str + "__" + ref_id + "__" + cur_end_str;
+	string name = ref_id + "~" + cur_start_str + "~" + ref_id + "~" + cur_end_str;
 	string bltoutfile = run_blast(blast_dir, data, mpd_id[0], name, seq, readsdetail, true);
 
 	parse_blast(ref_bps, ref_bps2, bltoutfile, readslist, readsdetail);
@@ -1787,7 +1787,7 @@ void BLASTBreakPoints::write_inss(const string& blast_dir, ofstream& INTERREFINE
 	string seq = fai.fetch_1_system(ref_id, position1, position2);
 	seq += n;
 	seq += fai.fetch_1_system(mate_ref_id, position3, position4);
-	string name = ref_id + "__" + cur_start_str + "__" + mate_ref_id + "__" + cur_mate_start_str;
+	string name = ref_id + "~" + cur_start_str + "~" + mate_ref_id + "~" + cur_mate_start_str;
 	string bltoutfile = run_blast(blast_dir, data, mpd_id[0], name, seq, readsdetail, true);
 	parse_blast(ref_bps, ref_bps2, bltoutfile, readslist, readsdetail);
 	int64_t left_bound_blast1 = 0;
@@ -1823,7 +1823,7 @@ void BLASTBreakPoints::write_inss(const string& blast_dir, ofstream& INTERREFINE
 	seq = fai.fetch_1_system(ref_id, position1, position2);
 	seq += n;
 	seq += fai.fetch_1_system(mate_ref_id, position3, position4);
-	name = ref_id + "__" + cur_end_str + "__" + mate_ref_id + "__" + cur_mate_end_str;
+	name = ref_id + "~" + cur_end_str + "~" + mate_ref_id + "~" + cur_mate_end_str;
 	if (mpd_id.size() > 1) {
 		//cout << "inss here-9\n";
 		bltoutfile = run_blast(blast_dir, data, mpd_id[1], name, seq, readsdetail, true);
@@ -1897,7 +1897,7 @@ void BLASTBreakPoints::write_inso(const string& blast_dir, ofstream& INTERREFINE
 	string seq = fai.fetch_1_system(ref_id, position1, position2);
 	seq += n;
 	seq += fai.fetch_1_system(mate_ref_id, position4, position3);
-	string name = ref_id + "__" + cur_start_str + "__" + mate_ref_id + "__" + cur_mate_end_str;
+	string name = ref_id + "~" + cur_start_str + "~" + mate_ref_id + "~" + cur_mate_end_str;
 	string bltoutfile = run_blast(blast_dir, data, mpd_id[0], name, seq, readsdetail, true);
 	parse_blast(ref_bps, ref_bps2, bltoutfile, readslist, readsdetail);
 	int64_t left_bound_blast1 = position1 + ref_bps[0] - 1;
@@ -1925,7 +1925,7 @@ void BLASTBreakPoints::write_inso(const string& blast_dir, ofstream& INTERREFINE
 	seq = fai.fetch_1_system(ref_id, position1, position2);
 	seq += n;
 	seq += fai.fetch_1_system(mate_ref_id, position4, position3);
-	name = ref_id + "__" + cur_end_str + "__" + mate_ref_id + "__" + cur_mate_start_str;
+	name = ref_id + "~" + cur_end_str + "~" + mate_ref_id + "~" + cur_mate_start_str;
 	if (mpd_id.size() > 1) {
 		bltoutfile = run_blast(blast_dir, data, mpd_id[1], name, seq, readsdetail, true);
 	} else {
@@ -1992,7 +1992,7 @@ void BLASTBreakPoints::write_transl_inter(const string& blast_dir, ofstream& INT
 		string seq = fai.fetch_1_system(ref_id, position1, position2);
 		seq += n;
 		seq += fai.fetch_1_system(mate_ref_id, position3, position4);
-		string name = ref_id + "__" + cur_start_str + "__" + mate_ref_id + "__" + cur_mate_start_str;
+		string name = ref_id + "~" + cur_start_str + "~" + mate_ref_id + "~" + cur_mate_start_str;
 		string bltoutfile = run_blast(blast_dir, data, mpd_id[0], name, seq, readsdetail, true);
 		parse_blast(ref_bps, ref_bps2, bltoutfile, readslist, readsdetail);
 		int64_t left_bound_blast = position1 + ref_bps[0] - 1;
@@ -2025,7 +2025,7 @@ void BLASTBreakPoints::write_transl_inter(const string& blast_dir, ofstream& INT
 		string seq = fai.fetch_1_system(ref_id, position1, position2);
 		seq += n;
 		seq += fai.fetch_1_system(mate_ref_id, position3, position4);
-		string name = ref_id + "__" + cur_start_str + "__" + mate_ref_id + "__" + cur_mate_start_str;
+		string name = ref_id + "~" + cur_start_str + "~" + mate_ref_id + "~" + cur_mate_start_str;
 		string bltoutfile = run_blast(blast_dir, data, mpd_id[0], name, seq, readsdetail, true);
 		parse_blast(ref_bps, ref_bps2, bltoutfile, readslist, readsdetail);
 		int64_t left_bound_blast = position1 + ref_bps[0] - 1;
@@ -2054,7 +2054,7 @@ void BLASTBreakPoints::write_transl_inter(const string& blast_dir, ofstream& INT
 		string seq = fai.fetch_1_system(ref_id, position1, position2);
 		seq += n;
 		seq += fai.fetch_1_system(mate_ref_id, position4, position3);
-		string name = ref_id + "__" + cur_start_str + "__" + mate_ref_id + "__" + cur_mate_start_str;
+		string name = ref_id + "~" + cur_start_str + "~" + mate_ref_id + "~" + cur_mate_start_str;
 		string bltoutfile = run_blast(blast_dir, data, mpd_id[0], name, seq, readsdetail, true);
 		parse_blast(ref_bps, ref_bps2, bltoutfile, readslist, readsdetail);
 		int64_t left_bound_blast = position1 + ref_bps[0] - 1;
@@ -2083,7 +2083,7 @@ void BLASTBreakPoints::write_transl_inter(const string& blast_dir, ofstream& INT
 		string seq = fai.fetch_1_system(ref_id, position1, position2);
 		seq += n;
 		seq += fai.fetch_1_system(mate_ref_id, position4, position3);
-		string name = ref_id + "__" + cur_start_str + "__" + mate_ref_id + "__" + cur_mate_start_str;
+		string name = ref_id + "~" + cur_start_str + "~" + mate_ref_id + "~" + cur_mate_start_str;
 		string bltoutfile = run_blast(blast_dir, data, mpd_id[0], name, seq, readsdetail, true);
 		parse_blast(ref_bps, ref_bps2, bltoutfile, readslist, readsdetail);
 		int64_t left_bound_blast = position1 + ref_bps[0] - 1;
@@ -2110,7 +2110,7 @@ string BLASTBreakPoints::run_blast(const string blastdir, const vector<string>& 
 	//cout << "run_blast here-0\n";
 //	const string blastdir = options.prefix + ".blast/";
 	//cout << "run_blast here-0-a:" << sbjctfile << "\n";
-	const string delim_double_underscore = "__";
+	const string delim_double_underscore = "~";
 	const string sbjctfile = blastdir + mpd_id + ".sbj.fa";
 
 	//cout << "run_blast here-1\n";
@@ -2122,7 +2122,7 @@ string BLASTBreakPoints::run_blast(const string blastdir, const vector<string>& 
 	string bltoutfile = blastdir + mpd_id + ".bltout";
 	if(mpd_id.empty()) {
 		cout << "[BLASTBreakPoints.run_blast] bltout file: " << bltoutfile << "\n";
-		exit(1);
+		exit(0);
 	}
 	ofstream QRSEQ(queryfile, ios::binary);
 	auto the_detail = ref_readsdetail.find(name);
@@ -2132,7 +2132,7 @@ string BLASTBreakPoints::run_blast(const string blastdir, const vector<string>& 
 		castle::StringUtils::tokenize(name, delim_double_underscore, temp_bp);
 		swap(temp_bp[0], temp_bp[2]);
 		swap(temp_bp[1], temp_bp[3]);
-		string alt_name = castle::StringUtils::join(temp_bp, "__");
+		string alt_name = castle::StringUtils::join(temp_bp, "~");
 		the_detail = ref_readsdetail.find(alt_name);
 	}
 	if (ref_readsdetail.end() != the_detail) {

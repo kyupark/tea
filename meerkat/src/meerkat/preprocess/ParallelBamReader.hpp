@@ -4,6 +4,10 @@
  *  Created on: Jun 2, 2016
  *      Author: Euncheon Lim, The Center for Biomedical Informatics, Harvard Medical School, Boston, MA, 02115, USA
  *      Email: euncheon_lim@hms.harvard.edu
+ * 
+ *  Revised on: Jul 7, 2017
+ *       By Simon Chu.
+ *       Add: classify_store_reads_in_regions() function to save map-clip, map-unmap pairs in regions, before going to the initial output steps.
  *
  *  The original version is written by Lovelace J. Luquette
  */
@@ -16,6 +20,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <algorithm>
+#include <utility>
 #include <thread>
 #include <mutex>
 #include <condition_variable>
@@ -81,6 +86,8 @@ public:
 	void output_blacklist_file();
 	void find_quality_standard_and_max_read_length(vector<uint64_t>& quality_sample_space);
 
+	void classify_store_reads_in_regions();//CC: use this function to classify the read pairs (m-u, m-c) in regions.
+	
 	void output_unmapped();
 
 	void collect_second_statistics();

@@ -47,7 +47,7 @@ public:
 	static void create_bfi_index(vector<int64_t>& block_boundary, const string& input_path, const string& output_index_path, const int64_t block_size);
 	static void load_bfi_index(vector<int64_t>& block_boundary, const string& input_path);
 	static void create_bni_index(const string& input_path, const string& output_index_path);
-	static void load_bni_index(vector<BamTools::BlockOffset>& offset_blocks, const string& input_BAM_name, const string& output_bni_index_path);
+	//static void load_bni_index(vector<BamTools::BlockOffset>& offset_blocks, const string& input_BAM_name, const string& output_bni_index_path);
 	static void load_bai_bni_index(vector<int64_t>& block_boundary, const string& input_path, const string& output_bni_index_path, const int64_t block_size, const int64_t n_cores);
 	template<typename T> static T cas(volatile T *ptr, T oval, T nval);
 	template<typename T> static T aaf(volatile T *ptr, T amount);

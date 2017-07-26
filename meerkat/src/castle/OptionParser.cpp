@@ -463,11 +463,9 @@ void OptionParser::read_blacklist() {
 	if (is_gz) {
 		gzf.open(bfile_name.c_str());
 		bfile = &gzf;
-		if (gzf.peek() == igzstream::traits_type::eof()) return;
 	} else {
 		f.open(bfile_name.c_str(), ios::binary);
 		bfile = &f;
-		if (f.peek() == ifstream::traits_type::eof()) return;
 	}
 
 	char buf[100];

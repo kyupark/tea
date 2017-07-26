@@ -110,7 +110,6 @@ void ParallelDiscordExtractor::extract_discordant_reads_serial() {
 	collect_clipped_discordants_serial();
 	write_discordants_serial();
 }
-
 void ParallelDiscordExtractor::collect_boundaries(const int64_t size_block) {
 	string a_path(options.infile_name);
 	string an_index_path;
@@ -1109,8 +1108,7 @@ void ParallelDiscordExtractor::write_discordants_alt() {
 			num_memorized_clipped_discs_lists[block_id] = num_memorized_clipped_discs;
 			if(verbose) {
 				string a_block_boundary_str = (boost::format("%s %d-%d %d")
-						% local_alignment_entry.Name % local_alignment_entry.RefID
-						% local_alignment_entry.Position
+						% local_alignment_entry.Name % local_alignment_entry.RefID % local_alignment_entry.Position
 						% local_alignment_entry.AlignmentFlag).str();
 				cout << (boost::format("[ParallelDiscordExtrator.write_discordants] (last) Block-%d %s\n")
 						% block_id % a_block_boundary_str).str();
@@ -1231,6 +1229,7 @@ void ParallelDiscordExtractor::write_discordants_serial() {
 			exit(1);
 		}
 	}
+
 
 	/* Use the slow method to read tags so we can get the read group */
 	while (local_reader.LoadNextAlignmentCore(local_alignment_entry)) {
@@ -1369,7 +1368,7 @@ void ParallelDiscordExtractor::collect_discordants() {
 				string local_outfile_name = options.outfile_name + "."
 				+ str_block_id;
 				int64_t skip_pos = disc_boundary_pos[block_id];
-				fstream out(options.outfile_name + ".sam", ios::in | ios::out | ios::binary | ios::ate);
+				fstream out(options.outfile_name + ".sam", ios::in | ios::out | ios::binary|ios::ate);
 				out.seekp(skip_pos, ios::beg);
 				out << castle::IOUtils::read_fully(local_outfile_name);
 			});
