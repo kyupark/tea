@@ -20,60 +20,61 @@ void TEAOptionParser::show_help() {
 	cout << "==============================================================================\n"
 			"TEA: Transposable Element Analysis (Ver. 2.0.2)\n"
             "==============================================================================\n"
-			"Usage:                       tea <Command> [Options]\n"
-			"Commands:                    tea, tea_u, tea_v, transduction, orphan, post\n"
-			"       tea                   basic module\n"
-			"       tea_u                 module for unmapped [experimental]\n"
-			"       tea_v                 module for viral integration [experimental]\n"
-			"       transduction          module for detecting transduction [experimental]\n"
-			"       orphan                module for detecting orphan [experimental]\n"
-			"       post                  post-processing for the transduction, and orphan modules [experimental]\n"
-			"       comp                  compare results\n\n"
+			"Usage:                          tea <Command> [Options]\n"
+			"Commands:                       tea, tea_u, tea_v, transduction, orphan, post\n"
+			"       tea                      basic module\n"
+			"       tea_u                    module for unmapped [experimental]\n"
+			"       tea_v                    module for viral integration [experimental]\n"
+			"       transduction             module for detecting transduction [experimental]\n"
+			"       orphan                   module for detecting orphan [experimental]\n"
+			"       post                     post-processing for the transduction, and orphan modules [experimental]\n"
+			"       comp                     compare results\n\n"
 			"Options:\n\n"
-			"       -b [STR]              the absolute path of the INPUT BAM file [" << prefix << "]\n"
-			"       -x [STR]              the absolute path prefix of the INPUT BAM file excluding \".bam\" suffix. e.g.) /home/test.bam -> /home/test [" << prefix << "]\n";
+			"       -b [STR]                 the absolute path of the INPUT BAM file [" << prefix << "]\n"
+			"       -x [STR]                 the absolute path prefix of the INPUT BAM file excluding \".bam\" suffix. e.g.) /home/test.bam -> /home/test [" << prefix << "]\n";
 	cout << boolalpha <<
-			"       -D [STR]              the path to output folder [" << working_dir << "]\n"
-			"       -t [INT]              # cores for parallelization [" << n_cores << "]\n\n"
-			"       -M [STR]              the path to a repeat masker text file [NONE]\n"
-			"       -N [STR]              the path to a repeat annotation file [NONE]\n"
-			"       -V [STR]              the path to a virus annotation file [NONE]\n"
-			"       -r [STR]              the path to a repeat reference file [NONE]\n"
-			"       -hr [STR]             the path to a human reference file [NONE]\n"
+			"       -D [STR]                 the path to output folder [" << working_dir << "]\n"
+			"       -t [INT]                 # cores for parallelization [" << n_cores << "]\n\n"
+			"       -M [STR]                 the path to a repeat masker text file [NONE]\n"
+			"       -N [STR]                 the path to a repeat annotation file [NONE]\n"
+			"       -V [STR]                 the path to a virus annotation file [NONE]\n"
+			"       -r [STR]                 the path to a repeat reference file [NONE]\n"
+			"       -hr [STR]                the path to a human reference file [NONE]\n"
 
-			"       --step [STR]          the name of the start step [fasta, rabam, ram, cbam, rid]\n"
-			"       --sub [STR]           the name of a single step to run [fasta, rabam, ram, cbam, rid]\n"
-			"       --force               override the previous results [" << is_force << "]\n"
-			"       --clean               remove some intermediate files after calling all the steps [" << is_cleaning<< "]\n"
-			"       --sampe               the BAM is mapped by bwa sampe [" << is_sampe << "]\n\n"
-			"       --mem                 the BAM is mapped by bwa mem [" << is_mem << "]\n\n"
-			"       -a [INT]              the minimum number of bases defining the polyAT [" << min_polyAT << "]\n"
-			"       -c [INT]              the quality cutoff [" << qcutoff << "]\n"
-			"       -l [STR]              bwa aln parameter [" << aln_param << "]\n"
-			"       -m [INT]              the minimum number of matches while collecting a clipped read if the MD tag exists [" << min_matches << "]\n"
+			"       --step [STR]             the name of the start step [fasta, rabam, ram, cbam, rid]\n"
+			"       --sub [STR]              the name of a single step to run [fasta, rabam, ram, cbam, rid]\n"
+			"       --force                  override the previous results [" << is_force << "]\n"
+			"       --clean                  remove some intermediate files after calling all the steps [" << is_cleaning<< "]\n"
+			"       --sampe                  the BAM is mapped by bwa sampe [" << is_sampe << "]\n\n"
+			"       --mem                    the BAM is mapped by bwa mem [" << is_mem << "]\n\n"
+			"       -a [INT]                 the minimum number of bases defining the polyAT [" << min_polyAT << "]\n"
+			"       -c [INT]                 the quality cutoff [" << qcutoff << "]\n"
+			"       -l [STR]                 bwa aln parameter [" << aln_param << "]\n"
+			"       -m [INT]                 the minimum number of matches while collecting a clipped read if the MD tag exists [" << min_matches << "]\n"
 
-			"       -n [INT]              the maximum number of mismatches [" << max_mismatches << "]\n"
-			"       -R [STR]              the reference name [" << ref << "]\n"
-			"       -s [STR]              samse parameter [" << samse_param << "]\n\n"
+			"       -n [INT]                 the maximum number of mismatches [" << max_mismatches << "]\n"
+			"       -R [STR]                 the reference name [" << ref << "]\n"
+			"       -s [STR]                 samse parameter [" << samse_param << "]\n\n"
 
-			"       --min_ram [INT]       the minimum number of supporting ram [" << min_ram << "]\n"
-			"       --oneside_ram         include one-sided ram clusters [" << oneside_ram << "]\n"
-			"       --exo                 turn on exogeneous mode [" << exo << "]\n"
-			"       --oi                  yields out of instances entries [" << no_oi << "]\n"
-			"       --min_out_conf [INT]  the minimum value of confidence score [" << min_out_conf << "]\n"
-			"       --ram_cutoff [INT]    the number of minimum ram cutoff [" << ram_cutoff << "]\n"
-			"       --jittering [INT]     the number of bases to adjust clipped position [" << jittering << "]\n"
-			"       --bp_margin [INT]     the number of bases to define a window within which a partner breakpoint (clipped position) would be sought in either forward or reverse strand [" << bp_margin << "]\n"
-			"       --min_acr [INT]       the minimum value of acr [" << min_acr << "]\n"
-			"       --min_acrr [INT]      the minimum value of acrr [" << min_acrr << "]\n"
-			"       --max_tsd [INT]       the maximum value of tsd [" << max_tsd << "]\n"
-			"       --rasym               the name of module [" << rasym << "]\n"
-			"       --transduction        the post analysis is transduction [" << is_transduction << "]\n"
-			"       --orphan              the post analysis is orphan [" << is_orphan << "]\n"
-			"       --l1                  the left .germline file name [" << l1 << "]\n"
-			"       --l2                  the right .germlime file name [" << l2 << "]\n"
-			"       --comp                the comparison results of the .germlime files [" << comp_out << "]\n\n"
-			"Note:                        Please set the tea_base environment to which the TEA is installed. [" << string(getenv("tea_base")) << "]\n"
+			"       --min_ram [INT]          the minimum number of supporting ram [" << min_ram << "]\n"
+			"       --oneside_ram            include one-sided ram clusters [" << oneside_ram << "]\n"
+			"       --exo                    turn on exogeneous mode [" << exo << "]\n"
+			"       --oi                     yields out of instances entries [" << no_oi << "]\n"
+			"       --min_out_conf [INT]     the minimum value of confidence score [" << min_out_conf << "]\n"
+			"       --ram_cutoff [INT]       the number of minimum ram cutoff [" << ram_cutoff << "]\n"
+			"       --jittering [INT]        the number of bases to adjust clipped position [" << jittering << "]\n"
+			"       --bp_margin [INT]        the number of bases to define a window within which a partner breakpoint (clipped position) would be sought in either forward or reverse strand [" << bp_margin << "]\n"
+			"       --min_acr [INT]          the minimum value of acr [" << min_acr << "]\n"
+			"       --min_acrr [INT]         the minimum value of acrr [" << min_acrr << "]\n"
+			"       --max_tsd [INT]          the maximum value of tsd [" << max_tsd << "]\n"
+			"       --rasym                  the name of module [" << rasym << "]\n"
+			"       --transduction           the post analysis is transduction [" << is_transduction << "]\n"
+			"       --orphan                 the post analysis is orphan [" << is_orphan << "]\n"
+			"       --l1                     the left .germline file name [" << l1 << "]\n"
+			"       --l2                     the right .germlime file name [" << l2 << "]\n"
+			"       --comp                   the comparison results of the .germlime files [" << comp_out << "]\n"
+			"       --include_head_clip  Include softclip heads as well as tails [" << including_head_clip << "]\n\n"
+			"Note:                           Please set the tea_base environment to which the TEA is installed. [" << string(getenv("tea_base")) << "]\n"
 			"Contact:                     Euncheon Lim <abysslover@gmail.com>\n";
 	exit(1);
 }
@@ -82,7 +83,7 @@ TEAOptionParser::TEAOptionParser() :
 		assembler_param("-i 21 -j 31 -o 16 -s 251 -p 70"), start_step("FASTA"),
 		n_cores(1), qcutoff(2), max_mismatches(9), min_matches(25), min_polyAT(10),
 		min_ram(3), ram_cutoff(6), jittering(2), bp_margin(50), min_acr(2), min_acrr(0.4), min_tsd(-20), max_tsd(50), min_out_conf(5), min_clipped_len(25),
-		is_force(false), no_clipped(false), oneside_ram(false), exo(false), bam_chr(true), merge_family(true), annot_oi(true), stringent_pair(false), annot_gene(true), no_oi(true), is_transduction(false), is_orphan(false), is_cleaning(false), is_sampe(false), is_mem(false) {
+		is_force(false), no_clipped(false), oneside_ram(false), exo(false), bam_chr(true), merge_family(true), annot_oi(true), stringent_pair(false), annot_gene(true), no_oi(true), is_transduction(false), is_orphan(false), is_cleaning(false), is_sampe(false), is_mem(false), including_head_clip(false) {
 	ram_cutoff = min_ram;
 	sub_name_map["FASTA"] = 0;
 	sub_name_map["fasta"] = 0;
@@ -100,7 +101,7 @@ TEAOptionParser::TEAOptionParser(int argc, char **argv) : prefix("-"), aln_param
 		assembler_param("-i 21 -j 31 -o 16 -s 251 -p 70"), start_step("FASTA"),
 		qcutoff(2), max_mismatches(9), min_matches(25), min_polyAT(10),
 		min_ram(3), ram_cutoff(6), jittering(2), bp_margin(50), min_acr(2), min_acrr(0.4), min_tsd(-20), max_tsd(50), min_out_conf(5), min_clipped_len(25),
-		is_force(false), no_clipped(false), oneside_ram(false), exo(false), bam_chr(true), merge_family(true), annot_oi(true), stringent_pair(false), annot_gene(true), no_oi(true), is_transduction(false), is_orphan(false), is_cleaning(false), is_sampe(false), is_mem(false) {
+		is_force(false), no_clipped(false), oneside_ram(false), exo(false), bam_chr(true), merge_family(true), annot_oi(true), stringent_pair(false), annot_gene(true), no_oi(true), is_transduction(false), is_orphan(false), is_cleaning(false), is_sampe(false), is_mem(false), including_head_clip(false) {
 	string cmd = "[TEAOptionParser.TEAOptionParser] cmd: ";
 	for(int i = 0; i < argc; ++i) {
 		cmd += string(argv[i]) + " ";
@@ -257,6 +258,8 @@ TEAOptionParser::TEAOptionParser(int argc, char **argv) : prefix("-"), aln_param
 			} else if("--comp" == argument) {
 				string value(argv[i + 1]);
 				comp_out = value;
+			} else if("--include_head_clip" == argument) {
+				including_head_clip = true;
 			}
 		} catch (exception& ex) {
 			cout << ex.what() << "\n";

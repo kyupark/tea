@@ -12,6 +12,8 @@
 using namespace std;
 
 int main(int argc, char **argv) {
+	cout << "meerkat-170802-1-update-from-simon\n";
+
 	setvbuf(stdout, NULL, _IONBF, 0);
 	castle::OptionParser option_parser(argc, argv);
 	castle::TimeChecker checker;

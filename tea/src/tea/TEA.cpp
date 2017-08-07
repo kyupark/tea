@@ -137,11 +137,6 @@ void TEA::run_rid() {
 	boost::unordered_map<string, pair<string, string>> rannot;
 	load_repeat_annotation(rannot);
 
-//	boost::unordered_map<string, pair<string, string>> vannot;
-//	if("va" == options.rasym) {
-//		load_virus_annotation()
-//	}
-
 	set<string> chrl;
 	boost::unordered_map<string, vector<pair<int64_t, int64_t>>> gap_annot;
 	boost::unordered_map<string, RefRepeatIntervalVector> ril_annot_alt;
@@ -228,6 +223,7 @@ void TEA::run_rid() {
 		auto c = c_entry.first;
 		chr_names.push_back(c);
 	}
+
 	sort(chr_names.begin(), chr_names.end(), [&](const string& lhs, const string& rhs)->bool{
 		string local_lhs = lhs;
 		string local_rhs = rhs;
@@ -248,6 +244,7 @@ void TEA::run_rid() {
 		}
 		return local_lhs < local_rhs;
 	});
+
 	vector<function<void()> > tasks;
 	bool headless = false;
 	for (auto c: chr_names) {
@@ -307,8 +304,10 @@ void TEA::run_rid() {
 							pm_cl.erase(nx);
 						}
 					}
+
 					positive_paired.insert(p.value.global_cluster_id);
 					negative_paired.insert(n.value.global_cluster_id);
+
 					if (nx == pm_cl.end()) {
 						break;
 					}
@@ -340,6 +339,7 @@ void TEA::run_rid() {
 					positive_only.insert(r_id);
 				}
 			}
+
 			for (int64_t r_id = 0; r_id < static_cast<int64_t>(n_cl.size()); ++r_id) {
 				if (negative_paired.end() != negative_paired.find(r_id)) {
 					continue;
@@ -356,6 +356,7 @@ void TEA::run_rid() {
 					negative_only.insert(r_id);
 				}
 			}
+
 			output_raw_file(c, cl_prefix, p_cl, n_cl, pm_cl, positive_only, negative_only, rl["all"], the_rep_is["fr"], headless);
 			int64_t gene_margin = 2;
 			count_clipped(ril_annot_alt, gene_annot, c, cl_prefix, contig_dir, pm_cl, p_cl, n_cl, positive_only, negative_only, rl["all"], the_rep_is["fr"], rmasker_filter_margin, gene_margin, headless);
@@ -370,7 +371,6 @@ void TEA::run_rid() {
 	vector<string> germline_files;
 	vector<string> cluster_files;
 	vector<string> germline_contig_files;
-
 	vector<string> removal_files;
 	for (auto c : chr_names) {
 //		auto c = c_entry.first;
@@ -398,6 +398,7 @@ void TEA::run_rid() {
 		cluster_files.push_back(cluster_file);
 		germline_contig_files.push_back(germline_contig_file);
 	}
+
 	string out_cluster_raw_file = cl_prefix + ".cluster.raw";
 	string out_clipped_file = cl_prefix + ".clipped";
 	string out_germline_file = cl_prefix + ".germline";
@@ -9294,14 +9295,16 @@ void TEA::_generate_cbam_files_mem_org() {
 					auto& seq = local_alignment_entry.QueryBases;
 					auto& qual = local_alignment_entry.Qualities;
 					auto& cigar = local_alignment_entry.CigarData;
-
-
 					auto& cigar_front_type = cigar.front().Type;
 					auto& cigar_back_type = cigar.back().Type;
 
 					clen = 0;
 					// # clipped in the beginning
-					if( !cigar.empty() && ('S' == cigar_front_type || 'H' == cigar_front_type) ) {
+					if (	((!options.including_head_clip && !local_alignment_entry.IsReverseStrand())
+								|| options.including_head_clip )
+							&& !cigar.empty()
+							&& ('S' == cigar_front_type || 'H' == cigar_front_type)
+							) {
 						clen = cigar.front().Length;
 						if (clen >= 5) {
 							int64_t the_qual_sub_str_pos = qual.size() - clen;
@@ -9341,8 +9344,15 @@ void TEA::_generate_cbam_files_mem_org() {
 							}
 							out_raw_sam.SaveSAMAlignment(local_alignment_entry);
 						}
-					} else if( !cigar.empty() && ('S' == cigar_back_type || 'H' == cigar_back_type) ) {
+					} else if (
+							((!options.including_head_clip && local_alignment_entry.IsReverseStrand())
+								|| options.including_head_clip )
+							&& !cigar.empty()
+							&& ('S' == cigar_back_type || 'H' == cigar_back_type)
+							) {
+
 						clen = cigar.back().Length;
+
 						if (clen >= 5) {
 							int64_t the_qual_sub_str_pos = qual.size() - clen;
 							if (the_qual_sub_str_pos > 0 && 'S' == cigar_back_type) {
@@ -9354,7 +9364,9 @@ void TEA::_generate_cbam_files_mem_org() {
 							int64_t n_good_quals = get_number_of_good_qualities(qual2, qcutoff);
 
 							if (n_good_quals >= 5  || 'H' == cigar_back_type) {
+
 								int64_t the_seq_sub_str_pos = seq.size() - clen;
+
 								if ('S' == cigar_back_type) {
 									cseq2 = seq.substr(the_seq_sub_str_pos);
 								}
@@ -10913,30 +10925,17 @@ void TEA::count_clipped(
 				end_pos = max(end_pos, the_ram_boundary_end);
 			}
 
-			const bool debug = (ref_reverse_index["chr2"] == chr_ref_id && the_ram_boundary_start == 31058709 && 31058709 == the_ram_boundary_end);
-			if(debug) {
-				cout << (boost::format("[TEA.count_clipped] pram start: %d, pram end: %d, nram start: %d, nram end: %d\n") % positive_entry.start % positive_entry.stop % negative_entry.start % negative_entry.stop).str();
-				cout << (boost::format("[TEA.count_clipped] pram start-2: %d, pram end: %d, nram start: %d, nram end: %d\n") % positive_entry.value.pos[0] % positive_entry.value.pos.back() % negative_entry.value.pos[0] % negative_entry.value.pos.back()).str();
-				cout << (boost::format("[TEA.count_clipped] BAM start: %d, end: %d, read len.: %d\n") % start_pos % end_pos % read_length).str();
-				for(auto pos: positive_entry.value.pos) {
-					cout << (boost::format("[TEA.count_clipped] pos position: %d\n") % pos).str();
-				}
-				for(auto pos: negative_entry.value.pos) {
-					cout << (boost::format("[TEA.count_clipped] neg position: %d\n") % pos).str();
-				}
-			}
-
 			int64_t mid_point = (positive_entry.stop + negative_entry.start + read_length) / (double)2;
 			local_reader.SetRegion(chr_ref_id, start_pos, chr_ref_id, end_pos);
 
 			output_clipped_stat(out_p_clipped_filename, out_n_clipped_filename, out_p_mate_rname, out_n_mate_rname, out_cl, out_germline, out_clipped, contig_dir, ref_repeat_interval_tree, stat_results, gene_interval_tree, gene_results, local_reader, the_ram_boundary_start, the_ram_boundary_end, positive_entry, negative_entry, chr, prefixed_chr, read_length, rmasker_filter_margin, gene_margin, mid_point);
 		}
 	}
+
 	RepeatClusterEntry an_empty_entry;
 	RAMIntervalEntry empty_interval_entry(0, 0, an_empty_entry);
 //	cout << "[TEA.count_clipped] process positive only\n";
 	{
-
 		for (int64_t r_id = 0; r_id < static_cast<int64_t>(p_cl.size()); ++r_id) {
 			if (positive_only.end() == positive_only.find(r_id)) {
 				continue;
@@ -11266,7 +11265,14 @@ void TEA::get_clipped_entries(
 		int64_t clipped_pos = local_alignment_entry.Position;
 		int64_t clipped_pos_qual_trimmed = local_alignment_entry.Position;
 
-		if (('S' == cigars.front().Type || 'H' == cigars.front().Type)) {
+		auto& cigar_front_type = cigars.front().Type;
+		auto& cigar_back_type = cigars.back().Type;
+
+		if (
+				((!options.including_head_clip && !local_alignment_entry.IsReverseStrand())
+					|| options.including_head_clip )
+				&& ('S' == cigar_front_type || 'H' == cigar_front_type)
+				) {
 			uint64_t match_idx = 1;
 
 			int64_t cigars_front_length = cigars.front().Length;
@@ -11316,7 +11322,11 @@ void TEA::get_clipped_entries(
 
 		}
 
-		if ( 'S' == cigars.back().Type || 'H' == cigars.back().Type ) {
+		if (
+				((!options.including_head_clip && local_alignment_entry.IsReverseStrand())
+					|| options.including_head_clip )
+				&& ('S' == cigar_back_type || 'H' == cigar_back_type)
+				) {
 
 			uint64_t match_idx = cigars.size() - 2;
 
@@ -11363,7 +11373,6 @@ void TEA::get_clipped_entries(
 			an_entry.clipped_qual_qual_trimmed = clipped_qual_qual_trimmed;
 			clipped_entries.push_back(an_entry);
 		}
-
 	}
 
 	map<int64_t, int64_t> pos_frequency_positive;

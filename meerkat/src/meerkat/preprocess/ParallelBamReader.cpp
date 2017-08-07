@@ -3971,6 +3971,7 @@ void ParallelBamReader::output_read_groups_alt() {
 			});
 	}
 	castle::ParallelRunner::run_unbalanced_load(n_cores, tasks);
+
 	{
 		boost::unordered_map<string, PairedAlignmentWithTwoIds> paired_alns;
 		for (int64_t block_id = 0; block_id < calculated_n_blocks - 1; ++block_id) {
@@ -4056,6 +4057,7 @@ void ParallelBamReader::output_read_groups_alt() {
 		});
 	}
 	castle::ParallelRunner::run_unbalanced_load(n_cores, tasks);
+
 //	for (uint64_t rg_id = 0; rg_id < read_groups.size(); ++rg_id) {
 //		tasks.push_back([&, rg_id, calculated_n_blocks] {
 //			string rg_name = read_groups[rg_id];
@@ -4100,7 +4102,8 @@ void ParallelBamReader::output_read_groups_alt() {
 //			boost::filesystem::remove(filename_2);
 //		}
 //	});
-	castle::ParallelRunner::run_unbalanced_load(n_cores, tasks);
+//	castle::ParallelRunner::run_unbalanced_load(n_cores, tasks);
+
 	cout << checker;
 }
 
@@ -4375,6 +4378,7 @@ void ParallelBamReader::create_reports() {
 		rdist_unmapfile = options.working_prefix + ".unmapped.rdist";
 		rdist_scfile = options.working_prefix + ".softclips.rdist";
 	}
+
 	{
 		int64_t rgi = 0;
 		ofstream RFILE(rfile, ios::binary);
@@ -4423,9 +4427,7 @@ void ParallelBamReader::align_clipped_reads() {
 	if (!options.working_dir.empty()) {
 		cl_sortbam = options.working_prefix + ".cl.sorted.bam";
 	}
-//	if (boost::filesystem::exists(cl_sortbam)) {
-//		return;
-//	}
+
 	castle::TimeChecker checker;
 	checker.setTarget("ParallelBamReader.align_clipped_reads");
 	checker.start();
@@ -4478,9 +4480,7 @@ void ParallelBamReader::align_clipped_reads() {
 		local_reader.Close();
 	}
 	n_read_groups = read_groups.size();
-//	if (boost::filesystem::exists("bwa.err")) {
-//		boost::filesystem::remove("bwa.err");
-//	}
+
 	cout << "[ParallelBamReader.align_clipped_reads] align clipped reads\n";
 	castle::TimeChecker sub_checker;
 	sub_checker.setTarget("ParallelBamReader.align_clipped_reads - align");
@@ -4610,43 +4610,44 @@ void ParallelBamReader::align_clipped_reads() {
 				string line;
 				ofstream out(cl_tmp_sam, ios::binary);
 				ifstream in(cl_sam, ios::binary);
+
 				// write the SAM header.
-					if(is_first_rg) {
-						while (getline(in, line, '\n')) {
-							if(line.empty()) {
-								continue;
-							}
-							if('@' == line[0]) {
-								out << line << "\n";
-								continue;
-							}
-							castle::StringUtils::tokenize(line, delim_tab, a);
-							if (a.size() > 11) {
-								a[11] = (boost::format("RG:Z:%s\t%s") % rgname % a[11]).str();
-							} else {
-								a.resize(12);
-								a[11] = "RG:Z:" + rgname;
-							}
-							out << castle::StringUtils::join(a, "\t") << "\n";
+				if(is_first_rg) {
+					while (getline(in, line, '\n')) {
+						if(line.empty()) {
+							continue;
 						}
-					} else {
-						while (getline(in, line, '\n')) {
-							if(line.empty()) {
-								continue;
-							}
-							if('@' == line[0]) {
-								continue;
-							}
-							castle::StringUtils::tokenize(line, delim_tab, a);
-							if (a.size() > 11) {
-								a[11] = (boost::format("RG:Z:%s\t%s") % rgname % a[11]).str();
-							} else {
-								a.resize(12);
-								a[11] = "RG:Z:" + rgname;
-							}
-							out << castle::StringUtils::join(a, "\t") << "\n";
+						if('@' == line[0]) {
+							out << line << "\n";
+							continue;
 						}
+						castle::StringUtils::tokenize(line, delim_tab, a);
+						if (a.size() > 11) {
+							a[11] = (boost::format("RG:Z:%s\t%s") % rgname % a[11]).str();
+						} else {
+							a.resize(12);
+							a[11] = "RG:Z:" + rgname;
+						}
+						out << castle::StringUtils::join(a, "\t") << "\n";
 					}
+				} else {
+					while (getline(in, line, '\n')) {
+						if(line.empty()) {
+							continue;
+						}
+						if('@' == line[0]) {
+							continue;
+						}
+						castle::StringUtils::tokenize(line, delim_tab, a);
+						if (a.size() > 11) {
+							a[11] = (boost::format("RG:Z:%s\t%s") % rgname % a[11]).str();
+						} else {
+							a.resize(12);
+							a[11] = "RG:Z:" + rgname;
+						}
+						out << castle::StringUtils::join(a, "\t") << "\n";
+					}
+				}
 //				boost::filesystem::remove(cl_sam);
 //				boost::filesystem::rename(cl_tmp_sam, cl_sam);
 //			string samtools_cmd = (boost::format("samtools view -bt %s -o %s %s") % reference_fai % cl_bam % cl_tmp_sam).str();
