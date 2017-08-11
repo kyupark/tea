@@ -12,7 +12,8 @@
 using namespace std;
 
 int main(int argc, char **argv) {
-	cout << "meerkat-170702-2-dre-handles-empty-blacklist\n";
+	cout << "meerkat-170802-1-update-from-simon\n";
+
 	setvbuf(stdout, NULL, _IONBF, 0);
 	castle::OptionParser option_parser(argc, argv);
 	castle::TimeChecker checker;
@@ -27,7 +28,6 @@ int main(int argc, char **argv) {
 		meerkat::ParallelDiscordExtractor pde;
 		pde.set_option_parser(option_parser);
 		pde.extract_discordant_reads();
-//		pde.extract_discordant_reads_serial();
 	} else if("r_alt" == option_parser.program_name) {
 		meerkat::AlternativeMapper am;
 		am.set_option_parser(option_parser);
@@ -43,13 +43,10 @@ int main(int argc, char **argv) {
 	} else if("mpd" == option_parser.program_name) {
 		meerkat::MatePairDiscordantCaller mpdc;
 		mpdc.set_option_parser(option_parser);
-//		mpdc.select_candidate_events_in_clusters();
-		mpdc.select_candidate_events_in_clusters_alt();
+		mpdc.select_candidate_events_in_clusters_alt(); 
 	} else if("alg" == option_parser.program_name) {
 		meerkat::SplitReadReAlign srra;
 		srra.set_option_parser(option_parser);
-//		srra.align_split_reads();
-//		srra.align_split_reads_alt();
 		srra.align_split_reads_par();
 	} else if("srd" == option_parser.program_name) {
 		meerkat::SplitReadSVCaller srd;
@@ -80,9 +77,6 @@ int main(int argc, char **argv) {
 		cnvo.set_option_parser(option_parser);
 		cnvo.find_sv_overlaps();
 	} else if("test" == option_parser.program_name) {
-//		meerkat::SplitReadSVCaller srd;
-//		srd.set_option_parser(option_parser);
-//		srd.call_structural_variants_test();
 		meerkat::Mechanism m;
 		m.set_option_parser(option_parser);
 		m.call_variants_alt();

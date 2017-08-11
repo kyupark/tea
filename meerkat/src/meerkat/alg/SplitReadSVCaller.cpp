@@ -117,7 +117,7 @@ void SplitReadSVCaller::collect_bp_data(map<string, CoordinateEntry>& cluster_re
 	}
 	const char* delim_tab = "\t";
 	const char* delim_slash = "/";
-	const char* delim_double_underscore = "__";
+	const char* delim_double_underscore = "~";
 //	const char* delim_colon = ":";
 	vector<string> data;
 	vector<string> cl;
@@ -157,11 +157,11 @@ void SplitReadSVCaller::collect_bp_data(map<string, CoordinateEntry>& cluster_re
 				continue;
 			} else {
 				cluster_region[a_cl] = an_entry;
-				if(string::npos == a_cl.rfind("_0")) {
-//					cout << "[SplitReadSVCaller.collect_bp_data] cl: " << a_cl << "_0" << "\n";
-					cluster_region[a_cl + "_0"] = an_entry;
+				if(string::npos == a_cl.rfind("~0")) {
+//					cout << "[SplitReadSVCaller.collect_bp_data] cl: " << a_cl << "~0" << "\n";
+					cluster_region[a_cl + "~0"] = an_entry;
 				} else {
-					auto the_suffix_pos = a_cl.rfind("_0");
+					auto the_suffix_pos = a_cl.rfind("~0");
 					if(string::npos != the_suffix_pos) {
 						auto temp_cl = a_cl.substr(0, the_suffix_pos);
 						cluster_region[temp_cl] = an_entry;
@@ -319,6 +319,8 @@ void SplitReadSVCaller::detect_intra_chromosomal_events(ofstream& BPREAD, vector
 	castle::IOUtils::remove_files(output_file_names, n_cores);
 	cout << checker;
 }
+
+
 void SplitReadSVCaller::detect_intra_chromosomal_events_alt(ofstream& BPREAD, vector<EventEntry>& result_sr, vector<EventEntry>& unsupport_del, BamTools::BamReader& reader, const map<string, pair<int64_t, int64_t>>& reverse_index_ref_id, const map<string, CoordinateEntry>& cluster_region) {
 	castle::TimeChecker checker;
 	checker.setTarget("SplitReadSVCaller.detect_intra_chromosomal_events_alt");
@@ -559,7 +561,7 @@ void SplitReadSVCaller::detect_del(ofstream& BPREAD, vector<EventEntry>& result_
 							}
 							string reads0 = castle::StringUtils::join(ref_bpread[0], "\t");
 							string reads1 = castle::StringUtils::join(ref_bpread[1], "\t");
-							BPREAD << (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % data[3] % (right_bound_sr1 + 1) % data[3] % (left_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
+							BPREAD << (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % data[3] % (right_bound_sr1 + 1) % data[3] % (left_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
 							EventEntry an_entry;
 							if (del_size > 10) {
 								an_entry.type = "del_inssu";
@@ -620,7 +622,7 @@ void SplitReadSVCaller::detect_del(ofstream& BPREAD, vector<EventEntry>& result_
 							}
 							string reads0 = castle::StringUtils::join(ref_bpread[1], "\t");
 							string reads1 = castle::StringUtils::join(ref_bpread[0], "\t");
-							BPREAD << (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % data[3] % (right_bound_sr1 + 1) % data[3] % (left_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
+							BPREAD << (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % data[3] % (right_bound_sr1 + 1) % data[3] % (left_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
 
 							EventEntry an_entry;
 							if (del_size > 10) {
@@ -682,7 +684,7 @@ void SplitReadSVCaller::detect_del(ofstream& BPREAD, vector<EventEntry>& result_
 							}
 							string reads0 = castle::StringUtils::join(ref_bpread[0], "\t");
 							string reads1 = castle::StringUtils::join(ref_bpread[1], "\t");
-							BPREAD << (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr2 + 1) % data[3] % (right_bound_sr2 + 1) % reads0 % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads1).str();
+							BPREAD << (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr2 + 1) % data[3] % (right_bound_sr2 + 1) % reads0 % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads1).str();
 							EventEntry an_entry;
 							if (del_size > 10) {
 								an_entry.type = "del_inssd";
@@ -744,7 +746,7 @@ void SplitReadSVCaller::detect_del(ofstream& BPREAD, vector<EventEntry>& result_
 							}
 							string reads0 = castle::StringUtils::join(ref_bpread[1], "\t");
 							string reads1 = castle::StringUtils::join(ref_bpread[0], "\t");
-							BPREAD << (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr2 + 1) % data[3] % (right_bound_sr2 + 1) % reads0 % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads1).str();
+							BPREAD << (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr2 + 1) % data[3] % (right_bound_sr2 + 1) % reads0 % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads1).str();
 							EventEntry an_entry;
 							if (del_size > 10) {
 								an_entry.type = "del_inssd";
@@ -840,7 +842,7 @@ void SplitReadSVCaller::detect_del(ofstream& BPREAD, vector<EventEntry>& result_
 							cout << "del here-13\n";
 						}
 						string reads = castle::StringUtils::join(ref_bpread[0], "\t");
-						BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+						BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 						EventEntry an_entry;
 						an_entry.type = data[0];
 						an_entry.cluster_id = data[1];
@@ -951,7 +953,7 @@ void SplitReadSVCaller::detect_del(ofstream& BPREAD, vector<EventEntry>& result_
 						cout << "del here-17\n";
 					}
 					string reads = castle::StringUtils::join(ref_bpread[0], "\t");
-					BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+					BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 					EventEntry an_entry;
 					an_entry.type = data[0];
 					an_entry.cluster_id = data[1];
@@ -1085,7 +1087,7 @@ void SplitReadSVCaller::detect_del(ofstream& BPREAD, vector<EventEntry>& result_
 								}
 								string reads0 = castle::StringUtils::join(ref_bpread[0], "\t");
 								string reads1 = castle::StringUtils::join(ref_bpread[1], "\t");
-								BPREAD << (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % data[3] % (right_bound_sr1 + 1) % data[3] % (left_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
+								BPREAD << (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % data[3] % (right_bound_sr1 + 1) % data[3] % (left_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
 								EventEntry an_entry;
 								if (del_size > 10) {
 									an_entry.type = "del_inssu";
@@ -1148,7 +1150,7 @@ void SplitReadSVCaller::detect_del(ofstream& BPREAD, vector<EventEntry>& result_
 								}
 								string reads0 = castle::StringUtils::join(ref_bpread[1], "\t");
 								string reads1 = castle::StringUtils::join(ref_bpread[0], "\t");
-								BPREAD << (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % data[3] % (right_bound_sr1 + 1) % data[3] % (left_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
+								BPREAD << (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % data[3] % (right_bound_sr1 + 1) % data[3] % (left_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
 								EventEntry an_entry;
 								if (del_size > 10) {
 									an_entry.type = "del_inssu";
@@ -1203,7 +1205,7 @@ void SplitReadSVCaller::detect_del(ofstream& BPREAD, vector<EventEntry>& result_
 								}
 								string reads0 = castle::StringUtils::join(ref_bpread[0], "\t");
 								string reads1 = castle::StringUtils::join(ref_bpread[1], "\t");
-								BPREAD << (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr2 + 1) % data[3] % (right_bound_sr2 + 1) % reads0 % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads1).str();
+								BPREAD << (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr2 + 1) % data[3] % (right_bound_sr2 + 1) % reads0 % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads1).str();
 								EventEntry an_entry;
 								if (del_size > 10) {
 									an_entry.type = "del_inssd";
@@ -1265,7 +1267,7 @@ void SplitReadSVCaller::detect_del(ofstream& BPREAD, vector<EventEntry>& result_
 								}
 								string reads0 = castle::StringUtils::join(ref_bpread[1], "\t");
 								string reads1 = castle::StringUtils::join(ref_bpread[0], "\t");
-								BPREAD << (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr2 + 1) % data[3] % (right_bound_sr2 + 1) % reads0 % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads1).str();
+								BPREAD << (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr2 + 1) % data[3] % (right_bound_sr2 + 1) % reads0 % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads1).str();
 								EventEntry an_entry;
 								if (del_size > 10) {
 									an_entry.type = "del_inssd";
@@ -1324,7 +1326,7 @@ void SplitReadSVCaller::detect_del(ofstream& BPREAD, vector<EventEntry>& result_
 								cout << "del here-28-a\n";
 							}
 							string reads = castle::StringUtils::join(ref_bpread[0], "\t");
-							BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+							BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 							EventEntry an_entry;
 							an_entry.type = data[0];
 							an_entry.cluster_id = data[1];
@@ -1394,7 +1396,7 @@ void SplitReadSVCaller::detect_del(ofstream& BPREAD, vector<EventEntry>& result_
 							cout << "del here-30-a\n";
 						}
 						string reads = castle::StringUtils::join(ref_bpread[0], "\t");
-						BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] %
+						BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] %
 								(right_bound_sr + 1) % reads).str();
 						EventEntry an_entry;
 						an_entry.type = data[0];
@@ -1546,7 +1548,7 @@ void SplitReadSVCaller::detect_del(ofstream& BPREAD, vector<EventEntry>& result_
 								}
 								string reads0 = castle::StringUtils::join(ref_bpread[0], "\t");
 								string reads1 = castle::StringUtils::join(ref_bpread[1], "\t");
-								BPREAD << (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % data[3] % (right_bound_sr1 + 1) % data[3] % (left_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
+								BPREAD << (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % data[3] % (right_bound_sr1 + 1) % data[3] % (left_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
 								EventEntry an_entry;
 								if (del_size > 10) {
 									an_entry.type = "del_inssu";
@@ -1608,7 +1610,7 @@ void SplitReadSVCaller::detect_del(ofstream& BPREAD, vector<EventEntry>& result_
 								}
 								string reads0 = castle::StringUtils::join(ref_bpread[1], "\t");
 								string reads1 = castle::StringUtils::join(ref_bpread[0], "\t");
-								BPREAD << (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % data[3] % (right_bound_sr1 + 1) % data[3] % (left_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
+								BPREAD << (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % data[3] % (right_bound_sr1 + 1) % data[3] % (left_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
 								EventEntry an_entry;
 								if (del_size > 10) {
 									an_entry.type = "del_inssu";
@@ -1665,7 +1667,7 @@ void SplitReadSVCaller::detect_del(ofstream& BPREAD, vector<EventEntry>& result_
 								}
 								string reads0 = castle::StringUtils::join(ref_bpread[0], "\t");
 								string reads1 = castle::StringUtils::join(ref_bpread[1], "\t");
-								BPREAD << (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr2 + 1) % data[3] % (right_bound_sr2 + 1) % reads0 % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads1).str();
+								BPREAD << (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr2 + 1) % data[3] % (right_bound_sr2 + 1) % reads0 % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads1).str();
 								EventEntry an_entry;
 								if (del_size > 10) {
 									an_entry.type = "del_inssd";
@@ -1727,7 +1729,7 @@ void SplitReadSVCaller::detect_del(ofstream& BPREAD, vector<EventEntry>& result_
 								}
 								string reads0 = castle::StringUtils::join(ref_bpread[1], "\t");
 								string reads1 = castle::StringUtils::join(ref_bpread[0], "\t");
-								BPREAD << (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr2 + 1) % data[3] % (right_bound_sr2 + 1) % reads0 % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads1).str();
+								BPREAD << (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr2 + 1) % data[3] % (right_bound_sr2 + 1) % reads0 % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads1).str();
 								EventEntry an_entry;
 								if (del_size > 10) {
 									an_entry.type = "del_inssd";
@@ -1787,7 +1789,7 @@ void SplitReadSVCaller::detect_del(ofstream& BPREAD, vector<EventEntry>& result_
 								cout << "del here-43-a\n";
 							}
 							string reads = castle::StringUtils::join(ref_bpread[0], "\t");
-							BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+							BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 							EventEntry an_entry;
 							an_entry.type = data[0];
 							an_entry.cluster_id = data[1];
@@ -1857,7 +1859,7 @@ void SplitReadSVCaller::detect_del(ofstream& BPREAD, vector<EventEntry>& result_
 							cout << "del here-46\n";
 						}
 						string reads = castle::StringUtils::join(ref_bpread[0], "\t");
-						BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+						BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 						EventEntry an_entry;
 						an_entry.type = data[0];
 						an_entry.cluster_id = data[1];
@@ -2233,7 +2235,7 @@ void SplitReadSVCaller::detect_inssd(ofstream& BPREAD, vector<EventEntry>& resul
 					}
 					string reads0 = castle::StringUtils::join(ref_bpread[0], "\t");
 					string reads1 = castle::StringUtils::join(ref_bpread[1], "\t");
-					BPREAD << (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr2 + 1) % data[3] % (right_bound_sr2 + 1) % reads0 % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads1).str();
+					BPREAD << (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr2 + 1) % data[3] % (right_bound_sr2 + 1) % reads0 % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads1).str();
 					EventEntry an_entry;
 					an_entry.type = data[0];
 					an_entry.cluster_id = data[1];
@@ -2295,7 +2297,7 @@ void SplitReadSVCaller::detect_inssd(ofstream& BPREAD, vector<EventEntry>& resul
 								cout << "inssd here-1\n";
 							}
 							int64_t size = right_bound_sr - left_bound_sr;
-							BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+							BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 							EventEntry an_entry;
 							an_entry.type = "tandem_dup";
 							an_entry.cluster_id = cluster_id1;
@@ -2318,7 +2320,7 @@ void SplitReadSVCaller::detect_inssd(ofstream& BPREAD, vector<EventEntry>& resul
 						int64_t right_bound_sr = right_bound_sr2;
 						int64_t size = right_bound_sr - left_bound_sr - 1;
 						string reads = castle::StringUtils::join(ref_bpread[0], "\t");
-						BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+						BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 						EventEntry an_entry;
 						an_entry.type = "del";
 						an_entry.cluster_id = cluster_id2;
@@ -2431,7 +2433,7 @@ void SplitReadSVCaller::detect_inssd(ofstream& BPREAD, vector<EventEntry>& resul
 					}
 					string reads0 = castle::StringUtils::join(ref_bpread[1], "\t");
 					string reads1 = castle::StringUtils::join(ref_bpread[0], "\t");
-					BPREAD << (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr2 + 1) % data[3] % (right_bound_sr2 + 1) % reads0 % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads1).str();
+					BPREAD << (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr2 + 1) % data[3] % (right_bound_sr2 + 1) % reads0 % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads1).str();
 					EventEntry an_entry;
 					an_entry.type = data[0];
 					an_entry.cluster_id = data[1];
@@ -2477,7 +2479,7 @@ void SplitReadSVCaller::detect_inssd(ofstream& BPREAD, vector<EventEntry>& resul
 						int64_t right_bound_sr = right_bound_sr1;
 						int64_t size = right_bound_sr - left_bound_sr;
 						string reads = castle::StringUtils::join(ref_bpread[0], "\t");
-						BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+						BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 						EventEntry an_entry;
 						an_entry.type = "tandem_dup";
 						an_entry.cluster_id = cluster_id1;
@@ -2526,7 +2528,7 @@ void SplitReadSVCaller::detect_inssd(ofstream& BPREAD, vector<EventEntry>& resul
 								cout << "inssd here-10\n";
 							}
 							int64_t size = right_bound_sr - left_bound_sr - 1;
-							BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+							BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 							EventEntry an_entry;
 							an_entry.type = "del";
 							an_entry.cluster_id = cluster_id2;
@@ -2939,7 +2941,7 @@ void SplitReadSVCaller::detect_inssd(ofstream& BPREAD, vector<EventEntry>& resul
 			}
 			string reads0 = castle::StringUtils::join(bpread_2[0], "\t");
 			string reads1 = castle::StringUtils::join(bpread_1[0], "\t");
-			BPREAD << (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr2 + 1) % data[3] % (right_bound_sr2 + 1) % reads0 % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads1).str();
+			BPREAD << (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr2 + 1) % data[3] % (right_bound_sr2 + 1) % reads0 % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads1).str();
 			EventEntry an_entry;
 			an_entry.type = data[0];
 			an_entry.cluster_id = data[1];
@@ -2984,7 +2986,7 @@ void SplitReadSVCaller::detect_inssd(ofstream& BPREAD, vector<EventEntry>& resul
 				int64_t right_bound_sr = right_bound_sr1;
 				int64_t size = right_bound_sr - left_bound_sr;
 				string reads = castle::StringUtils::join(bpread_1[0], "\t");
-				BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+				BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 				EventEntry an_entry;
 				an_entry.type = "tandem_dup";
 				an_entry.cluster_id = cluster_id1;
@@ -3005,7 +3007,7 @@ void SplitReadSVCaller::detect_inssd(ofstream& BPREAD, vector<EventEntry>& resul
 				int64_t right_bound_sr = right_bound_sr2;
 				int64_t size = right_bound_sr - left_bound_sr - 1;
 				string reads = castle::StringUtils::join(bpread_2[0], "\t");
-				BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+				BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 				EventEntry an_entry;
 				an_entry.type = "del";
 				an_entry.cluster_id = cluster_id2;
@@ -3318,7 +3320,7 @@ void SplitReadSVCaller::detect_inssu(ofstream& BPREAD, vector<EventEntry>& resul
 				if (ref_support_sr.size() > 1 && ref_support_sr[0] >= options.support_reads && ref_support_sr[1] >= options.support_reads && left_bound_sr1 && left_bound_sr2 && right_bound_sr1 && right_bound_sr2) {
 					string reads0 = castle::StringUtils::join(bpread_1[0], "\t");
 					string reads1 = castle::StringUtils::join(bpread_1[1], "\t");
-					string a_line = (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % data[3] % (right_bound_sr1 + 1) % data[3] % (left_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
+					string a_line = (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % data[3] % (right_bound_sr1 + 1) % data[3] % (left_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
 					if(debug) {
 						cout << "inssu here-3: " << a_line << "\n";
 					}
@@ -3368,7 +3370,7 @@ void SplitReadSVCaller::detect_inssu(ofstream& BPREAD, vector<EventEntry>& resul
 						int64_t right_bound_sr = right_bound_sr1;
 						int64_t size = right_bound_sr - left_bound_sr;
 						string reads = castle::StringUtils::join(bpread_1[0], "\t");
-						BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr - 1) % reads).str();
+						BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr - 1) % reads).str();
 						EventEntry an_entry;
 						an_entry.type = "tandem_dup";
 						an_entry.cluster_id = cluster_id1;
@@ -3389,7 +3391,7 @@ void SplitReadSVCaller::detect_inssu(ofstream& BPREAD, vector<EventEntry>& resul
 						int64_t right_bound_sr = right_bound_sr2;
 						int64_t size = right_bound_sr - left_bound_sr - 1;
 						string reads = castle::StringUtils::join(bpread_1[1], "\t");
-						BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr - 1) % reads).str();
+						BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr - 1) % reads).str();
 						EventEntry an_entry;
 						an_entry.type = "del";
 						an_entry.cluster_id = cluster_id2;
@@ -3505,7 +3507,7 @@ void SplitReadSVCaller::detect_inssu(ofstream& BPREAD, vector<EventEntry>& resul
 					}
 					string reads0 = castle::StringUtils::join(bpread_1[1], "\t");
 					string reads1 = castle::StringUtils::join(bpread_1[0], "\t");
-					BPREAD << (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % data[3] % (right_bound_sr1 + 1) % data[3] % (left_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
+					BPREAD << (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % data[3] % (right_bound_sr1 + 1) % data[3] % (left_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
 					EventEntry an_entry;
 					an_entry.type = data[0];
 					an_entry.cluster_id = data[1];
@@ -3550,7 +3552,7 @@ void SplitReadSVCaller::detect_inssu(ofstream& BPREAD, vector<EventEntry>& resul
 						int64_t right_bound_sr = right_bound_sr1;
 						int64_t size = right_bound_sr - left_bound_sr;
 						string reads = castle::StringUtils::join(bpread_1[1], "\t");
-						BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+						BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 						EventEntry an_entry;
 						an_entry.type = "tandem_dup";
 						an_entry.cluster_id = cluster_id1;
@@ -3571,7 +3573,7 @@ void SplitReadSVCaller::detect_inssu(ofstream& BPREAD, vector<EventEntry>& resul
 						int64_t right_bound_sr = right_bound_sr2;
 						int64_t size = right_bound_sr - left_bound_sr - 1;
 						string reads = castle::StringUtils::join(bpread_1[0], "\t");
-						BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+						BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 						EventEntry an_entry;
 						an_entry.type = "del";
 						an_entry.cluster_id = cluster_id2;
@@ -3947,7 +3949,7 @@ void SplitReadSVCaller::detect_inssu(ofstream& BPREAD, vector<EventEntry>& resul
 			}
 			string reads0 = castle::StringUtils::join(bpread_1[0], "\t");
 			string reads1 = castle::StringUtils::join(bpread_2[0], "\t");
-			BPREAD << (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % data[3] % (right_bound_sr1 + 1) % data[3] % (left_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
+			BPREAD << (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % data[3] % (right_bound_sr1 + 1) % data[3] % (left_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
 			EventEntry an_entry;
 			an_entry.type = data[0];
 			an_entry.cluster_id = data[1];
@@ -3993,7 +3995,7 @@ void SplitReadSVCaller::detect_inssu(ofstream& BPREAD, vector<EventEntry>& resul
 				int64_t right_bound_sr = right_bound_sr1;
 				int64_t size = right_bound_sr - left_bound_sr;
 				string reads = castle::StringUtils::join(bpread_1[0], "\t");
-				BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr - 1) % reads).str();
+				BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr - 1) % reads).str();
 				EventEntry an_entry;
 				an_entry.type = "tandem_dup";
 				an_entry.cluster_id = cluster_id1;
@@ -4015,7 +4017,7 @@ void SplitReadSVCaller::detect_inssu(ofstream& BPREAD, vector<EventEntry>& resul
 				int64_t right_bound_sr = right_bound_sr2;
 				int64_t size = right_bound_sr - left_bound_sr - 1;
 				string reads = castle::StringUtils::join(bpread_2[0], "\t");
-				BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr - 1) % reads).str();
+				BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr - 1) % reads).str();
 				EventEntry an_entry;
 				an_entry.type = "del";
 				an_entry.cluster_id = cluster_id2;
@@ -4300,7 +4302,7 @@ void SplitReadSVCaller::detect_insod(ofstream& BPREAD, vector<EventEntry>& resul
 					}
 					string reads0 = castle::StringUtils::join(bpread_1[0], "\t");
 					string reads1 = castle::StringUtils::join(bpread_2[0], "\t");
-					BPREAD << (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads0 % data[3] % (left_bound_sr2 + 1) % data[3] % (right_bound_sr2 + 1) % reads1).str();
+					BPREAD << (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads0 % data[3] % (left_bound_sr2 + 1) % data[3] % (right_bound_sr2 + 1) % reads1).str();
 					EventEntry an_entry;
 					an_entry.type = data[0];
 					an_entry.cluster_id = data[1];
@@ -4345,7 +4347,7 @@ void SplitReadSVCaller::detect_insod(ofstream& BPREAD, vector<EventEntry>& resul
 						int64_t right_bound_sr = right_bound_sr1;
 						int64_t size = right_bound_sr - left_bound_sr;
 						string reads = castle::StringUtils::join(bpread_1[0], "\t");
-						BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+						BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 						EventEntry an_entry;
 						an_entry.type = "invers_f";
 						an_entry.cluster_id = cluster_id1;
@@ -4358,7 +4360,7 @@ void SplitReadSVCaller::detect_insod(ofstream& BPREAD, vector<EventEntry>& resul
 						result_sr.push_back(an_entry);
 					}
 //	if (src_return2.size() > 4 && src_return2.size() > 4 && src_return2.size() > 4 && src_return2[4] >= options.support_reads && left_bound_sr2 && right_bound_sr2) {
-					//#int64_t left_bound_sr = left_bound_sr2;//#int64_t right_bound_sr = right_bound_sr2;//#int64_t size = right_bound_sr - left_bound_sr;//#my reads = join("\t", @{bpread_2{0}});//#BPREAD <<  "data[3]__left_bound_sr__data[3]__right_bound_sr\nreads\n";//#result_sr[sri][0] = "invers_r\tcluster_id2\tmpd2\tsrc_return2[4]\tdata[3]\tleft_bound_sr\tright_bound_sr\tsize\n";//#
+					//#int64_t left_bound_sr = left_bound_sr2;//#int64_t right_bound_sr = right_bound_sr2;//#int64_t size = right_bound_sr - left_bound_sr;//#my reads = join("\t", @{bpread_2{0}});//#BPREAD <<  "data[3]~left_bound_sr~data[3]~right_bound_sr\nreads\n";//#result_sr[sri][0] = "invers_r\tcluster_id2\tmpd2\tsrc_return2[4]\tdata[3]\tleft_bound_sr\tright_bound_sr\tsize\n";//#
 //	}
 				}
 			}
@@ -4419,7 +4421,7 @@ void SplitReadSVCaller::detect_insod(ofstream& BPREAD, vector<EventEntry>& resul
 						}
 						string reads0 = castle::StringUtils::join(ref_bpread[0], "\t");
 						string reads1 = castle::StringUtils::join(ref_bpread[1], "\t");
-						BPREAD << (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads0 % data[3] % (left_bound_sr2 + 1) % data[3] % (right_bound_sr2 + 1) % reads1).str();
+						BPREAD << (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads0 % data[3] % (left_bound_sr2 + 1) % data[3] % (right_bound_sr2 + 1) % reads1).str();
 						EventEntry an_entry;
 						an_entry.type = data[0];
 						an_entry.cluster_id = data[1];
@@ -4464,7 +4466,7 @@ void SplitReadSVCaller::detect_insod(ofstream& BPREAD, vector<EventEntry>& resul
 							int64_t right_bound_sr = right_bound_sr1;
 							int64_t size = right_bound_sr - left_bound_sr;
 							string reads = castle::StringUtils::join(ref_bpread[0], "\t");
-							BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+							BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 							EventEntry an_entry;
 							an_entry.type = "invers_f";
 							an_entry.cluster_id = cluster_id1;
@@ -4485,7 +4487,7 @@ void SplitReadSVCaller::detect_insod(ofstream& BPREAD, vector<EventEntry>& resul
 							int64_t right_bound_sr = right_bound_sr2;
 							int64_t size = right_bound_sr - left_bound_sr;
 							string reads = castle::StringUtils::join(ref_bpread[1], "\t");
-							BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+							BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 							EventEntry an_entry;
 							an_entry.type = "invers_r";
 							an_entry.cluster_id = cluster_id2;
@@ -4544,7 +4546,7 @@ void SplitReadSVCaller::detect_insod(ofstream& BPREAD, vector<EventEntry>& resul
 						}
 						string reads0 = castle::StringUtils::join(ref_bpread[1], "\t");
 						string reads1 = castle::StringUtils::join(ref_bpread[0], "\t");
-						BPREAD << (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads0 % data[3] % (left_bound_sr2 + 1) % data[3] % (right_bound_sr2 + 1) % reads1).str();
+						BPREAD << (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads0 % data[3] % (left_bound_sr2 + 1) % data[3] % (right_bound_sr2 + 1) % reads1).str();
 						EventEntry an_entry;
 						an_entry.type = data[0];
 						an_entry.cluster_id = data[1];
@@ -4589,7 +4591,7 @@ void SplitReadSVCaller::detect_insod(ofstream& BPREAD, vector<EventEntry>& resul
 							int64_t right_bound_sr = right_bound_sr1;
 							int64_t size = right_bound_sr - left_bound_sr;
 							string reads = castle::StringUtils::join(ref_bpread[1], "\t");
-							BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+							BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 							EventEntry an_entry;
 							an_entry.type = "invers_f";
 							an_entry.cluster_id = cluster_id1;
@@ -4610,7 +4612,7 @@ void SplitReadSVCaller::detect_insod(ofstream& BPREAD, vector<EventEntry>& resul
 							int64_t right_bound_sr = right_bound_sr2 - 1;
 							int64_t size = right_bound_sr - left_bound_sr;
 							string reads = castle::StringUtils::join(ref_bpread[0], "\t");
-							BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % left_bound_sr % data[3] % right_bound_sr % reads).str();
+							BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % left_bound_sr % data[3] % right_bound_sr % reads).str();
 							EventEntry an_entry;
 							an_entry.type = "invers_r";
 							an_entry.cluster_id = cluster_id2;
@@ -4680,7 +4682,7 @@ void SplitReadSVCaller::detect_insod(ofstream& BPREAD, vector<EventEntry>& resul
 						}
 						string reads0 = castle::StringUtils::join(ref_bpread[0], "\t");
 						string reads1 = castle::StringUtils::join(ref_bpread[1], "\t");
-						BPREAD << (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads0 % data[3] % (left_bound_sr2 + 1) % data[3] % (right_bound_sr2 + 1) % reads1).str();
+						BPREAD << (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads0 % data[3] % (left_bound_sr2 + 1) % data[3] % (right_bound_sr2 + 1) % reads1).str();
 						EventEntry an_entry;
 						an_entry.type = data[0];
 						an_entry.cluster_id = data[1];
@@ -4725,7 +4727,7 @@ void SplitReadSVCaller::detect_insod(ofstream& BPREAD, vector<EventEntry>& resul
 							int64_t right_bound_sr = right_bound_sr1;
 							int64_t size = right_bound_sr - left_bound_sr;
 							string reads = castle::StringUtils::join(ref_bpread[0], "\t");
-							BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+							BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 							EventEntry an_entry;
 							an_entry.type = "invers_f";
 							an_entry.cluster_id = cluster_id1;
@@ -4739,7 +4741,7 @@ void SplitReadSVCaller::detect_insod(ofstream& BPREAD, vector<EventEntry>& resul
 							//result_sr[sri][0] = "invers_f\tcluster_id1\tmpd1\tref_support_sr[0]\tdata[3]\tleft_bound_sr\tright_bound_sr\tsize\n";
 						}
 						//if (ref_support_sr.size() > 1 && ref_support_sr[1] >= options.support_reads && left_bound_sr2 && right_bound_sr2) {
-						//#int64_t left_bound_sr = left_bound_sr2;//#int64_t right_bound_sr = right_bound_sr2;//#int64_t size = right_bound_sr - left_bound_sr;//#my reads = join("\t", @{ref_bpread{1}});//#BPREAD <<  "data[3]__left_bound_sr__data[3]__right_bound_sr\nreads\n";//#result_sr[sri][0] = "invers_r\tcluster_id2\tmpd2\tref_support_sr[1]\tdata[3]\tleft_bound_sr\tright_bound_sr\tsize\n";//#
+						//#int64_t left_bound_sr = left_bound_sr2;//#int64_t right_bound_sr = right_bound_sr2;//#int64_t size = right_bound_sr - left_bound_sr;//#my reads = join("\t", @{ref_bpread{1}});//#BPREAD <<  "data[3]~left_bound_sr~data[3]~right_bound_sr\nreads\n";//#result_sr[sri][0] = "invers_r\tcluster_id2\tmpd2\tref_support_sr[1]\tdata[3]\tleft_bound_sr\tright_bound_sr\tsize\n";//#
 						//}
 					}
 				} else {
@@ -4787,7 +4789,7 @@ void SplitReadSVCaller::detect_insod(ofstream& BPREAD, vector<EventEntry>& resul
 						}
 						string reads0 = castle::StringUtils::join(ref_bpread[1], "\t");
 						string reads1 = castle::StringUtils::join(ref_bpread[0], "\t");
-						BPREAD << (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads0 % data[3] % (left_bound_sr2 + 1) % data[3] % (right_bound_sr2 + 1) % reads1).str();
+						BPREAD << (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads0 % data[3] % (left_bound_sr2 + 1) % data[3] % (right_bound_sr2 + 1) % reads1).str();
 						EventEntry an_entry;
 						an_entry.type = data[0];
 						an_entry.cluster_id = data[1];
@@ -4832,7 +4834,7 @@ void SplitReadSVCaller::detect_insod(ofstream& BPREAD, vector<EventEntry>& resul
 							int64_t right_bound_sr = right_bound_sr1;
 							int64_t size = right_bound_sr - left_bound_sr;
 							string reads = castle::StringUtils::join(ref_bpread[1], "\t");
-							BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+							BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 							EventEntry an_entry;
 							an_entry.type = "invers_f";
 							an_entry.cluster_id = cluster_id1;
@@ -4846,7 +4848,7 @@ void SplitReadSVCaller::detect_insod(ofstream& BPREAD, vector<EventEntry>& resul
 							//result_sr[sri][0] = "invers_f\tcluster_id1\tmpd1\tref_support_sr[1]\tdata[3]\tleft_bound_sr\tright_bound_sr\tsize\n";
 						}
 						//if (ref_support_sr.size() > 0 && ref_support_sr[0] >= options.support_reads && left_bound_sr2 && right_bound_sr2) {
-						//#int64_t left_bound_sr = left_bound_sr2;//#int64_t right_bound_sr = right_bound_sr2;//#int64_t size = right_bound_sr - left_bound_sr;//#my reads = join("\t", @{ref_bpread{0}});//#BPREAD <<  "data[3]__left_bound_sr__data[3]__right_bound_sr\nreads\n";//#result_sr[sri][0] = "invers_r\tcluster_id2\tmpd2\tref_support_sr[0]\tdata[3]\tleft_bound_sr\tright_bound_sr\tsize\n";//#
+						//#int64_t left_bound_sr = left_bound_sr2;//#int64_t right_bound_sr = right_bound_sr2;//#int64_t size = right_bound_sr - left_bound_sr;//#my reads = join("\t", @{ref_bpread{0}});//#BPREAD <<  "data[3]~left_bound_sr~data[3]~right_bound_sr\nreads\n";//#result_sr[sri][0] = "invers_r\tcluster_id2\tmpd2\tref_support_sr[0]\tdata[3]\tleft_bound_sr\tright_bound_sr\tsize\n";//#
 						//}
 					}
 				}
@@ -4968,7 +4970,7 @@ void SplitReadSVCaller::detect_insod(ofstream& BPREAD, vector<EventEntry>& resul
 								}
 								string reads0 = castle::StringUtils::join(ref_bpread[0], "\t");
 								string reads1 = castle::StringUtils::join(ref_bpread[1], "\t");
-								BPREAD << (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads0 % data[3] % (left_bound_sr2 + 1) % data[3] % (right_bound_sr2 + 1) % reads1).str();
+								BPREAD << (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads0 % data[3] % (left_bound_sr2 + 1) % data[3] % (right_bound_sr2 + 1) % reads1).str();
 								EventEntry an_entry;
 								an_entry.type = data[0];
 								an_entry.cluster_id = data[1];
@@ -5013,7 +5015,7 @@ void SplitReadSVCaller::detect_insod(ofstream& BPREAD, vector<EventEntry>& resul
 									int64_t right_bound_sr = right_bound_sr1;
 									int64_t size = right_bound_sr - left_bound_sr;
 									string reads = castle::StringUtils::join(ref_bpread[0], "\t");
-									BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+									BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 									EventEntry an_entry;
 									an_entry.type = "invers_f";
 									an_entry.cluster_id = cluster_id1;
@@ -5034,7 +5036,7 @@ void SplitReadSVCaller::detect_insod(ofstream& BPREAD, vector<EventEntry>& resul
 									int64_t right_bound_sr = right_bound_sr2;
 									int64_t size = right_bound_sr - left_bound_sr;
 									string reads = castle::StringUtils::join(ref_bpread[1], "\t");
-									BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+									BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 									EventEntry an_entry;
 									an_entry.type = "invers_r";
 									an_entry.cluster_id = cluster_id2;
@@ -5117,7 +5119,7 @@ void SplitReadSVCaller::detect_insod(ofstream& BPREAD, vector<EventEntry>& resul
 								}
 								string reads0 = castle::StringUtils::join(ref_bpread[1], "\t");
 								string reads1 = castle::StringUtils::join(ref_bpread[0], "\t");
-								BPREAD << (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads0 % data[3] % (left_bound_sr2 + 1) % data[3] % (right_bound_sr2 + 1) % reads1).str();
+								BPREAD << (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads0 % data[3] % (left_bound_sr2 + 1) % data[3] % (right_bound_sr2 + 1) % reads1).str();
 								EventEntry an_entry;
 								an_entry.type = data[0];
 								an_entry.cluster_id = data[1];
@@ -5162,7 +5164,7 @@ void SplitReadSVCaller::detect_insod(ofstream& BPREAD, vector<EventEntry>& resul
 									int64_t right_bound_sr = right_bound_sr1;
 									string reads = castle::StringUtils::join(ref_bpread[1], "\t");
 									int64_t size = right_bound_sr - left_bound_sr;
-									BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+									BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 									EventEntry an_entry;
 									an_entry.type = "invers_f";
 									an_entry.cluster_id = cluster_id1;
@@ -5183,7 +5185,7 @@ void SplitReadSVCaller::detect_insod(ofstream& BPREAD, vector<EventEntry>& resul
 									int64_t right_bound_sr = right_bound_sr2;
 									int64_t size = right_bound_sr - left_bound_sr;
 									string reads = castle::StringUtils::join(ref_bpread[0], "\t");
-									BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+									BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 									EventEntry an_entry;
 									an_entry.type = "invers_r";
 									an_entry.cluster_id = cluster_id2;
@@ -5224,7 +5226,7 @@ void SplitReadSVCaller::detect_insod(ofstream& BPREAD, vector<EventEntry>& resul
 								cout << "insod here-38-a:\n";
 							}
 							int64_t size = right_bound_sr - left_bound_sr;
-							BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+							BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 							EventEntry an_entry;
 							an_entry.type = "invers_f";
 							an_entry.cluster_id = cluster_id1;
@@ -5329,7 +5331,7 @@ void SplitReadSVCaller::detect_insod(ofstream& BPREAD, vector<EventEntry>& resul
 								}
 								string reads0 = castle::StringUtils::join(ref_bpread[0], "\t");
 								string reads1 = castle::StringUtils::join(ref_bpread[1], "\t");
-								BPREAD << (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads0 % data[3] % (left_bound_sr2 + 1) % data[3] % (right_bound_sr2 + 1) % reads1).str();
+								BPREAD << (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads0 % data[3] % (left_bound_sr2 + 1) % data[3] % (right_bound_sr2 + 1) % reads1).str();
 								EventEntry an_entry;
 								an_entry.type = data[0];
 								an_entry.cluster_id = data[1];
@@ -5374,7 +5376,7 @@ void SplitReadSVCaller::detect_insod(ofstream& BPREAD, vector<EventEntry>& resul
 									int64_t right_bound_sr = right_bound_sr1;
 									int64_t size = right_bound_sr - left_bound_sr;
 									string reads = castle::StringUtils::join(ref_bpread[0], "\t");
-									BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+									BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 									EventEntry an_entry;
 									an_entry.type = "invers_f";
 									an_entry.cluster_id = cluster_id1;
@@ -5395,7 +5397,7 @@ void SplitReadSVCaller::detect_insod(ofstream& BPREAD, vector<EventEntry>& resul
 									int64_t right_bound_sr = right_bound_sr2;
 									int64_t size = right_bound_sr - left_bound_sr;
 									string reads = castle::StringUtils::join(ref_bpread[1], "\t");
-									BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+									BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 									EventEntry an_entry;
 									an_entry.type = "invers_r";
 									an_entry.cluster_id = cluster_id2;
@@ -5451,7 +5453,7 @@ void SplitReadSVCaller::detect_insod(ofstream& BPREAD, vector<EventEntry>& resul
 								}
 								string reads0 = castle::StringUtils::join(ref_bpread[1], "\t");
 								string reads1 = castle::StringUtils::join(ref_bpread[0], "\t");
-								BPREAD << (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads0 % data[3] % (left_bound_sr2 + 1) % data[3] % (right_bound_sr2 + 1) % reads1).str();
+								BPREAD << (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads0 % data[3] % (left_bound_sr2 + 1) % data[3] % (right_bound_sr2 + 1) % reads1).str();
 								EventEntry an_entry;
 								an_entry.type = data[0];
 								an_entry.cluster_id = data[1];
@@ -5496,7 +5498,7 @@ void SplitReadSVCaller::detect_insod(ofstream& BPREAD, vector<EventEntry>& resul
 									int64_t right_bound_sr = right_bound_sr1;
 									string reads = castle::StringUtils::join(ref_bpread[1], "\t");
 									int64_t size = right_bound_sr - left_bound_sr;
-									BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+									BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 									EventEntry an_entry;
 									an_entry.type = "invers_f";
 									an_entry.cluster_id = cluster_id1;
@@ -5517,7 +5519,7 @@ void SplitReadSVCaller::detect_insod(ofstream& BPREAD, vector<EventEntry>& resul
 									int64_t right_bound_sr = right_bound_sr2;
 									int64_t size = right_bound_sr - left_bound_sr;
 									string reads = castle::StringUtils::join(ref_bpread[0], "\t");
-									BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+									BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 									EventEntry an_entry;
 									an_entry.type = "invers_r";
 									an_entry.cluster_id = cluster_id2;
@@ -5552,7 +5554,7 @@ void SplitReadSVCaller::detect_insod(ofstream& BPREAD, vector<EventEntry>& resul
 								cout << "insod here-52-a:\n";
 							}
 							int64_t size = right_bound_sr - left_bound_sr;
-							BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+							BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 							EventEntry an_entry;
 							an_entry.type = "invers_f";
 							an_entry.cluster_id = cluster_id1;
@@ -5998,7 +6000,7 @@ void SplitReadSVCaller::detect_insod(ofstream& BPREAD, vector<EventEntry>& resul
 		if (src_return1.size() > 4 && src_return2.size() > 4 && src_return1[4] >= options.support_reads && src_return2[4] >= options.support_reads && left_bound_sr1 && right_bound_sr1 && left_bound_sr2 && right_bound_sr2) {
 			string reads0 = castle::StringUtils::join(bpread_1[0], "\t");
 			string reads1 = castle::StringUtils::join(bpread_2[0], "\t");
-			string a_line = (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads0 % data[3] % (left_bound_sr2 + 1) % data[3] % (right_bound_sr2 + 1) % reads1).str();
+			string a_line = (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads0 % data[3] % (left_bound_sr2 + 1) % data[3] % (right_bound_sr2 + 1) % reads1).str();
 			if(debug) {
 				cout << "insod here-73:" << a_line;
 			}
@@ -6047,7 +6049,7 @@ void SplitReadSVCaller::detect_insod(ofstream& BPREAD, vector<EventEntry>& resul
 				int64_t right_bound_sr = right_bound_sr1;
 				int64_t size = right_bound_sr - left_bound_sr;
 				string reads = castle::StringUtils::join(bpread_1[0], "\t");
-				BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+				BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 				EventEntry an_entry;
 				an_entry.type = "invers_f";
 				an_entry.cluster_id = cluster_id1;
@@ -6068,7 +6070,7 @@ void SplitReadSVCaller::detect_insod(ofstream& BPREAD, vector<EventEntry>& resul
 				int64_t right_bound_sr = right_bound_sr2;
 				int64_t size = right_bound_sr - left_bound_sr;
 				string reads = castle::StringUtils::join(bpread_2[0], "\t");
-				BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+				BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 				EventEntry an_entry;
 				an_entry.type = "invers_r";
 				an_entry.cluster_id = cluster_id2;
@@ -6400,7 +6402,7 @@ void SplitReadSVCaller::detect_insou(ofstream& BPREAD, vector<EventEntry>& resul
 					}
 					string reads0 = castle::StringUtils::join(bpread_1[0], "\t");
 					string reads1 = castle::StringUtils::join(bpread_2[0], "\t");
-					BPREAD << (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % data[3] % (right_bound_sr1 + 1) % data[3] % (left_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
+					BPREAD << (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % data[3] % (right_bound_sr1 + 1) % data[3] % (left_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
 					EventEntry an_entry;
 					an_entry.type = data[0];
 					an_entry.cluster_id = data[1];
@@ -6438,7 +6440,7 @@ void SplitReadSVCaller::detect_insou(ofstream& BPREAD, vector<EventEntry>& resul
 					//int64_t mpd1 = boost::lexical_cast<int64_t>(mpd_str_1);
 					int64_t mpd2 = boost::lexical_cast<int64_t>(mpd_str_2);
 //					if (src_return1.size() > 4 && src_return1.size() > 4 && src_return1.size() > 4 && src_return1[4] >= options.support_reads && left_bound_sr1 && right_bound_sr1) {
-					//#int64_t left_bound_sr = left_bound_sr1;//#int64_t right_bound_sr = right_bound_sr1;//#int64_t size = right_bound_sr - left_bound_sr;//#my reads = join("\t", @{bpread_1{0}});//#BPREAD <<  "data[3]__left_bound_sr__data[3]__right_bound_sr\nreads\n";//#result_sr[sri][0] = "invers_f\tcluster_id1\tmpd1\tsrc_return1[4]\tdata[3]\tleft_bound_sr\tright_bound_sr\tsize\n";//#
+					//#int64_t left_bound_sr = left_bound_sr1;//#int64_t right_bound_sr = right_bound_sr1;//#int64_t size = right_bound_sr - left_bound_sr;//#my reads = join("\t", @{bpread_1{0}});//#BPREAD <<  "data[3]~left_bound_sr~data[3]~right_bound_sr\nreads\n";//#result_sr[sri][0] = "invers_f\tcluster_id1\tmpd1\tsrc_return1[4]\tdata[3]\tleft_bound_sr\tright_bound_sr\tsize\n";//#
 //					}
 					if (src_return2.size() > 4 && src_return2[4] >= options.support_reads && left_bound_sr2 && right_bound_sr2) {
 						if(debug) {
@@ -6448,7 +6450,7 @@ void SplitReadSVCaller::detect_insou(ofstream& BPREAD, vector<EventEntry>& resul
 						int64_t right_bound_sr = right_bound_sr2;
 						int64_t size = right_bound_sr - left_bound_sr;
 						string reads = castle::StringUtils::join(bpread_2[0], "\t");
-						BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+						BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 						EventEntry an_entry;
 						an_entry.type = "invers_r";
 						an_entry.cluster_id = cluster_id2;
@@ -6545,7 +6547,7 @@ void SplitReadSVCaller::detect_insou(ofstream& BPREAD, vector<EventEntry>& resul
 						}
 						string reads0 = castle::StringUtils::join(ref_bpread[1], "\t");
 						string reads1 = castle::StringUtils::join(ref_bpread[0], "\t");
-						BPREAD << (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % data[3] % (right_bound_sr1 + 1) % data[3] % (left_bound_sr1 - 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
+						BPREAD << (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % data[3] % (right_bound_sr1 + 1) % data[3] % (left_bound_sr1 - 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
 						EventEntry an_entry;
 						an_entry.type = data[0];
 						an_entry.cluster_id = data[1];
@@ -6605,7 +6607,7 @@ void SplitReadSVCaller::detect_insou(ofstream& BPREAD, vector<EventEntry>& resul
 									cout << "insou here-3\n";
 								}
 								int64_t size = right_bound_sr - left_bound_sr;
-								BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+								BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 								EventEntry an_entry;
 								an_entry.type = "invers_f";
 								an_entry.cluster_id = cluster_id1;
@@ -6627,7 +6629,7 @@ void SplitReadSVCaller::detect_insou(ofstream& BPREAD, vector<EventEntry>& resul
 							int64_t right_bound_sr = right_bound_sr2;
 							int64_t size = right_bound_sr - left_bound_sr;
 							string reads = castle::StringUtils::join(ref_bpread[0], "\t");
-							BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+							BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 							EventEntry an_entry;
 							an_entry.type = "invers_r";
 							an_entry.cluster_id = cluster_id2;
@@ -6712,7 +6714,7 @@ void SplitReadSVCaller::detect_insou(ofstream& BPREAD, vector<EventEntry>& resul
 						}
 						string reads0 = castle::StringUtils::join(ref_bpread[0], "\t");
 						string reads1 = castle::StringUtils::join(ref_bpread[1], "\t");
-						BPREAD << (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % data[3] % (right_bound_sr1 + 1) % data[3] % (left_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
+						BPREAD << (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % data[3] % (right_bound_sr1 + 1) % data[3] % (left_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
 						EventEntry an_entry;
 						an_entry.type = data[0];
 						an_entry.cluster_id = data[1];
@@ -6757,7 +6759,7 @@ void SplitReadSVCaller::detect_insou(ofstream& BPREAD, vector<EventEntry>& resul
 							int64_t right_bound_sr = right_bound_sr1;
 							int64_t size = right_bound_sr - left_bound_sr;
 							string reads = castle::StringUtils::join(ref_bpread[0], "\t");
-							BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+							BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 							EventEntry an_entry;
 							an_entry.type = "invers_f";
 							an_entry.cluster_id = cluster_id1;
@@ -6792,7 +6794,7 @@ void SplitReadSVCaller::detect_insou(ofstream& BPREAD, vector<EventEntry>& resul
 									cout << "insou here-7\n";
 								}
 								int64_t size = right_bound_sr - left_bound_sr;
-								BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+								BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 								EventEntry an_entry;
 								an_entry.type = "invers_r";
 								an_entry.cluster_id = cluster_id2;
@@ -6891,7 +6893,7 @@ void SplitReadSVCaller::detect_insou(ofstream& BPREAD, vector<EventEntry>& resul
 						}
 						string reads0 = castle::StringUtils::join(ref_bpread[1], "\t");
 						string reads1 = castle::StringUtils::join(ref_bpread[0], "\t");
-						BPREAD << (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % data[3] % (right_bound_sr1 + 1) % data[3] % (left_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
+						BPREAD << (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % data[3] % (right_bound_sr1 + 1) % data[3] % (left_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
 						EventEntry an_entry;
 						an_entry.type = data[0];
 						an_entry.cluster_id = data[1];
@@ -6929,7 +6931,7 @@ void SplitReadSVCaller::detect_insou(ofstream& BPREAD, vector<EventEntry>& resul
 						//int64_t mpd1 = boost::lexical_cast<int64_t>(mpd_str_1);
 						int64_t mpd2 = boost::lexical_cast<int64_t>(mpd_str_2);
 //						if (ref_support_sr.size() > 0 && ref_support_sr[0] >= options.support_reads) {
-						//#int64_t left_bound_sr = left_bound_sr1;//#int64_t right_bound_sr = right_bound_sr1;//#my reads = join("\t", @{ref_bpread{0}});//#if (ref_bpread{1})//#{//#reads = join("\t", @{ref_bpread{1}});//#}//#else//#{//#left_bound_sr = positiona1 + ref_boundary1[1] + options.cut_sr;//#right_bound_sr = positiona4 - (ref_boundary2[0] - (positiona2-positiona1+101));//#}//#if (left_bound_sr && right_bound_sr)//#{//#int64_t size = right_bound_sr - left_bound_sr;//#BPREAD <<  "data[3]__left_bound_sr__data[3]__right_bound_sr\nreads\n";//#result_sr[sri][0] = "invers_f\tcluster_id1\tmpd1\tref_support_sr[0]\tdata[3]\tleft_bound_sr\tright_bound_sr\tsize\n";//#//#}
+						//#int64_t left_bound_sr = left_bound_sr1;//#int64_t right_bound_sr = right_bound_sr1;//#my reads = join("\t", @{ref_bpread{0}});//#if (ref_bpread{1})//#{//#reads = join("\t", @{ref_bpread{1}});//#}//#else//#{//#left_bound_sr = positiona1 + ref_boundary1[1] + options.cut_sr;//#right_bound_sr = positiona4 - (ref_boundary2[0] - (positiona2-positiona1+101));//#}//#if (left_bound_sr && right_bound_sr)//#{//#int64_t size = right_bound_sr - left_bound_sr;//#BPREAD <<  "data[3]~left_bound_sr~data[3]~right_bound_sr\nreads\n";//#result_sr[sri][0] = "invers_f\tcluster_id1\tmpd1\tref_support_sr[0]\tdata[3]\tleft_bound_sr\tright_bound_sr\tsize\n";//#//#}
 //						}
 						if (ref_support_sr.size() > 1 && ref_support_sr[1] >= options.support_reads && left_bound_sr2 && right_bound_sr2) {
 							if(debug) {
@@ -6939,7 +6941,7 @@ void SplitReadSVCaller::detect_insou(ofstream& BPREAD, vector<EventEntry>& resul
 							int64_t right_bound_sr = right_bound_sr2;
 							int64_t size = right_bound_sr - left_bound_sr;
 							string reads = castle::StringUtils::join(ref_bpread[0], "\t");
-							BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+							BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 							EventEntry an_entry;
 							an_entry.type = "invers_r";
 							an_entry.cluster_id = cluster_id2;
@@ -7022,7 +7024,7 @@ void SplitReadSVCaller::detect_insou(ofstream& BPREAD, vector<EventEntry>& resul
 						}
 						string reads0 = castle::StringUtils::join(ref_bpread[0], "\t");
 						string reads1 = castle::StringUtils::join(ref_bpread[1], "\t");
-						BPREAD << (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % data[3] % (right_bound_sr1 + 1) % data[3] % (left_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
+						BPREAD << (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % data[3] % (right_bound_sr1 + 1) % data[3] % (left_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
 						EventEntry an_entry;
 						an_entry.type = data[0];
 						an_entry.cluster_id = data[1];
@@ -7051,7 +7053,7 @@ void SplitReadSVCaller::detect_insou(ofstream& BPREAD, vector<EventEntry>& resul
 						//int64_t mpd1 = boost::lexical_cast<int64_t>(mpd_str_1);
 						int64_t mpd2 = boost::lexical_cast<int64_t>(mpd_str_2);
 //						if (ref_support_sr.size() > 1 && ref_support_sr[1] >= options.support_reads && left_bound_sr1 && right_bound_sr1) {
-						//#int64_t left_bound_sr = left_bound_sr1;//#int64_t right_bound_sr = right_bound_sr1;//#int64_t size = right_bound_sr - left_bound_sr;//#my reads = join("\t", @{ref_bpread{0}});//#BPREAD <<  "data[3]__left_bound_sr__data[3]__right_bound_sr\nreads\n";//#result_sr[sri][0] = "invers_f\tcluster_id1\tmpd1\tref_support_sr[1]\tdata[3]\tleft_bound_sr\tright_bound_sr\tsize\n";//#
+						//#int64_t left_bound_sr = left_bound_sr1;//#int64_t right_bound_sr = right_bound_sr1;//#int64_t size = right_bound_sr - left_bound_sr;//#my reads = join("\t", @{ref_bpread{0}});//#BPREAD <<  "data[3]~left_bound_sr~data[3]~right_bound_sr\nreads\n";//#result_sr[sri][0] = "invers_f\tcluster_id1\tmpd1\tref_support_sr[1]\tdata[3]\tleft_bound_sr\tright_bound_sr\tsize\n";//#
 //						}
 						if (ref_support_sr.size() > 0 && ref_support_sr[0] >= options.support_reads) {
 							if(debug) {
@@ -7075,7 +7077,7 @@ void SplitReadSVCaller::detect_insou(ofstream& BPREAD, vector<EventEntry>& resul
 									cout << "insou here-11\n";
 								}
 								int64_t size = right_bound_sr - left_bound_sr;
-								BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+								BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 								EventEntry an_entry;
 								an_entry.type = "invers_r";
 								an_entry.cluster_id = cluster_id2;
@@ -7197,7 +7199,7 @@ void SplitReadSVCaller::detect_insou(ofstream& BPREAD, vector<EventEntry>& resul
 								}
 								string reads0 = castle::StringUtils::join(ref_bpread[1], "\t");
 								string reads1 = castle::StringUtils::join(ref_bpread[0], "\t");
-								BPREAD << (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % data[3] % (right_bound_sr1 + 1) % data[3] % (left_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
+								BPREAD << (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % data[3] % (right_bound_sr1 + 1) % data[3] % (left_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
 								EventEntry an_entry;
 								an_entry.type = data[0];
 								an_entry.cluster_id = data[1];
@@ -7233,7 +7235,7 @@ void SplitReadSVCaller::detect_insou(ofstream& BPREAD, vector<EventEntry>& resul
 									int64_t right_bound_sr = right_bound_sr1;
 									string reads = castle::StringUtils::join(ref_bpread[1], "\t");
 									int64_t size = right_bound_sr - left_bound_sr;
-									BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+									BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 									EventEntry an_entry;
 									an_entry.type = "invers_f";
 									an_entry.cluster_id = cluster_id1;
@@ -7253,7 +7255,7 @@ void SplitReadSVCaller::detect_insou(ofstream& BPREAD, vector<EventEntry>& resul
 									int64_t right_bound_sr = right_bound_sr2;
 									int64_t size = right_bound_sr - left_bound_sr;
 									string reads = castle::StringUtils::join(ref_bpread[0], "\t");
-									BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+									BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 									EventEntry an_entry;
 									an_entry.type = "invers_r";
 									an_entry.cluster_id = cluster_id2;
@@ -7320,7 +7322,7 @@ void SplitReadSVCaller::detect_insou(ofstream& BPREAD, vector<EventEntry>& resul
 								}
 								string reads0 = castle::StringUtils::join(ref_bpread[1], "\t");
 								string reads1 = castle::StringUtils::join(ref_bpread[0], "\t");
-								BPREAD << (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % data[3] % (right_bound_sr1 + 1) % data[3] % (left_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
+								BPREAD << (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % data[3] % (right_bound_sr1 + 1) % data[3] % (left_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
 								EventEntry an_entry;
 								an_entry.type = data[0];
 								an_entry.cluster_id = data[1];
@@ -7356,7 +7358,7 @@ void SplitReadSVCaller::detect_insou(ofstream& BPREAD, vector<EventEntry>& resul
 									int64_t right_bound_sr = right_bound_sr1;
 									string reads = castle::StringUtils::join(ref_bpread[1], "\t");
 									int64_t size = right_bound_sr - left_bound_sr;
-									BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+									BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 									EventEntry an_entry;
 									an_entry.type = "invers_f";
 									an_entry.cluster_id = cluster_id1;
@@ -7376,7 +7378,7 @@ void SplitReadSVCaller::detect_insou(ofstream& BPREAD, vector<EventEntry>& resul
 									int64_t right_bound_sr = right_bound_sr2;
 									int64_t size = right_bound_sr - left_bound_sr;
 									string reads = castle::StringUtils::join(ref_bpread[0], "\t");
-									BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+									BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 									EventEntry an_entry;
 									an_entry.type = "invers_r";
 									an_entry.cluster_id = cluster_id2;
@@ -7417,7 +7419,7 @@ void SplitReadSVCaller::detect_insou(ofstream& BPREAD, vector<EventEntry>& resul
 								cout << "insou here-18\n";
 							}
 							int64_t size = right_bound_sr - left_bound_sr;
-							BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+							BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 							EventEntry an_entry;
 							an_entry.type = "invers_f";
 							an_entry.cluster_id = cluster_id1;
@@ -7532,7 +7534,7 @@ void SplitReadSVCaller::detect_insou(ofstream& BPREAD, vector<EventEntry>& resul
 								}
 								string reads0 = castle::StringUtils::join(ref_bpread[1], "\t");
 								string reads1 = castle::StringUtils::join(ref_bpread[0], "\t");
-								BPREAD << (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % data[3] % (right_bound_sr1 + 1) % data[3] % (left_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
+								BPREAD << (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % data[3] % (right_bound_sr1 + 1) % data[3] % (left_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
 								EventEntry an_entry;
 								an_entry.type = data[0];
 								an_entry.cluster_id = data[1];
@@ -7568,7 +7570,7 @@ void SplitReadSVCaller::detect_insou(ofstream& BPREAD, vector<EventEntry>& resul
 									int64_t right_bound_sr = right_bound_sr1;
 									string reads = castle::StringUtils::join(ref_bpread[1], "\t");
 									int64_t size = right_bound_sr - left_bound_sr;
-									BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+									BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 									EventEntry an_entry;
 									an_entry.type = "invers_f";
 									an_entry.cluster_id = cluster_id1;
@@ -7588,7 +7590,7 @@ void SplitReadSVCaller::detect_insou(ofstream& BPREAD, vector<EventEntry>& resul
 									int64_t right_bound_sr = right_bound_sr2;
 									int64_t size = right_bound_sr - left_bound_sr;
 									string reads = castle::StringUtils::join(ref_bpread[0], "\t");
-									BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+									BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 									EventEntry an_entry;
 									an_entry.type = "invers_r";
 									an_entry.cluster_id = cluster_id2;
@@ -7655,7 +7657,7 @@ void SplitReadSVCaller::detect_insou(ofstream& BPREAD, vector<EventEntry>& resul
 								}
 								string reads0 = castle::StringUtils::join(ref_bpread[1], "\t");
 								string reads1 = castle::StringUtils::join(ref_bpread[0], "\t");
-								BPREAD << (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % data[3] % (right_bound_sr1 + 1) % data[3] % (left_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
+								BPREAD << (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % data[3] % (right_bound_sr1 + 1) % data[3] % (left_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
 								EventEntry an_entry;
 								an_entry.type = data[0];
 								an_entry.cluster_id = data[1];
@@ -7691,7 +7693,7 @@ void SplitReadSVCaller::detect_insou(ofstream& BPREAD, vector<EventEntry>& resul
 									int64_t right_bound_sr = right_bound_sr1;
 									string reads = castle::StringUtils::join(ref_bpread[1], "\t");
 									int64_t size = right_bound_sr - left_bound_sr;
-									BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+									BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 									EventEntry an_entry;
 									an_entry.type = "invers_f";
 									an_entry.cluster_id = cluster_id1;
@@ -7711,7 +7713,7 @@ void SplitReadSVCaller::detect_insou(ofstream& BPREAD, vector<EventEntry>& resul
 									int64_t right_bound_sr = right_bound_sr2;
 									int64_t size = right_bound_sr - left_bound_sr;
 									string reads = castle::StringUtils::join(ref_bpread[0], "\t");
-									BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+									BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 									EventEntry an_entry;
 									an_entry.type = "invers_r";
 									an_entry.cluster_id = cluster_id2;
@@ -7752,7 +7754,7 @@ void SplitReadSVCaller::detect_insou(ofstream& BPREAD, vector<EventEntry>& resul
 								cout << "insou here-25\n";
 							}
 							int64_t size = right_bound_sr - left_bound_sr;
-							BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+							BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 							EventEntry an_entry;
 							an_entry.type = "invers_f";
 							an_entry.cluster_id = cluster_id1;
@@ -8248,7 +8250,7 @@ void SplitReadSVCaller::detect_insou(ofstream& BPREAD, vector<EventEntry>& resul
 			}
 			string reads0 = castle::StringUtils::join(bpread_1[0], "\t");
 			string reads1 = castle::StringUtils::join(bpread_2[0], "\t");
-			BPREAD << (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % data[3] % (right_bound_sr1 + 1) % data[3] % (left_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
+			BPREAD << (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % data[3] % (right_bound_sr1 + 1) % data[3] % (left_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
 			EventEntry an_entry;
 			an_entry.type = data[0];
 			an_entry.cluster_id = data[1];
@@ -8281,7 +8283,7 @@ void SplitReadSVCaller::detect_insou(ofstream& BPREAD, vector<EventEntry>& resul
 				int64_t right_bound_sr = right_bound_sr1;
 				int64_t size = right_bound_sr - left_bound_sr;
 				string reads = castle::StringUtils::join(bpread_1[0], "\t");
-				string a_line = (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+				string a_line = (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 				if(debug) {
 					cout << "insou here-27: " << a_line << "\n";
 				}
@@ -8305,7 +8307,7 @@ void SplitReadSVCaller::detect_insou(ofstream& BPREAD, vector<EventEntry>& resul
 				int64_t right_bound_sr = right_bound_sr2 - 1;
 				int64_t size = right_bound_sr - left_bound_sr;
 				string reads = castle::StringUtils::join(bpread_2[0], "\t");
-				BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % left_bound_sr % data[3] % right_bound_sr % reads).str();
+				BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % left_bound_sr % data[3] % right_bound_sr % reads).str();
 				EventEntry an_entry;
 				an_entry.type = "invers_r";
 				an_entry.cluster_id = cluster_id2;
@@ -8520,7 +8522,7 @@ void SplitReadSVCaller::detect_invers(ofstream& BPREAD, vector<EventEntry>& resu
 							//cout << "invers here-0\n";
 							string reads0 = castle::StringUtils::join(ref_bpread[0], "\t");
 							string reads1 = castle::StringUtils::join(ref_bpread[1], "\t");
-							BPREAD << (boost::format("%s__%s__%s__%s\n%s\t%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads0 % reads1).str();
+							BPREAD << (boost::format("%s~%s~%s~%s\n%s\t%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads0 % reads1).str();
 							EventEntry an_entry;
 							an_entry.type = "invers";
 							an_entry.cluster_id = data[1];
@@ -8545,7 +8547,7 @@ void SplitReadSVCaller::detect_invers(ofstream& BPREAD, vector<EventEntry>& resu
 								//cout << "invers here-1\n";
 								int64_t size = right_bound_sr - left_bound_sr;
 								string reads = castle::StringUtils::join(ref_bpread[0], "\t");
-								BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+								BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 								EventEntry an_entry;
 								an_entry.type = "invers_f";
 								an_entry.cluster_id = cluster_id1;
@@ -8561,7 +8563,7 @@ void SplitReadSVCaller::detect_invers(ofstream& BPREAD, vector<EventEntry>& resu
 								//cout << "invers here-2\n";
 								int64_t size = right_bound_sr - left_bound_sr;
 								string reads = castle::StringUtils::join(ref_bpread[1], "\t");
-								BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+								BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 								EventEntry an_entry;
 								an_entry.type = "invers_r";
 								an_entry.cluster_id = cluster_id2;
@@ -8601,7 +8603,7 @@ void SplitReadSVCaller::detect_invers(ofstream& BPREAD, vector<EventEntry>& resu
 								//cout << "invers here-3\n";
 								string reads0 = castle::StringUtils::join(ref_bpread[0], "\t");
 								string reads1 = castle::StringUtils::join(ref_bpread[1], "\t");
-								BPREAD << (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr2 + 1) % reads0 % data[3] % (right_bound_sr1 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
+								BPREAD << (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr2 + 1) % reads0 % data[3] % (right_bound_sr1 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
 								EventEntry an_entry;
 								an_entry.type = "del_invers";
 								an_entry.cluster_id = data[1];
@@ -8634,7 +8636,7 @@ void SplitReadSVCaller::detect_invers(ofstream& BPREAD, vector<EventEntry>& resu
 									int64_t right_bound_sr = right_bound_sr2;
 									int64_t size = right_bound_sr - left_bound_sr;
 									string reads = castle::StringUtils::join(ref_bpread[0], "\t");
-									BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+									BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 									EventEntry an_entry;
 									an_entry.type = "invers_f";
 									an_entry.cluster_id = cluster_id1;
@@ -8652,7 +8654,7 @@ void SplitReadSVCaller::detect_invers(ofstream& BPREAD, vector<EventEntry>& resu
 									int64_t right_bound_sr = right_bound_sr1;
 									int64_t size = right_bound_sr - left_bound_sr;
 									string reads = castle::StringUtils::join(ref_bpread[1], "\t");
-									BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+									BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 									EventEntry an_entry;
 									an_entry.type = "invers_r";
 									an_entry.cluster_id = cluster_id2;
@@ -8693,7 +8695,7 @@ void SplitReadSVCaller::detect_invers(ofstream& BPREAD, vector<EventEntry>& resu
 								//cout << "invers here-6\n";
 								string reads0 = castle::StringUtils::join(ref_bpread[1], "\t");
 								string reads1 = castle::StringUtils::join(ref_bpread[0], "\t");
-								BPREAD << (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr2 + 1) % reads0 % data[3] % (right_bound_sr1 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
+								BPREAD << (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr2 + 1) % reads0 % data[3] % (right_bound_sr1 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
 								EventEntry an_entry;
 								an_entry.type = "del_invers";
 								an_entry.cluster_id = data[1];
@@ -8733,7 +8735,7 @@ void SplitReadSVCaller::detect_invers(ofstream& BPREAD, vector<EventEntry>& resu
 										}
 									}
 									int64_t size = right_bound_sr - left_bound_sr;
-									BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+									BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 									EventEntry an_entry;
 									an_entry.type = "invers_f";
 									an_entry.cluster_id = cluster_id1;
@@ -8751,7 +8753,7 @@ void SplitReadSVCaller::detect_invers(ofstream& BPREAD, vector<EventEntry>& resu
 									int64_t right_bound_sr = right_bound_sr1;
 									int64_t size = right_bound_sr - left_bound_sr;
 									string reads = castle::StringUtils::join(ref_bpread[0], "\t");
-									BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+									BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 									EventEntry an_entry;
 									an_entry.type = "invers_r";
 									an_entry.cluster_id = cluster_id2;
@@ -8818,7 +8820,7 @@ void SplitReadSVCaller::detect_invers(ofstream& BPREAD, vector<EventEntry>& resu
 							//cout << "invers here-9\n";
 							string reads0 = castle::StringUtils::join(ref_bpread[0], "\t");
 							string reads1 = castle::StringUtils::join(ref_bpread[1], "\t");
-							BPREAD << (boost::format("%s__%s__%s__%s\n%s\t%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads0 % reads1).str();
+							BPREAD << (boost::format("%s~%s~%s~%s\n%s\t%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads0 % reads1).str();
 							EventEntry an_entry;
 							an_entry.type = "invers";
 							an_entry.cluster_id = data[1];
@@ -8844,7 +8846,7 @@ void SplitReadSVCaller::detect_invers(ofstream& BPREAD, vector<EventEntry>& resu
 								//cout << "invers here-10\n";
 								int64_t size = right_bound_sr - left_bound_sr;
 								string reads = castle::StringUtils::join(ref_bpread[0], "\t");
-								BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+								BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 								EventEntry an_entry;
 								an_entry.type = "invers_f";
 								an_entry.cluster_id = cluster_id1;
@@ -8860,7 +8862,7 @@ void SplitReadSVCaller::detect_invers(ofstream& BPREAD, vector<EventEntry>& resu
 								//cout << "invers here-11\n";
 								int64_t size = right_bound_sr - left_bound_sr;
 								string reads = castle::StringUtils::join(ref_bpread[1], "\t");
-								BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+								BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 								EventEntry an_entry;
 								an_entry.type = "invers_r";
 								an_entry.cluster_id = cluster_id2;
@@ -8901,7 +8903,7 @@ void SplitReadSVCaller::detect_invers(ofstream& BPREAD, vector<EventEntry>& resu
 								//cout << "invers here-12\n";
 								string reads0 = castle::StringUtils::join(ref_bpread[0], "\t");
 								string reads1 = castle::StringUtils::join(ref_bpread[1], "\t");
-								BPREAD << (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
+								BPREAD << (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
 								EventEntry an_entry;
 								an_entry.type = "del_invers";
 								an_entry.cluster_id = data[1];
@@ -8934,7 +8936,7 @@ void SplitReadSVCaller::detect_invers(ofstream& BPREAD, vector<EventEntry>& resu
 									int64_t right_bound_sr = right_bound_sr1;
 									int64_t size = right_bound_sr - left_bound_sr;
 									string reads = castle::StringUtils::join(ref_bpread[0], "\t");
-									BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+									BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 									EventEntry an_entry;
 									an_entry.type = "invers_f";
 									an_entry.cluster_id = cluster_id1;
@@ -8952,7 +8954,7 @@ void SplitReadSVCaller::detect_invers(ofstream& BPREAD, vector<EventEntry>& resu
 									int64_t right_bound_sr = right_bound_sr2;
 									int64_t size = right_bound_sr - left_bound_sr;
 									string reads = castle::StringUtils::join(ref_bpread[1], "\t");
-									BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+									BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 									EventEntry an_entry;
 									an_entry.type = "invers_r";
 									an_entry.cluster_id = cluster_id2;
@@ -8992,7 +8994,7 @@ void SplitReadSVCaller::detect_invers(ofstream& BPREAD, vector<EventEntry>& resu
 								//cout << "invers here-15\n";
 								string reads0 = castle::StringUtils::join(ref_bpread[1], "\t");
 								string reads1 = castle::StringUtils::join(ref_bpread[0], "\t");
-								BPREAD << (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
+								BPREAD << (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
 								EventEntry an_entry;
 								an_entry.type = "del_invers";
 								an_entry.cluster_id = data[1];
@@ -9032,7 +9034,7 @@ void SplitReadSVCaller::detect_invers(ofstream& BPREAD, vector<EventEntry>& resu
 										}
 									}
 									int64_t size = right_bound_sr - left_bound_sr;
-									BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+									BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 									EventEntry an_entry;
 									an_entry.type = "invers_f";
 									an_entry.cluster_id = cluster_id1;
@@ -9050,7 +9052,7 @@ void SplitReadSVCaller::detect_invers(ofstream& BPREAD, vector<EventEntry>& resu
 									int64_t right_bound_sr = right_bound_sr2;
 									int64_t size = right_bound_sr - left_bound_sr;
 									string reads = castle::StringUtils::join(ref_bpread[0], "\t");
-									BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+									BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 									EventEntry an_entry;
 									an_entry.type = "invers_r";
 									an_entry.cluster_id = cluster_id2;
@@ -9133,7 +9135,7 @@ void SplitReadSVCaller::detect_invers(ofstream& BPREAD, vector<EventEntry>& resu
 							//cout << "invers here-18\n";
 							string reads0 = castle::StringUtils::join(ref_bpread[0], "\t");
 							string reads1 = castle::StringUtils::join(ref_bpread[1], "\t");
-							BPREAD << (boost::format("%s__%s__%s__%s\n%s\t%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads0 % reads1).str();
+							BPREAD << (boost::format("%s~%s~%s~%s\n%s\t%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads0 % reads1).str();
 							EventEntry an_entry;
 							an_entry.type = "invers";
 							an_entry.cluster_id = data[1];
@@ -9159,7 +9161,7 @@ void SplitReadSVCaller::detect_invers(ofstream& BPREAD, vector<EventEntry>& resu
 								//cout << "invers here-19\n";
 								int64_t size = right_bound_sr - left_bound_sr;
 								string reads = castle::StringUtils::join(ref_bpread[0], "\t");
-								BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+								BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 								EventEntry an_entry;
 								an_entry.type = "invers_f";
 								an_entry.cluster_id = cluster_id1;
@@ -9175,7 +9177,7 @@ void SplitReadSVCaller::detect_invers(ofstream& BPREAD, vector<EventEntry>& resu
 								//cout << "invers here-20\n";
 								int64_t size = right_bound_sr - left_bound_sr;
 								string reads = castle::StringUtils::join(ref_bpread[1], "\t");
-								BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+								BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 								EventEntry an_entry;
 								an_entry.type = "invers_r";
 								an_entry.cluster_id = cluster_id2;
@@ -9216,7 +9218,7 @@ void SplitReadSVCaller::detect_invers(ofstream& BPREAD, vector<EventEntry>& resu
 								//cout << "invers here-21\n";
 								string reads0 = castle::StringUtils::join(ref_bpread[0], "\t");
 								string reads1 = castle::StringUtils::join(ref_bpread[1], "\t");
-								BPREAD << (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
+								BPREAD << (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
 								EventEntry an_entry;
 								an_entry.type = "del_invers";
 								an_entry.cluster_id = data[1];
@@ -9249,7 +9251,7 @@ void SplitReadSVCaller::detect_invers(ofstream& BPREAD, vector<EventEntry>& resu
 									int64_t right_bound_sr = right_bound_sr1;
 									int64_t size = right_bound_sr - left_bound_sr;
 									string reads = castle::StringUtils::join(ref_bpread[0], "\t");
-									BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+									BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 									EventEntry an_entry;
 									an_entry.type = "invers_f";
 									an_entry.cluster_id = cluster_id1;
@@ -9267,7 +9269,7 @@ void SplitReadSVCaller::detect_invers(ofstream& BPREAD, vector<EventEntry>& resu
 									int64_t right_bound_sr = right_bound_sr2;
 									int64_t size = right_bound_sr - left_bound_sr;
 									string reads = castle::StringUtils::join(ref_bpread[1], "\t");
-									BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+									BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 									EventEntry an_entry;
 									an_entry.type = "invers_r";
 									an_entry.cluster_id = cluster_id2;
@@ -9307,7 +9309,7 @@ void SplitReadSVCaller::detect_invers(ofstream& BPREAD, vector<EventEntry>& resu
 								//cout << "invers here-24\n";
 								string reads0 = castle::StringUtils::join(ref_bpread[1], "\t");
 								string reads1 = castle::StringUtils::join(ref_bpread[0], "\t");
-								BPREAD << (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
+								BPREAD << (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
 								EventEntry an_entry;
 								an_entry.type = "del_invers";
 								an_entry.cluster_id = data[1];
@@ -9351,7 +9353,7 @@ void SplitReadSVCaller::detect_invers(ofstream& BPREAD, vector<EventEntry>& resu
 										}
 									}
 									int64_t size = right_bound_sr - left_bound_sr;
-									BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+									BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 									EventEntry an_entry;
 									an_entry.type = "invers_f";
 									an_entry.cluster_id = cluster_id1;
@@ -9369,7 +9371,7 @@ void SplitReadSVCaller::detect_invers(ofstream& BPREAD, vector<EventEntry>& resu
 									int64_t right_bound_sr = right_bound_sr2;
 									int64_t size = right_bound_sr - left_bound_sr;
 									string reads = castle::StringUtils::join(ref_bpread[0], "\t");
-									BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+									BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 									EventEntry an_entry;
 									an_entry.type = "invers_r";
 									an_entry.cluster_id = cluster_id2;
@@ -9440,7 +9442,7 @@ void SplitReadSVCaller::detect_invers(ofstream& BPREAD, vector<EventEntry>& resu
 							//cout << "invers here-30\n";
 							string reads0 = castle::StringUtils::join(ref_bpread[0], "\t");
 							string reads1 = castle::StringUtils::join(ref_bpread[1], "\t");
-							BPREAD << (boost::format("%s__%s__%s__%s\n%s\t%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads0 % reads1).str();
+							BPREAD << (boost::format("%s~%s~%s~%s\n%s\t%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads0 % reads1).str();
 							EventEntry an_entry;
 							an_entry.type = "invers";
 							an_entry.cluster_id = data[1];
@@ -9467,7 +9469,7 @@ void SplitReadSVCaller::detect_invers(ofstream& BPREAD, vector<EventEntry>& resu
 								//cout << "invers here-32\n";
 								int64_t size = right_bound_sr - left_bound_sr;
 								string reads = castle::StringUtils::join(ref_bpread[0], "\t");
-								BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+								BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 								EventEntry an_entry;
 								an_entry.type = "invers_f";
 								an_entry.cluster_id = cluster_id1;
@@ -9483,7 +9485,7 @@ void SplitReadSVCaller::detect_invers(ofstream& BPREAD, vector<EventEntry>& resu
 								//cout << "invers here-33\n";
 								int64_t size = right_bound_sr - left_bound_sr;
 								string reads = castle::StringUtils::join(ref_bpread[1], "\t");
-								BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+								BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 								EventEntry an_entry;
 								an_entry.type = "invers_r";
 								an_entry.cluster_id = cluster_id2;
@@ -9525,7 +9527,7 @@ void SplitReadSVCaller::detect_invers(ofstream& BPREAD, vector<EventEntry>& resu
 								//cout << "invers here-35\n";
 								string reads0 = castle::StringUtils::join(ref_bpread[0], "\t");
 								string reads1 = castle::StringUtils::join(ref_bpread[1], "\t");
-								BPREAD << (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
+								BPREAD << (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
 								EventEntry an_entry;
 								an_entry.type = "del_invers";
 								an_entry.cluster_id = data[1];
@@ -9560,7 +9562,7 @@ void SplitReadSVCaller::detect_invers(ofstream& BPREAD, vector<EventEntry>& resu
 									int64_t right_bound_sr = right_bound_sr1;
 									int64_t size = right_bound_sr - left_bound_sr;
 									string reads = castle::StringUtils::join(ref_bpread[0], "\t");
-									BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+									BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 									EventEntry an_entry;
 									an_entry.type = "invers_f";
 									an_entry.cluster_id = cluster_id1;
@@ -9578,7 +9580,7 @@ void SplitReadSVCaller::detect_invers(ofstream& BPREAD, vector<EventEntry>& resu
 									int64_t right_bound_sr = right_bound_sr2;
 									int64_t size = right_bound_sr - left_bound_sr;
 									string reads = castle::StringUtils::join(ref_bpread[1], "\t");
-									BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+									BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 									EventEntry an_entry;
 									an_entry.type = "invers_r";
 									an_entry.cluster_id = cluster_id2;
@@ -9618,7 +9620,7 @@ void SplitReadSVCaller::detect_invers(ofstream& BPREAD, vector<EventEntry>& resu
 								//cout << "invers here-40\n";
 								string reads0 = castle::StringUtils::join(ref_bpread[1], "\t");
 								string reads1 = castle::StringUtils::join(ref_bpread[0], "\t");
-								BPREAD << (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
+								BPREAD << (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
 								EventEntry an_entry;
 								an_entry.type = "del_invers";
 								an_entry.cluster_id = data[1];
@@ -9662,7 +9664,7 @@ void SplitReadSVCaller::detect_invers(ofstream& BPREAD, vector<EventEntry>& resu
 										}
 									}
 									int64_t size = right_bound_sr - left_bound_sr;
-									BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+									BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 									EventEntry an_entry;
 									an_entry.type = "invers_f";
 									an_entry.cluster_id = cluster_id1;
@@ -9680,7 +9682,7 @@ void SplitReadSVCaller::detect_invers(ofstream& BPREAD, vector<EventEntry>& resu
 									int64_t right_bound_sr = right_bound_sr2;
 									int64_t size = right_bound_sr - left_bound_sr;
 									string reads = castle::StringUtils::join(ref_bpread[0], "\t");
-									BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+									BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 									EventEntry an_entry;
 									an_entry.type = "invers_r";
 									an_entry.cluster_id = cluster_id2;
@@ -10056,7 +10058,7 @@ void SplitReadSVCaller::detect_invers(ofstream& BPREAD, vector<EventEntry>& resu
 			//cout << "invers here-55\n";
 			string reads0 = castle::StringUtils::join(bpread_1[0], "\t");
 			string reads1 = castle::StringUtils::join(bpread_2[0], "\t");
-			BPREAD << (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
+			BPREAD << (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
 			EventEntry an_entry;
 			an_entry.type = data[0];
 			an_entry.cluster_id = data[1];
@@ -10090,7 +10092,7 @@ void SplitReadSVCaller::detect_invers(ofstream& BPREAD, vector<EventEntry>& resu
 				int64_t right_bound_sr = right_bound_sr1;
 				int64_t size = right_bound_sr - left_bound_sr;
 				string reads = castle::StringUtils::join(bpread_1[0], "\t");
-				BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+				BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 				EventEntry an_entry;
 				an_entry.type = "invers_f";
 				an_entry.cluster_id = cluster_id1;
@@ -10108,7 +10110,7 @@ void SplitReadSVCaller::detect_invers(ofstream& BPREAD, vector<EventEntry>& resu
 				int64_t right_bound_sr = right_bound_sr2;
 				int64_t size = right_bound_sr - left_bound_sr;
 				string reads = castle::StringUtils::join(bpread_2[0], "\t");
-				BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+				BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 				EventEntry an_entry;
 				an_entry.type = "invers_r";
 				an_entry.cluster_id = cluster_id2;
@@ -10246,7 +10248,7 @@ void SplitReadSVCaller::detect_tandem_dup(ofstream& BPREAD, vector<EventEntry>& 
 					cout << "tandem_dup here-6\n";
 				}
 				string reads = castle::StringUtils::join(bpread_1[0], "\t");
-				BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+				BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 				EventEntry an_entry;
 				an_entry.type = data[0];
 				an_entry.cluster_id = data[1];
@@ -10340,7 +10342,7 @@ void SplitReadSVCaller::detect_tandem_dup(ofstream& BPREAD, vector<EventEntry>& 
 								}
 								string reads0 = castle::StringUtils::join(ref_bpread[0], "\t");
 								string reads1 = castle::StringUtils::join(ref_bpread[1], "\t");
-								BPREAD << (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % data[3] % (right_bound_sr1 + 1) % data[3] % (left_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
+								BPREAD << (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % data[3] % (right_bound_sr1 + 1) % data[3] % (left_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
 								EventEntry an_entry;
 								if (del_size > 10) {
 									an_entry.type = "del_inssu";
@@ -10389,7 +10391,7 @@ void SplitReadSVCaller::detect_tandem_dup(ofstream& BPREAD, vector<EventEntry>& 
 								}
 								string reads0 = castle::StringUtils::join(ref_bpread[1], "\t");
 								string reads1 = castle::StringUtils::join(ref_bpread[0], "\t");
-								BPREAD << (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % data[3] % (right_bound_sr1 + 1) % data[3] % (left_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
+								BPREAD << (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % data[3] % (right_bound_sr1 + 1) % data[3] % (left_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
 								EventEntry an_entry;
 								if (del_size > 10) {
 									an_entry.type = "del_inssu";
@@ -10446,7 +10448,7 @@ void SplitReadSVCaller::detect_tandem_dup(ofstream& BPREAD, vector<EventEntry>& 
 								}
 								string reads0 = castle::StringUtils::join(ref_bpread[0], "\t");
 								string reads1 = castle::StringUtils::join(ref_bpread[1], "\t");
-								BPREAD << (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr2 + 1) % data[3] % (right_bound_sr2 + 1) % reads0 % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads1).str();
+								BPREAD << (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr2 + 1) % data[3] % (right_bound_sr2 + 1) % reads0 % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads1).str();
 								EventEntry an_entry;
 								if (del_size > 10) {
 									an_entry.type = "del_inssd";
@@ -10495,7 +10497,7 @@ void SplitReadSVCaller::detect_tandem_dup(ofstream& BPREAD, vector<EventEntry>& 
 								}
 								string reads0 = castle::StringUtils::join(ref_bpread[1], "\t");
 								string reads1 = castle::StringUtils::join(ref_bpread[0], "\t");
-								BPREAD << (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr2 + 1) % data[3] % (right_bound_sr2 + 1) % reads0 % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads1).str();
+								BPREAD << (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr2 + 1) % data[3] % (right_bound_sr2 + 1) % reads0 % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads1).str();
 								EventEntry an_entry;
 								if (del_size > 10) {
 									an_entry.type = "del_inssd";
@@ -10551,7 +10553,7 @@ void SplitReadSVCaller::detect_tandem_dup(ofstream& BPREAD, vector<EventEntry>& 
 							cout << "tandem_dup here-24\n";
 						}
 						string reads = castle::StringUtils::join(ref_bpread[0], "\t");
-						BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+						BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 						EventEntry an_entry;
 						an_entry.type = data[0];
 						an_entry.cluster_id = data[1];
@@ -10659,7 +10661,7 @@ void SplitReadSVCaller::detect_tandem_dup(ofstream& BPREAD, vector<EventEntry>& 
 								}
 								string reads0 = castle::StringUtils::join(ref_bpread[0], "\t");
 								string reads1 = castle::StringUtils::join(ref_bpread[1], "\t");
-								BPREAD << (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % data[3] % (right_bound_sr1 + 1) % data[3] % (left_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
+								BPREAD << (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % data[3] % (right_bound_sr1 + 1) % data[3] % (left_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
 								EventEntry an_entry;
 								if (del_size > 10) {
 									an_entry.type = "del_inssu";
@@ -10708,7 +10710,7 @@ void SplitReadSVCaller::detect_tandem_dup(ofstream& BPREAD, vector<EventEntry>& 
 								}
 								string reads0 = castle::StringUtils::join(ref_bpread[1], "\t");
 								string reads1 = castle::StringUtils::join(ref_bpread[0], "\t");
-								BPREAD << (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % data[3] % (right_bound_sr1 + 1) % data[3] % (left_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
+								BPREAD << (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % data[3] % (right_bound_sr1 + 1) % data[3] % (left_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
 								EventEntry an_entry;
 								if (del_size > 10) {
 									an_entry.type = "del_inssu";
@@ -10765,7 +10767,7 @@ void SplitReadSVCaller::detect_tandem_dup(ofstream& BPREAD, vector<EventEntry>& 
 								}
 								string reads0 = castle::StringUtils::join(ref_bpread[0], "\t");
 								string reads1 = castle::StringUtils::join(ref_bpread[1], "\t");
-								BPREAD << (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr2 + 1) % data[3] % (right_bound_sr2 + 1) % reads0 % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads1).str();
+								BPREAD << (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr2 + 1) % data[3] % (right_bound_sr2 + 1) % reads0 % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads1).str();
 								EventEntry an_entry;
 								if (del_size > 10) {
 									an_entry.type = "del_inssd";
@@ -10814,7 +10816,7 @@ void SplitReadSVCaller::detect_tandem_dup(ofstream& BPREAD, vector<EventEntry>& 
 								}
 								string reads0 = castle::StringUtils::join(ref_bpread[1], "\t");
 								string reads1 = castle::StringUtils::join(ref_bpread[0], "\t");
-								BPREAD << (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr2 + 1) % data[3] % (right_bound_sr2 + 1) % reads0 % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads1).str();
+								BPREAD << (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr2 + 1) % data[3] % (right_bound_sr2 + 1) % reads0 % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads1).str();
 								EventEntry an_entry;
 								if (del_size > 10) {
 									an_entry.type = "del_inssd";
@@ -10870,7 +10872,7 @@ void SplitReadSVCaller::detect_tandem_dup(ofstream& BPREAD, vector<EventEntry>& 
 							cout << "tandem_dup here-41\n";
 						}
 						string reads = castle::StringUtils::join(ref_bpread[0], "\t");
-						BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+						BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 						EventEntry an_entry;
 						an_entry.type = data[0];
 						an_entry.cluster_id = data[1];
@@ -11006,7 +11008,7 @@ void SplitReadSVCaller::detect_invers_f(ofstream& BPREAD, vector<EventEntry>& re
 						cout << "invers_f here-0\n";
 					}
 					string reads = castle::StringUtils::join(bpread_1[0], "\t");
-					BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+					BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 					EventEntry an_entry;
 					an_entry.type = data[0];
 					an_entry.cluster_id = data[1];
@@ -11084,7 +11086,7 @@ void SplitReadSVCaller::detect_invers_f(ofstream& BPREAD, vector<EventEntry>& re
 						cout << "invers_f here-1\n";
 					}
 					string reads = castle::StringUtils::join(bpread_1[0], "\t");
-					BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+					BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 					EventEntry an_entry;
 					an_entry.type = data[0];
 					an_entry.cluster_id = data[1];
@@ -11164,7 +11166,7 @@ void SplitReadSVCaller::detect_invers_f(ofstream& BPREAD, vector<EventEntry>& re
 							}
 							string reads0 = castle::StringUtils::join(ref_bpread[0], "\t");
 							string reads1 = castle::StringUtils::join(ref_bpread[1], "\t");
-							BPREAD << (boost::format("%s__%s__%s__%s\n%s\t%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads0 % reads1).str();
+							BPREAD << (boost::format("%s~%s~%s~%s\n%s\t%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads0 % reads1).str();
 							EventEntry an_entry;
 							an_entry.type = "invers";
 							an_entry.cluster_id = data[1];
@@ -11212,7 +11214,7 @@ void SplitReadSVCaller::detect_invers_f(ofstream& BPREAD, vector<EventEntry>& re
 								}
 								string reads0 = castle::StringUtils::join(ref_bpread[0], "\t");
 								string reads1 = castle::StringUtils::join(ref_bpread[1], "\t");
-								BPREAD << (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
+								BPREAD << (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
 								EventEntry an_entry;
 								an_entry.type = "del_invers";
 								an_entry.cluster_id = data[1];
@@ -11263,7 +11265,7 @@ void SplitReadSVCaller::detect_invers_f(ofstream& BPREAD, vector<EventEntry>& re
 								}
 								string reads0 = castle::StringUtils::join(ref_bpread[1], "\t");
 								string reads1 = castle::StringUtils::join(ref_bpread[0], "\t");
-								BPREAD << (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
+								BPREAD << (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
 								EventEntry an_entry;
 								an_entry.type = "del_invers";
 								an_entry.cluster_id = data[1];
@@ -11317,7 +11319,7 @@ void SplitReadSVCaller::detect_invers_f(ofstream& BPREAD, vector<EventEntry>& re
 							cout << "invers_f here-5: " << data[1] << "/" << data[2] << "\n";
 						}
 						string reads = castle::StringUtils::join(ref_bpread[0], "\t");
-						BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+						BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 						EventEntry an_entry;
 						an_entry.type = data[0];
 						an_entry.cluster_id = data[1];
@@ -11396,7 +11398,7 @@ void SplitReadSVCaller::detect_invers_f(ofstream& BPREAD, vector<EventEntry>& re
 							}
 							string reads0 = castle::StringUtils::join(ref_bpread[0], "\t");
 							string reads1 = castle::StringUtils::join(ref_bpread[1], "\t");
-							BPREAD << (boost::format("%s__%s__%s__%s\n%s\t%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads0 % reads1).str();
+							BPREAD << (boost::format("%s~%s~%s~%s\n%s\t%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads0 % reads1).str();
 							EventEntry an_entry;
 							an_entry.type = "invers";
 							an_entry.cluster_id = data[1];
@@ -11444,7 +11446,7 @@ void SplitReadSVCaller::detect_invers_f(ofstream& BPREAD, vector<EventEntry>& re
 								}
 								string reads0 = castle::StringUtils::join(ref_bpread[0], "\t");
 								string reads1 = castle::StringUtils::join(ref_bpread[1], "\t");
-								BPREAD << (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
+								BPREAD << (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
 								EventEntry an_entry;
 								an_entry.type = "del_invers";
 								an_entry.cluster_id = data[1];
@@ -11494,7 +11496,7 @@ void SplitReadSVCaller::detect_invers_f(ofstream& BPREAD, vector<EventEntry>& re
 								}
 								string reads0 = castle::StringUtils::join(ref_bpread[1], "\t");
 								string reads1 = castle::StringUtils::join(ref_bpread[0], "\t");
-								BPREAD << (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
+								BPREAD << (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
 								EventEntry an_entry;
 								an_entry.type = "del_invers";
 								an_entry.cluster_id = data[1];
@@ -11548,7 +11550,7 @@ void SplitReadSVCaller::detect_invers_f(ofstream& BPREAD, vector<EventEntry>& re
 							cout << "invers_f here-9\n";
 						}
 						string reads = castle::StringUtils::join(ref_bpread[0], "\t");
-						BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+						BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 						EventEntry an_entry;
 						an_entry.type = data[0];
 						an_entry.cluster_id = data[1];
@@ -11672,7 +11674,7 @@ void SplitReadSVCaller::detect_invers_r(ofstream& BPREAD, vector<EventEntry>& re
 				if (src_return1.size() > 4 && src_return1[4] >= options.support_reads) {
 					//cout << "invers_r here-6\n";
 					string reads = castle::StringUtils::join(bpread_1[0], "\t");
-					BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+					BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 					EventEntry an_entry;
 					an_entry.type = data[0];
 					an_entry.cluster_id = data[1];
@@ -11736,7 +11738,7 @@ void SplitReadSVCaller::detect_invers_r(ofstream& BPREAD, vector<EventEntry>& re
 				if (src_return1.size() > 4 && src_return1[4] >= options.support_reads) {
 					//cout << "invers_r here-10-a\n";
 					string reads = castle::StringUtils::join(bpread_1[0], "\t");
-					BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+					BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 					EventEntry an_entry;
 					an_entry.type = data[0];
 					an_entry.cluster_id = data[1];
@@ -11804,7 +11806,7 @@ void SplitReadSVCaller::detect_invers_r(ofstream& BPREAD, vector<EventEntry>& re
 							//cout << "invers_r here-10-a\n";
 							string reads0 = castle::StringUtils::join(ref_bpread[0], "\t");
 							string reads1 = castle::StringUtils::join(ref_bpread[1], "\t");
-							BPREAD << (boost::format("%s__%s__%s__%s\n%s\t%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads0 % reads1).str();
+							BPREAD << (boost::format("%s~%s~%s~%s\n%s\t%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads0 % reads1).str();
 							EventEntry an_entry;
 							an_entry.type = "invers";
 							an_entry.cluster_id = data[1];
@@ -11845,7 +11847,7 @@ void SplitReadSVCaller::detect_invers_r(ofstream& BPREAD, vector<EventEntry>& re
 								//cout << "invers_r here-11-a\n";
 								string reads0 = castle::StringUtils::join(ref_bpread[0], "\t");
 								string reads1 = castle::StringUtils::join(ref_bpread[1], "\t");
-								BPREAD << (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
+								BPREAD << (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
 								EventEntry an_entry;
 								an_entry.type = "del_invers";
 								an_entry.cluster_id = data[1];
@@ -11891,7 +11893,7 @@ void SplitReadSVCaller::detect_invers_r(ofstream& BPREAD, vector<EventEntry>& re
 								//cout << "invers_r here-12-a\n";
 								string reads0 = castle::StringUtils::join(ref_bpread[1], "\t");
 								string reads1 = castle::StringUtils::join(ref_bpread[0], "\t");
-								BPREAD << (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
+								BPREAD << (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
 								EventEntry an_entry;
 								an_entry.type = "del_invers";
 								an_entry.cluster_id = data[1];
@@ -11935,7 +11937,7 @@ void SplitReadSVCaller::detect_invers_r(ofstream& BPREAD, vector<EventEntry>& re
 					if (ref_support_sr.size() > 0 && ref_support_sr[0] >= options.support_reads) {
 						//cout << "invers_r here-13-a\n";
 						string reads = castle::StringUtils::join(ref_bpread[0], "\t");
-						BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+						BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 						EventEntry an_entry;
 						an_entry.type = data[0];
 						an_entry.cluster_id = data[1];
@@ -12002,7 +12004,7 @@ void SplitReadSVCaller::detect_invers_r(ofstream& BPREAD, vector<EventEntry>& re
 							//cout << "invers_r here-14-a\n";
 							string reads0 = castle::StringUtils::join(ref_bpread[0], "\t");
 							string reads1 = castle::StringUtils::join(ref_bpread[1], "\t");
-							BPREAD << (boost::format("%s__%s__%s__%s\n%s\t%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads0 % reads1).str();
+							BPREAD << (boost::format("%s~%s~%s~%s\n%s\t%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads0 % reads1).str();
 							EventEntry an_entry;
 							an_entry.type = "invers";
 							an_entry.cluster_id = data[1];
@@ -12043,7 +12045,7 @@ void SplitReadSVCaller::detect_invers_r(ofstream& BPREAD, vector<EventEntry>& re
 								//cout << "invers_r here-15-a\n";
 								string reads0 = castle::StringUtils::join(ref_bpread[0], "\t");
 								string reads1 = castle::StringUtils::join(ref_bpread[1], "\t");
-								BPREAD << (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
+								BPREAD << (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
 								EventEntry an_entry;
 								an_entry.type = "del_invers";
 								an_entry.cluster_id = data[1];
@@ -12089,7 +12091,7 @@ void SplitReadSVCaller::detect_invers_r(ofstream& BPREAD, vector<EventEntry>& re
 								//cout << "invers_r here-16-a\n";
 								string reads0 = castle::StringUtils::join(ref_bpread[1], "\t");
 								string reads1 = castle::StringUtils::join(ref_bpread[0], "\t");
-								BPREAD << (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
+								BPREAD << (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr1 + 1) % data[3] % (right_bound_sr1 + 1) % reads0 % data[3] % (right_bound_sr2 + 1) % data[3] % (left_bound_sr2 + 1) % reads1).str();
 								EventEntry an_entry;
 								an_entry.type = "del_invers";
 								an_entry.cluster_id = data[1];
@@ -12133,7 +12135,7 @@ void SplitReadSVCaller::detect_invers_r(ofstream& BPREAD, vector<EventEntry>& re
 					if (ref_support_sr.size() > 0 && ref_support_sr[0] >= options.support_reads) {
 						//cout << "invers_r here-17-a\n";
 						string reads = castle::StringUtils::join(ref_bpread[0], "\t");
-						BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
+						BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % data[3] % (left_bound_sr + 1) % data[3] % (right_bound_sr + 1) % reads).str();
 						EventEntry an_entry;
 						an_entry.type = data[0];
 						an_entry.cluster_id = data[1];
@@ -12586,7 +12588,7 @@ void SplitReadSVCaller::detect_inss(ofstream& BPREAD, vector<EventEntry>& result
 					string reads1 = castle::StringUtils::join(ref_bpread[1], "\t");
 					int64_t del_size = left_bound_sr2 - left_bound_sr1 - 1;
 					int64_t ins_size = right_bound_sr2 - right_bound_sr1 + 1;
-					BPREAD << (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % ref_id % (left_bound_sr1 + 1) % mate_ref_id % (right_bound_sr1 + 1) % reads0 % ref_id % (left_bound_sr2 + 1) % mate_ref_id % (right_bound_sr2 + 1) % reads1).str();
+					BPREAD << (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % ref_id % (left_bound_sr1 + 1) % mate_ref_id % (right_bound_sr1 + 1) % reads0 % ref_id % (left_bound_sr2 + 1) % mate_ref_id % (right_bound_sr2 + 1) % reads1).str();
 					EventEntry an_entry;
 					an_entry.type = data[0];
 					an_entry.cluster_id = data[1];
@@ -12658,7 +12660,7 @@ void SplitReadSVCaller::detect_inss(ofstream& BPREAD, vector<EventEntry>& result
 								right_bound_sr = cur_mate_start;
 							}
 							string reads = castle::StringUtils::join(ref_bpread[0], "\t");
-							BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % ref_id % (left_bound_sr + 1) % mate_ref_id % (right_bound_sr + 1) % reads).str();
+							BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % ref_id % (left_bound_sr + 1) % mate_ref_id % (right_bound_sr + 1) % reads).str();
 
 							EventEntry an_entry;
 							an_entry.type = "transl_inter";
@@ -12723,7 +12725,7 @@ void SplitReadSVCaller::detect_inss(ofstream& BPREAD, vector<EventEntry>& result
 								right_bound_sr = cur_mate_end;
 							}
 							string reads = castle::StringUtils::join(ref_bpread[0], "\t");
-							BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % mate_ref_id % (right_bound_sr + 1) % ref_id % (left_bound_sr + 1) % reads).str();
+							BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % mate_ref_id % (right_bound_sr + 1) % ref_id % (left_bound_sr + 1) % reads).str();
 							EventEntry an_entry;
 							an_entry.type = "transl_inter";
 							an_entry.cluster_id = cluster_id1;
@@ -12788,7 +12790,7 @@ void SplitReadSVCaller::detect_inss(ofstream& BPREAD, vector<EventEntry>& result
 								right_bound_sr = cur_mate_end;
 							}
 							string reads = castle::StringUtils::join(ref_bpread[1], "\t");
-							BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % ref_id % (left_bound_sr + 1) % mate_ref_id % (right_bound_sr + 1) % reads).str();
+							BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % ref_id % (left_bound_sr + 1) % mate_ref_id % (right_bound_sr + 1) % reads).str();
 							EventEntry an_entry;
 							an_entry.type = "transl_inter";
 							an_entry.cluster_id = cluster_id2;
@@ -12846,7 +12848,7 @@ void SplitReadSVCaller::detect_inss(ofstream& BPREAD, vector<EventEntry>& result
 								right_bound_sr = cur_mate_start;
 							}
 							string reads = castle::StringUtils::join(ref_bpread[1], "\t");
-							BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % mate_ref_id % (right_bound_sr + 1) % ref_id % (left_bound_sr + 1) % reads).str();
+							BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % mate_ref_id % (right_bound_sr + 1) % ref_id % (left_bound_sr + 1) % reads).str();
 							EventEntry an_entry;
 							an_entry.type = "transl_inter";
 							an_entry.cluster_id = cluster_id2;
@@ -12976,7 +12978,7 @@ void SplitReadSVCaller::detect_inss(ofstream& BPREAD, vector<EventEntry>& result
 					string reads1 = castle::StringUtils::join(ref_bpread[0], "\t");
 					int64_t del_size = left_bound_sr2 - left_bound_sr1 - 1;
 					int64_t ins_size = right_bound_sr2 - right_bound_sr1 + 1;
-					string a_line = (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % ref_id % (left_bound_sr1 + 1) % mate_ref_id % (right_bound_sr1 + 1) % reads0 % ref_id % (left_bound_sr2 + 1) % mate_ref_id % (right_bound_sr2 + 1) % reads1).str();
+					string a_line = (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % ref_id % (left_bound_sr1 + 1) % mate_ref_id % (right_bound_sr1 + 1) % reads0 % ref_id % (left_bound_sr2 + 1) % mate_ref_id % (right_bound_sr2 + 1) % reads1).str();
 					if(debug) {
 						cout << "inss here-60\n";
 					}
@@ -13057,7 +13059,7 @@ void SplitReadSVCaller::detect_inss(ofstream& BPREAD, vector<EventEntry>& result
 								right_bound_sr = cur_mate_start;
 							}
 							string reads = castle::StringUtils::join(ref_bpread[1], "\t");
-							BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % ref_id % (left_bound_sr + 1) % mate_ref_id % (right_bound_sr + 1) % reads).str();
+							BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % ref_id % (left_bound_sr + 1) % mate_ref_id % (right_bound_sr + 1) % reads).str();
 							EventEntry an_entry;
 							an_entry.type = "transl_inter";
 							an_entry.cluster_id = cluster_id1;
@@ -13118,7 +13120,7 @@ void SplitReadSVCaller::detect_inss(ofstream& BPREAD, vector<EventEntry>& result
 								right_bound_sr = cur_mate_end;
 							}
 							string reads = castle::StringUtils::join(ref_bpread[1], "\t");
-							BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % mate_ref_id % (right_bound_sr + 1) % ref_id % (left_bound_sr + 1) % reads).str();
+							BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % mate_ref_id % (right_bound_sr + 1) % ref_id % (left_bound_sr + 1) % reads).str();
 
 							EventEntry an_entry;
 							an_entry.type = "transl_inter";
@@ -13185,7 +13187,7 @@ void SplitReadSVCaller::detect_inss(ofstream& BPREAD, vector<EventEntry>& result
 								right_bound_sr = cur_mate_end;
 							}
 							string reads = castle::StringUtils::join(ref_bpread[0], "\t");
-							BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % ref_id % (left_bound_sr + 1) % mate_ref_id % (right_bound_sr + 1) % reads).str();
+							BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % ref_id % (left_bound_sr + 1) % mate_ref_id % (right_bound_sr + 1) % reads).str();
 							EventEntry an_entry;
 							an_entry.type = "transl_inter";
 							an_entry.cluster_id = cluster_id2;
@@ -13246,7 +13248,7 @@ void SplitReadSVCaller::detect_inss(ofstream& BPREAD, vector<EventEntry>& result
 								right_bound_sr = cur_mate_start;
 							}
 							string reads = castle::StringUtils::join(ref_bpread[0], "\t");
-							BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % mate_ref_id % (right_bound_sr + 1) % ref_id % (left_bound_sr + 1) % reads).str();
+							BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % mate_ref_id % (right_bound_sr + 1) % ref_id % (left_bound_sr + 1) % reads).str();
 							EventEntry an_entry;
 							an_entry.type = "transl_inter";
 							an_entry.cluster_id = cluster_id2;
@@ -13532,7 +13534,7 @@ void SplitReadSVCaller::detect_inss(ofstream& BPREAD, vector<EventEntry>& result
 				}
 				int64_t del_size = left_bound_sr2 - left_bound_sr1 - 1;
 				int64_t ins_size = right_bound_sr2 - right_bound_sr1 + 1;
-				BPREAD << (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % ref_id % (left_bound_sr1 + 1) % mate_ref_id % (right_bound_sr1 + 1) % reads0 % ref_id % (left_bound_sr2 + 1) % mate_ref_id % (right_bound_sr2 + 1) % reads1).str();
+				BPREAD << (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % ref_id % (left_bound_sr1 + 1) % mate_ref_id % (right_bound_sr1 + 1) % reads0 % ref_id % (left_bound_sr2 + 1) % mate_ref_id % (right_bound_sr2 + 1) % reads1).str();
 				EventEntry an_entry;
 				an_entry.type = data[0];
 				an_entry.cluster_id = data[1];
@@ -13565,7 +13567,7 @@ void SplitReadSVCaller::detect_inss(ofstream& BPREAD, vector<EventEntry>& result
 				swap(reads0, reads1);
 				int64_t del_size = left_bound_sr2 - left_bound_sr1 - 1;
 				int64_t ins_size = right_bound_sr2 - right_bound_sr1 + 1;
-				BPREAD << (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % ref_id % (left_bound_sr1 + 1) % mate_ref_id % (right_bound_sr1 + 1) % reads0 % ref_id % (left_bound_sr2 + 1) % mate_ref_id % (right_bound_sr2 + 1) % reads1).str();
+				BPREAD << (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % ref_id % (left_bound_sr1 + 1) % mate_ref_id % (right_bound_sr1 + 1) % reads0 % ref_id % (left_bound_sr2 + 1) % mate_ref_id % (right_bound_sr2 + 1) % reads1).str();
 				EventEntry an_entry;
 				an_entry.type = data[0];
 				an_entry.cluster_id = data[1];
@@ -13650,7 +13652,7 @@ void SplitReadSVCaller::detect_inss(ofstream& BPREAD, vector<EventEntry>& result
 						right_bound_sr = cur_mate_start;
 					}
 					string reads = castle::StringUtils::join(bpread_1[0], "\t");
-					BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % ref_id % (left_bound_sr + 1) % mate_ref_id % (right_bound_sr + 1) % reads).str();
+					BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % ref_id % (left_bound_sr + 1) % mate_ref_id % (right_bound_sr + 1) % reads).str();
 					EventEntry an_entry;
 					an_entry.type = "transl_inter";
 					an_entry.cluster_id = cluster_id1;
@@ -13710,7 +13712,7 @@ void SplitReadSVCaller::detect_inss(ofstream& BPREAD, vector<EventEntry>& result
 						right_bound_sr = cur_mate_end;
 					}
 					string reads = castle::StringUtils::join(bpread_1[0], "\t");
-					BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % mate_ref_id % (right_bound_sr + 1) % ref_id % (left_bound_sr + 1) % reads).str();
+					BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % mate_ref_id % (right_bound_sr + 1) % ref_id % (left_bound_sr + 1) % reads).str();
 					EventEntry an_entry;
 					an_entry.type = "transl_inter";
 					an_entry.cluster_id = cluster_id1;
@@ -13777,7 +13779,7 @@ void SplitReadSVCaller::detect_inss(ofstream& BPREAD, vector<EventEntry>& result
 						right_bound_sr = cur_mate_end;
 					}
 					string reads = castle::StringUtils::join(bpread_2[0], "\t");
-					BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % ref_id % (left_bound_sr + 1) % mate_ref_id % (right_bound_sr + 1) % reads).str();
+					BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % ref_id % (left_bound_sr + 1) % mate_ref_id % (right_bound_sr + 1) % reads).str();
 					EventEntry an_entry;
 					an_entry.type = "transl_inter";
 					an_entry.cluster_id = cluster_id2;
@@ -13840,7 +13842,7 @@ void SplitReadSVCaller::detect_inss(ofstream& BPREAD, vector<EventEntry>& result
 						right_bound_sr = cur_mate_start;
 					}
 					string reads = castle::StringUtils::join(bpread_2[0], "\t");
-					BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % mate_ref_id % (right_bound_sr + 1) % ref_id % (left_bound_sr + 1) % reads).str();
+					BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % mate_ref_id % (right_bound_sr + 1) % ref_id % (left_bound_sr + 1) % reads).str();
 					EventEntry an_entry;
 					an_entry.type = "transl_inter";
 					an_entry.cluster_id = cluster_id2;
@@ -14076,7 +14078,7 @@ void SplitReadSVCaller::detect_inso(ofstream& BPREAD, vector<EventEntry>& result
 						}
 						string reads0 = castle::StringUtils::join(ref_bpread[0], "\t");
 						string reads1 = castle::StringUtils::join(ref_bpread[1], "\t");
-						BPREAD << (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % ref_id % (left_bound_sr1 + 1) % mate_ref_id % (right_bound_sr1 + 1) % reads0 % ref_id % (left_bound_sr2 + 1) % mate_ref_id % (right_bound_sr2 + 1) % reads1).str();
+						BPREAD << (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % ref_id % (left_bound_sr1 + 1) % mate_ref_id % (right_bound_sr1 + 1) % reads0 % ref_id % (left_bound_sr2 + 1) % mate_ref_id % (right_bound_sr2 + 1) % reads1).str();
 						EventEntry an_entry;
 						an_entry.type = data[0];
 						an_entry.cluster_id = data[1];
@@ -14161,7 +14163,7 @@ void SplitReadSVCaller::detect_inso(ofstream& BPREAD, vector<EventEntry>& result
 									cout << "inso here-23\n";
 								}
 								if(ref_support_sr.size() > 0) {
-									BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % ref_id % (left_bound_sr + 1) % mate_ref_id % (right_bound_sr + 1) % reads).str();
+									BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % ref_id % (left_bound_sr + 1) % mate_ref_id % (right_bound_sr + 1) % reads).str();
 									EventEntry an_entry;
 									an_entry.type = "transl_inter";
 									an_entry.cluster_id = cluster_id1;
@@ -14182,7 +14184,7 @@ void SplitReadSVCaller::detect_inso(ofstream& BPREAD, vector<EventEntry>& result
 									cout << "inso here-24\n";
 								}
 								if(ref_support_sr.size() > 0) {
-									BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % mate_ref_id % (right_bound_sr + 1) % ref_id % (left_bound_sr + 1) % reads).str();
+									BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % mate_ref_id % (right_bound_sr + 1) % ref_id % (left_bound_sr + 1) % reads).str();
 									EventEntry an_entry;
 									an_entry.type = "transl_inter";
 									an_entry.cluster_id = cluster_id1;
@@ -14251,7 +14253,7 @@ void SplitReadSVCaller::detect_inso(ofstream& BPREAD, vector<EventEntry>& result
 									cout << "inso here-32\n";
 								}
 								if(ref_support_sr.size() > 1) {
-									BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % ref_id % (left_bound_sr + 1) % mate_ref_id % (right_bound_sr + 1) % reads).str();
+									BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % ref_id % (left_bound_sr + 1) % mate_ref_id % (right_bound_sr + 1) % reads).str();
 									EventEntry an_entry;
 									an_entry.type = "transl_inter";
 									an_entry.cluster_id = cluster_id2;
@@ -14271,7 +14273,7 @@ void SplitReadSVCaller::detect_inso(ofstream& BPREAD, vector<EventEntry>& result
 									cout << "inso here-33\n";
 								}
 								if(ref_support_sr.size() > 1) {
-									BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % mate_ref_id % (right_bound_sr + 1) % ref_id % (left_bound_sr + 1) % reads).str();
+									BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % mate_ref_id % (right_bound_sr + 1) % ref_id % (left_bound_sr + 1) % reads).str();
 									EventEntry an_entry;
 									an_entry.type = "transl_inter";
 									an_entry.cluster_id = cluster_id2;
@@ -14382,7 +14384,7 @@ void SplitReadSVCaller::detect_inso(ofstream& BPREAD, vector<EventEntry>& result
 						}
 						string reads0 = castle::StringUtils::join(ref_bpread[1], "\t");
 						string reads1 = castle::StringUtils::join(ref_bpread[0], "\t");
-						BPREAD << (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % ref_id % (left_bound_sr1 + 1) % mate_ref_id % (right_bound_sr1 + 1) % reads0 % ref_id % (left_bound_sr2 + 1) % mate_ref_id % (right_bound_sr2 + 1) % reads1).str();
+						BPREAD << (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % ref_id % (left_bound_sr1 + 1) % mate_ref_id % (right_bound_sr1 + 1) % reads0 % ref_id % (left_bound_sr2 + 1) % mate_ref_id % (right_bound_sr2 + 1) % reads1).str();
 						EventEntry an_entry;
 						an_entry.type = data[0];
 						an_entry.cluster_id = data[1];
@@ -14466,7 +14468,7 @@ void SplitReadSVCaller::detect_inso(ofstream& BPREAD, vector<EventEntry>& result
 								cout << "inso here-57\n";
 								}
 								if (ref_support_sr.size() > 1) {
-									BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % ref_id % (left_bound_sr + 1) % mate_ref_id % (right_bound_sr + 1) % reads).str();
+									BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % ref_id % (left_bound_sr + 1) % mate_ref_id % (right_bound_sr + 1) % reads).str();
 									EventEntry an_entry;
 									an_entry.type = "transl_inter";
 									an_entry.cluster_id = cluster_id1;
@@ -14486,7 +14488,7 @@ void SplitReadSVCaller::detect_inso(ofstream& BPREAD, vector<EventEntry>& result
 								cout << "inso here-58\n";
 								}
 								if (ref_support_sr.size() > 1) {
-									BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % mate_ref_id % (right_bound_sr + 1) % ref_id % (left_bound_sr + 1) % reads).str();
+									BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % mate_ref_id % (right_bound_sr + 1) % ref_id % (left_bound_sr + 1) % reads).str();
 									EventEntry an_entry;
 									an_entry.type = "transl_inter";
 									an_entry.cluster_id = cluster_id1;
@@ -14559,7 +14561,7 @@ void SplitReadSVCaller::detect_inso(ofstream& BPREAD, vector<EventEntry>& result
 								cout << "inso here-67\n";
 								}
 								if (ref_support_sr.size() > 0) {
-									BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % ref_id % (left_bound_sr + 1) % mate_ref_id % (right_bound_sr + 1) % reads).str();
+									BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % ref_id % (left_bound_sr + 1) % mate_ref_id % (right_bound_sr + 1) % reads).str();
 									EventEntry an_entry;
 									an_entry.type = "transl_inter";
 									an_entry.cluster_id = cluster_id2;
@@ -14579,7 +14581,7 @@ void SplitReadSVCaller::detect_inso(ofstream& BPREAD, vector<EventEntry>& result
 								cout << "inso here-68\n";
 								}
 								if (ref_support_sr.size() > 0) {
-									BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % mate_ref_id % (right_bound_sr + 1) % ref_id % (left_bound_sr + 1) % reads).str();
+									BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % mate_ref_id % (right_bound_sr + 1) % ref_id % (left_bound_sr + 1) % reads).str();
 									EventEntry an_entry;
 									an_entry.type = "transl_inter";
 									an_entry.cluster_id = cluster_id2;
@@ -14735,7 +14737,7 @@ void SplitReadSVCaller::detect_inso(ofstream& BPREAD, vector<EventEntry>& result
 						}
 						string reads0 = castle::StringUtils::join(ref_bpread[0], "\t");
 						string reads1 = castle::StringUtils::join(ref_bpread[1], "\t");
-						BPREAD << (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % ref_id % (left_bound_sr1 + 1) % mate_ref_id % (right_bound_sr1 + 1) % reads0 % ref_id % (left_bound_sr2 + 1) % mate_ref_id % (right_bound_sr2 + 1) % reads1).str();
+						BPREAD << (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % ref_id % (left_bound_sr1 + 1) % mate_ref_id % (right_bound_sr1 + 1) % reads0 % ref_id % (left_bound_sr2 + 1) % mate_ref_id % (right_bound_sr2 + 1) % reads1).str();
 						EventEntry an_entry;
 						an_entry.type = data[0];
 						an_entry.cluster_id = data[1];
@@ -14829,7 +14831,7 @@ void SplitReadSVCaller::detect_inso(ofstream& BPREAD, vector<EventEntry>& result
 								cout << "inso here-95\n";
 								}
 								if (ref_support_sr.size() > 0) {
-									BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % ref_id % (left_bound_sr + 1) % mate_ref_id % (right_bound_sr + 1) % reads).str();
+									BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % ref_id % (left_bound_sr + 1) % mate_ref_id % (right_bound_sr + 1) % reads).str();
 									EventEntry an_entry;
 									an_entry.type = "transl_inter";
 									an_entry.cluster_id = cluster_id1;
@@ -14849,7 +14851,7 @@ void SplitReadSVCaller::detect_inso(ofstream& BPREAD, vector<EventEntry>& result
 								cout << "inso here-96\n";
 								}
 								if (ref_support_sr.size() > 0) {
-									BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % mate_ref_id % (right_bound_sr + 1) % ref_id % (left_bound_sr + 1) % reads).str();
+									BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % mate_ref_id % (right_bound_sr + 1) % ref_id % (left_bound_sr + 1) % reads).str();
 									EventEntry an_entry;
 									an_entry.type = "transl_inter";
 									an_entry.cluster_id = cluster_id1;
@@ -14919,7 +14921,7 @@ void SplitReadSVCaller::detect_inso(ofstream& BPREAD, vector<EventEntry>& result
 								cout << "inso here-104\n";
 								}
 								if (ref_support_sr.size() > 1) {
-									BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % ref_id % (left_bound_sr + 1) % mate_ref_id % (right_bound_sr + 1) % reads).str();
+									BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % ref_id % (left_bound_sr + 1) % mate_ref_id % (right_bound_sr + 1) % reads).str();
 									EventEntry an_entry;
 									an_entry.type = "transl_inter";
 									an_entry.cluster_id = cluster_id2;
@@ -14938,7 +14940,7 @@ void SplitReadSVCaller::detect_inso(ofstream& BPREAD, vector<EventEntry>& result
 								cout << "inso here-105\n";
 								}
 								if (ref_support_sr.size() > 1) {
-									BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % mate_ref_id % (right_bound_sr + 1) % ref_id % (left_bound_sr + 1) % reads).str();
+									BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % mate_ref_id % (right_bound_sr + 1) % ref_id % (left_bound_sr + 1) % reads).str();
 									EventEntry an_entry;
 									an_entry.type = "transl_inter";
 									an_entry.cluster_id = cluster_id2;
@@ -15048,7 +15050,7 @@ void SplitReadSVCaller::detect_inso(ofstream& BPREAD, vector<EventEntry>& result
 						}
 						string reads0 = castle::StringUtils::join(ref_bpread[1], "\t");
 						string reads1 = castle::StringUtils::join(ref_bpread[0], "\t");
-						BPREAD << (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % ref_id % (left_bound_sr1 + 1) % mate_ref_id % (right_bound_sr1 + 1) % reads0 % ref_id % (left_bound_sr2 + 1) % mate_ref_id % (right_bound_sr2 + 1) % reads1).str();
+						BPREAD << (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % ref_id % (left_bound_sr1 + 1) % mate_ref_id % (right_bound_sr1 + 1) % reads0 % ref_id % (left_bound_sr2 + 1) % mate_ref_id % (right_bound_sr2 + 1) % reads1).str();
 						EventEntry an_entry;
 						an_entry.type = data[0];
 						an_entry.cluster_id = data[1];
@@ -15143,7 +15145,7 @@ void SplitReadSVCaller::detect_inso(ofstream& BPREAD, vector<EventEntry>& result
 								cout << "inso here-129\n";
 								}
 								if (ref_support_sr.size() > 1) {
-									BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % ref_id % (left_bound_sr + 1) % mate_ref_id % (right_bound_sr + 1) % reads).str();
+									BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % ref_id % (left_bound_sr + 1) % mate_ref_id % (right_bound_sr + 1) % reads).str();
 									EventEntry an_entry;
 									an_entry.type = "transl_inter";
 									an_entry.cluster_id = cluster_id1;
@@ -15163,7 +15165,7 @@ void SplitReadSVCaller::detect_inso(ofstream& BPREAD, vector<EventEntry>& result
 								cout << "inso here-130\n";
 								}
 								if (ref_support_sr.size() > 1) {
-									BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % mate_ref_id % (right_bound_sr + 1) % ref_id % (left_bound_sr + 1) % reads).str();
+									BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % mate_ref_id % (right_bound_sr + 1) % ref_id % (left_bound_sr + 1) % reads).str();
 									EventEntry an_entry;
 									an_entry.type = "transl_inter";
 									an_entry.cluster_id = cluster_id1;
@@ -15233,7 +15235,7 @@ void SplitReadSVCaller::detect_inso(ofstream& BPREAD, vector<EventEntry>& result
 								cout << "inso here-138\n";
 								}
 								if (ref_support_sr.size() > 0) {
-									BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % ref_id % (left_bound_sr + 1) % mate_ref_id % (right_bound_sr + 1) % reads).str();
+									BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % ref_id % (left_bound_sr + 1) % mate_ref_id % (right_bound_sr + 1) % reads).str();
 									EventEntry an_entry;
 									an_entry.type = "transl_inter";
 									an_entry.cluster_id = cluster_id2;
@@ -15252,7 +15254,7 @@ void SplitReadSVCaller::detect_inso(ofstream& BPREAD, vector<EventEntry>& result
 								cout << "inso here-139\n";
 								}
 								if (ref_support_sr.size() > 0) {
-									BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % mate_ref_id % (right_bound_sr + 1) % ref_id % (left_bound_sr + 1) % reads).str();
+									BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % mate_ref_id % (right_bound_sr + 1) % ref_id % (left_bound_sr + 1) % reads).str();
 									EventEntry an_entry;
 									an_entry.type = "transl_inter";
 									an_entry.cluster_id = cluster_id2;
@@ -15624,7 +15626,7 @@ void SplitReadSVCaller::detect_inso(ofstream& BPREAD, vector<EventEntry>& result
 			}
 			string reads0 = castle::StringUtils::join(bpread_1[0], "\t");
 			string reads1 = castle::StringUtils::join(bpread_2[0], "\t");
-			BPREAD << (boost::format("%s__%s__%s__%s\n%s\n%s__%s__%s__%s\n%s\n") % ref_id % (left_bound_sr1 + 1) % mate_ref_id % (right_bound_sr1 + 1) % reads0 % ref_id % (left_bound_sr2 + 1) % mate_ref_id % (right_bound_sr2 + 1) % reads1).str();
+			BPREAD << (boost::format("%s~%s~%s~%s\n%s\n%s~%s~%s~%s\n%s\n") % ref_id % (left_bound_sr1 + 1) % mate_ref_id % (right_bound_sr1 + 1) % reads0 % ref_id % (left_bound_sr2 + 1) % mate_ref_id % (right_bound_sr2 + 1) % reads1).str();
 			EventEntry an_entry;
 			an_entry.type = data[0];
 			an_entry.cluster_id = data[1];
@@ -15672,7 +15674,7 @@ void SplitReadSVCaller::detect_inso(ofstream& BPREAD, vector<EventEntry>& result
 					if(debug) {
 						cout << "inso here-189\n";
 					}
-					BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % ref_id % (left_bound_sr + 1) % mate_ref_id % (right_bound_sr - 1) % reads).str();
+					BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % ref_id % (left_bound_sr + 1) % mate_ref_id % (right_bound_sr - 1) % reads).str();
 					EventEntry an_entry;
 					an_entry.type = "transl_inter";
 					an_entry.cluster_id = cluster_id1;
@@ -15690,7 +15692,7 @@ void SplitReadSVCaller::detect_inso(ofstream& BPREAD, vector<EventEntry>& result
 					if(debug) {
 						cout << "inso here-190\n";
 					}
-					BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % mate_ref_id % (right_bound_sr - 1) % ref_id % (left_bound_sr + 1) % reads).str();
+					BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % mate_ref_id % (right_bound_sr - 1) % ref_id % (left_bound_sr + 1) % reads).str();
 					EventEntry an_entry;
 					an_entry.type = "transl_inter";
 					an_entry.cluster_id = cluster_id1;
@@ -15717,7 +15719,7 @@ void SplitReadSVCaller::detect_inso(ofstream& BPREAD, vector<EventEntry>& result
 					if(debug) {
 						cout << "inso here-192\n";
 					}
-					BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % ref_id % (left_bound_sr + 1) % mate_ref_id % (right_bound_sr - 1) % reads).str();
+					BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % ref_id % (left_bound_sr + 1) % mate_ref_id % (right_bound_sr - 1) % reads).str();
 					EventEntry an_entry;
 					an_entry.type = "transl_inter";
 					an_entry.cluster_id = cluster_id2;
@@ -15734,7 +15736,7 @@ void SplitReadSVCaller::detect_inso(ofstream& BPREAD, vector<EventEntry>& result
 					if(debug) {
 						cout << "inso here-193\n";
 					}
-					BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % mate_ref_id % (right_bound_sr - 1) % ref_id % (left_bound_sr + 1) % reads).str();
+					BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % mate_ref_id % (right_bound_sr - 1) % ref_id % (left_bound_sr + 1) % reads).str();
 					EventEntry an_entry;
 					an_entry.type = "transl_inter";
 					an_entry.cluster_id = cluster_id2;
@@ -15905,7 +15907,7 @@ void SplitReadSVCaller::detect_transl_inter(ofstream& BPREAD, vector<EventEntry>
 					cout << "transl_inter here-9\n";
 				}
 				string reads = castle::StringUtils::join(bpread_1[0], "\t");
-				BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % ref_id % (left_bound_sr + 1) % mate_ref_id % (right_bound_sr + 1) % reads).str();
+				BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % ref_id % (left_bound_sr + 1) % mate_ref_id % (right_bound_sr + 1) % reads).str();
 				EventEntry an_entry;
 				an_entry.type = data[0];
 				an_entry.cluster_id = data[1];
@@ -16045,7 +16047,7 @@ void SplitReadSVCaller::detect_transl_inter(ofstream& BPREAD, vector<EventEntry>
 					cout << "transl_inter here-19\n";
 				}
 				string reads = castle::StringUtils::join(bpread_1[0], "\t");
-				BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % ref_id % (left_bound_sr + 1) % mate_ref_id % (right_bound_sr + 1) % reads).str();
+				BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % ref_id % (left_bound_sr + 1) % mate_ref_id % (right_bound_sr + 1) % reads).str();
 				EventEntry an_entry;
 				an_entry.type = data[0];
 				an_entry.cluster_id = data[1];
@@ -16186,7 +16188,7 @@ void SplitReadSVCaller::detect_transl_inter(ofstream& BPREAD, vector<EventEntry>
 						cout << "transl_inter here-30\n";
 					}
 					string reads = castle::StringUtils::join(bpread_1[0], "\t");
-					BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % ref_id % (left_bound_sr + 1) % mate_ref_id % (right_bound_sr - 1) % reads).str();
+					BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % ref_id % (left_bound_sr + 1) % mate_ref_id % (right_bound_sr - 1) % reads).str();
 					EventEntry an_entry;
 					an_entry.type = data[0];
 					an_entry.cluster_id = data[1];
@@ -16287,7 +16289,7 @@ void SplitReadSVCaller::detect_transl_inter(ofstream& BPREAD, vector<EventEntry>
 						cout << "transl_inter here-40\n";
 					}
 					string reads = castle::StringUtils::join(bpread_1[0], "\t");
-					BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % ref_id % (left_bound_sr + 1) % mate_ref_id % (right_bound_sr + 1) % reads).str();
+					BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % ref_id % (left_bound_sr + 1) % mate_ref_id % (right_bound_sr + 1) % reads).str();
 					EventEntry an_entry;
 					an_entry.type = data[0];
 					an_entry.cluster_id = data[1];
@@ -16418,7 +16420,7 @@ void SplitReadSVCaller::detect_transl_inter(ofstream& BPREAD, vector<EventEntry>
 						cout << "transl_inter here-51\n";
 					}
 					string reads = castle::StringUtils::join(bpread_1[0], "\t");
-					BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % ref_id % (left_bound_sr + 1) % mate_ref_id % (right_bound_sr + 1) % reads).str();
+					BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % ref_id % (left_bound_sr + 1) % mate_ref_id % (right_bound_sr + 1) % reads).str();
 					EventEntry an_entry;
 					an_entry.type = data[0];
 					an_entry.cluster_id = data[1];
@@ -16520,7 +16522,7 @@ void SplitReadSVCaller::detect_transl_inter(ofstream& BPREAD, vector<EventEntry>
 						cout << "transl_inter here-61\n";
 					}
 					string reads = castle::StringUtils::join(bpread_1[0], "\t");
-					BPREAD << (boost::format("%s__%s__%s__%s\n%s\n") % ref_id % (left_bound_sr + 1) % mate_ref_id % (right_bound_sr + 1) % reads).str();
+					BPREAD << (boost::format("%s~%s~%s~%s\n%s\n") % ref_id % (left_bound_sr + 1) % mate_ref_id % (right_bound_sr + 1) % reads).str();
 					EventEntry an_entry;
 					an_entry.type = data[0];
 					an_entry.cluster_id = data[1];
@@ -16550,7 +16552,7 @@ void SplitReadSVCaller::sr_cluster(vector<int64_t>& boundary1, vector<int64_t>& 
 	vector<string> temp_cols;
 	map<int64_t, vector<BamTools::BamAlignment>> cluster;
 	int64_t count = 0;
-	const char* delim_underscore = "_";
+	const char* delim_underscore = "~";
 
 	for (auto& al : ref_discord_sr) {
 		string& readname = al.Name;
@@ -16841,7 +16843,7 @@ void SplitReadSVCaller::sr_cluster_no_cl(vector<int64_t>& src_return, map<int64_
 	vector<string> temp_cols;
 	map<int64_t, vector<BamTools::BamAlignment>> cluster;
 	int64_t count = 0;
-	const char* delim_underscore = "_";
+	const char* delim_underscore = "~";
 //	const char* delim_tab = "\t";
 
 	for (auto& al : discord_sr) {
@@ -16958,7 +16960,7 @@ void SplitReadSVCaller::sr_cluster_1(vector<int64_t>& boundary1, vector<int64_t>
 	map<int64_t, vector<BamTools::BamAlignment>> cluster;
 //	my %cluster;
 	int64_t count = 0;
-	const char* delim_underscore = "_";
+	const char* delim_underscore = "~";
 
 	for (auto& al : discord_sr) {
 		string& readname = al.Name;
@@ -17099,7 +17101,7 @@ void SplitReadSVCaller::sr_cluster_1_no_cl(vector<int64_t>& src_return, map<int6
 	vector<string> temp_cols;
 	map<int64_t, vector<BamTools::BamAlignment>> cluster;
 	int64_t count = 0;
-	const char* delim_underscore = "_";
+	const char* delim_underscore = "~";
 	for (auto& al : discord_sr) {
 		string& readname = al.Name;
 		int64_t seqid_num = al.RefID;
