@@ -360,7 +360,7 @@ void TEA::run_rid() {
 						}
 						else {
 							if (debug) cout << "before erase nx \n";
-							pm_cl.erase(nx);
+							nx = pm_cl.erase(nx);
 							if (debug) cout << "after erase nx, size:" << pm_cl.size() << "\n";
 						}
 					}
