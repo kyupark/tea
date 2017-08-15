@@ -137,11 +137,6 @@ void TEA::run_rid() {
 	boost::unordered_map<string, pair<string, string>> rannot;
 	load_repeat_annotation(rannot);
 
-//	boost::unordered_map<string, pair<string, string>> vannot;
-//	if("va" == options.rasym) {
-//		load_virus_annotation()
-//	}
-
 	set<string> chrl;
 	boost::unordered_map<string, vector<pair<int64_t, int64_t>>> gap_annot;
 	boost::unordered_map<string, RefRepeatIntervalVector> ril_annot_alt;
@@ -151,10 +146,6 @@ void TEA::run_rid() {
 	bool out_gap = false;
 
 	load_ref_annotation(chrl, rannot, ril_annot_alt, gap_annot, gene_annot, out_chrl, out_gap);
-
-//	for(auto& an_itr : ril_annot_alt) {
-//		cout << (boost::format("[TEA.run_rid] entry: %s\n") % an_itr.first).str();
-//	}
 
 	string cbam_file;
 	if (!options.no_clipped && (options.is_sampe || options.is_mem) ) {
@@ -202,6 +193,8 @@ void TEA::run_rid() {
 
 	boost::unordered_map<string, boost::unordered_map<int8_t, vector<RAMRepeatEntry>>> ram;
 	load_ram(ram, rannot, rm_dup);
+
+	cout << (boost::format("[TEA.run_rid] Creating positive and negative ram storage for the parallelization\n")).str();
 	for (auto& c_entry : ram) {
 		auto& c = c_entry.first;
 		// create positive and negative ram storage for the parallelization
@@ -212,6 +205,7 @@ void TEA::run_rid() {
 			;
 		}
 	}
+
 	string the_first_stat_file = options.prefix + ".firststat";
 	if (!options.working_dir.empty()) {
 		the_first_stat_file = options.working_prefix + ".firststat";
@@ -237,6 +231,8 @@ void TEA::run_rid() {
 		auto c = c_entry.first;
 		chr_names.push_back(c);
 	}
+
+	cout << (boost::format("[TEA.run_rid] Sorting chr_names \n")).str();
 	sort(chr_names.begin(), chr_names.end(), [&](const string& lhs, const string& rhs)->bool{
 		string local_lhs = lhs;
 		string local_rhs = rhs;
@@ -257,13 +253,11 @@ void TEA::run_rid() {
 		}
 		return local_lhs < local_rhs;
 	});
+
+
 	vector<function<void()> > tasks;
 	bool headless = false;
 	for (auto c: chr_names) {
-//		if (c!="9") {
-//			continue;
-//		}
-//		auto c = c_entry.first;
 		tasks.push_back([&, c, headless] {
 			RAMIntervalVector p_cl;
 			RAMIntervalVector n_cl;
@@ -291,14 +285,6 @@ void TEA::run_rid() {
 			boost::unordered_set<int64_t> positive_paired;
 			boost::unordered_set<int64_t> negative_paired;
 
-//			for (auto an_entry : pm_cl) {
-//				auto& positive_entry = p_cl[an_entry.first];
-//				auto& negative_entry = n_cl[an_entry.second];
-//				positive_paired.insert(positive_entry.value.global_cluster_id);
-//				negative_paired.insert(negative_entry.value.global_cluster_id);
-//			}
-
-
 			bool debug = false;
 //			bool debug = (c == "22");
 
@@ -322,7 +308,7 @@ void TEA::run_rid() {
 			}
 
 			auto it = pm_cl.begin();
-			cout << c << ":" << pm_cl.size() << "\n";
+//			cout << c << ":" << pm_cl.size() << "\n";
 			if (pm_cl.size() == 1) {
 				auto p = p_cl[it->first];
 				auto n = n_cl[it->second];
@@ -336,43 +322,26 @@ void TEA::run_rid() {
 					auto nx = next(it);
 					auto p = p_cl[it->first];
 					auto n = n_cl[it->second];
-					if (debug) cout << "p.start" << p.start << "p.stop" << p.stop << "\n";
-					if (debug) cout << "n.start" << n.start << "n.stop" << n.stop << "\n";
-
 					auto pp = p_cl[nx->first];
 					auto nn = n_cl[nx->second];
-					if (debug) cout << "pp.start" << pp.start << "pp.stop" << pp.stop  << "\n";
-					if (debug) cout << "nn.start" << nn.start << "nn.stop" << nn.stop  << "\n";
 
 					if ((p.start == pp.start || n.stop == nn.stop)
 							&& (p.value.rep_repeat == pp.value.rep_repeat
 									|| n.value.rep_repeat == nn.value.rep_repeat)) {
 						if( p.value.ram + n.value.ram < pp.value.ram + nn.value.ram) {
-							if (debug) cout << "before erase it \n";
 							it = pm_cl.erase(it);
-							if (debug) cout << "after erase it, size:" << pm_cl.size() << "\n";
-//							if (nx == pm_cl.end()) {
-//								if (debug) cout << "before break \n";
-//								break;
-//							}
-							if (debug) cout << "before continue \n";
 							continue;
 						}
 						else {
-							if (debug) cout << "before erase nx \n";
 							nx = pm_cl.erase(nx);
-							if (debug) cout << "after erase nx, size:" << pm_cl.size() << "\n";
 						}
 					}
 					positive_paired.insert(p.value.global_cluster_id);
 					negative_paired.insert(n.value.global_cluster_id);
 					if (nx == pm_cl.end()) {
-						if (debug) cout << "before break nx==pm_cl.end\n";
 						break;
 					}
-					if (debug) cout << "before ++it \n";
 					++it;
-					if (debug) cout << "after ++it \n";
 				}
 				auto& p = p_cl[it->first];
 				auto& n = n_cl[it->second];
@@ -479,6 +448,7 @@ void TEA::run_vid() {
 	ref_support.insert("ponAbe2");
 	ref_support.insert("panTro3");
 	ref_support.insert("rheMac2");
+
 	string ref = options.ref;
 	if (ref_support.end() == ref_support.find(ref)) {
 		cout << (boost::format("The reference %s is not supported\n") % ref).str();
@@ -607,15 +577,16 @@ void TEA::run_vid() {
 				}
 				pair_cluster_alt(pm_cl, p_cl, n_cl, is["all"]["inter_gap"], rl["all"], stringent_pair);
 			}
+
 			boost::unordered_set<int64_t> positive_paired;
 			boost::unordered_set<int64_t> negative_paired;
-
 			for (auto an_entry : pm_cl) {
 				auto& positive_entry = p_cl[an_entry.first];
 				auto& negative_entry = n_cl[an_entry.second];
 				positive_paired.insert(positive_entry.value.global_cluster_id);
 				negative_paired.insert(negative_entry.value.global_cluster_id);
 			}
+
 			boost::unordered_set<int64_t> positive_only;
 			boost::unordered_set<int64_t> negative_only;
 			for (int64_t r_id = 0; r_id < static_cast<int64_t>(p_cl.size()); ++r_id) {
@@ -12294,7 +12265,7 @@ void TEA::output_clipped_stat(ofstream& out_p_clipped_filename, ofstream& out_n_
 	if(has_written_germline) {
 		int64_t n_valid_entries = 0;
 		for (auto& an_entry : clipped_entries) {
-			if (1 != an_entry.aligned || 1 != an_entry.strand) {
+			if (1 != an_entry.aligned || 1 != an_entry.strand || 0 == an_entry.clipped_seq.length()) {
 				continue;
 			}
 			++n_valid_entries;
@@ -12306,7 +12277,7 @@ void TEA::output_clipped_stat(ofstream& out_p_clipped_filename, ofstream& out_n_
 			ofstream out_fq(fq_name, ios::binary);
 			int64_t n_cnt = 0;
 			for (auto& an_entry : clipped_entries) {
-				if (1 != an_entry.aligned || 1 != an_entry.strand) {
+				if (1 != an_entry.aligned || 1 != an_entry.strand || 0 == an_entry.clipped_seq.length() ) {
 					continue;
 				}
 				out_fq << (boost::format(">cr%d\n%s\n") % n_cnt % an_entry.clipped_seq).str();
@@ -12323,7 +12294,7 @@ void TEA::output_clipped_stat(ofstream& out_p_clipped_filename, ofstream& out_n_
 	if(has_written_germline) {
 		int64_t n_valid_entries = 0;
 		for (auto& an_entry : clipped_entries) {
-			if (1 != an_entry.aligned || -1 != an_entry.strand) {
+			if (1 != an_entry.aligned || -1 != an_entry.strand || 0 == an_entry.clipped_seq.length()) {
 				continue;
 			}
 			++n_valid_entries;
@@ -12335,7 +12306,7 @@ void TEA::output_clipped_stat(ofstream& out_p_clipped_filename, ofstream& out_n_
 			ofstream out_fq(fq_name, ios::binary);
 			int64_t n_cnt = 0;
 			for (auto& an_entry : clipped_entries) {
-				if (1 != an_entry.aligned || -1 != an_entry.strand) {
+				if (1 != an_entry.aligned || -1 != an_entry.strand || 0 == an_entry.clipped_seq.length()) {
 					continue;
 				}
 				out_fq << (boost::format(">cr%d\n%s\n") % n_cnt % an_entry.clipped_seq).str();
@@ -12578,7 +12549,7 @@ void TEA::output_clipped_stat_v(ofstream& out_p_clipped_filename, ofstream& out_
 	{
 		int64_t n_valid_entries = 0;
 		for (auto& an_entry : clipped_entries) {
-			if (1 != an_entry.aligned || 1 != an_entry.strand) {
+			if (1 != an_entry.aligned || 1 != an_entry.strand || 0 == an_entry.clipped_seq.length()) {
 				continue;
 			}
 			++n_valid_entries;
@@ -12590,7 +12561,7 @@ void TEA::output_clipped_stat_v(ofstream& out_p_clipped_filename, ofstream& out_
 			ofstream out_fq(fq_name, ios::binary);
 			int64_t n_cnt = 0;
 			for (auto& an_entry : clipped_entries) {
-				if (1 != an_entry.aligned || 1 != an_entry.strand) {
+				if (1 != an_entry.aligned || 1 != an_entry.strand || 0 == an_entry.clipped_seq.length()) {
 					continue;
 				}
 				out_fq << (boost::format(">cr%d\n%s\n") % n_cnt % an_entry.clipped_seq).str();
@@ -12607,7 +12578,7 @@ void TEA::output_clipped_stat_v(ofstream& out_p_clipped_filename, ofstream& out_
 	{
 		int64_t n_valid_entries = 0;
 		for (auto& an_entry : clipped_entries) {
-			if (1 != an_entry.aligned || -1 != an_entry.strand) {
+			if (1 != an_entry.aligned || -1 != an_entry.strand || 0 == an_entry.clipped_seq.length()) {
 				continue;
 			}
 			++n_valid_entries;
@@ -12619,7 +12590,7 @@ void TEA::output_clipped_stat_v(ofstream& out_p_clipped_filename, ofstream& out_
 			ofstream out_fq(fq_name, ios::binary);
 			int64_t n_cnt = 0;
 			for (auto& an_entry : clipped_entries) {
-				if (1 != an_entry.aligned || -1 != an_entry.strand) {
+				if (1 != an_entry.aligned || -1 != an_entry.strand || 0 == an_entry.clipped_seq.length()) {
 					continue;
 				}
 				out_fq << (boost::format(">cr%d\n%s\n") % n_cnt % an_entry.clipped_seq).str();
@@ -12860,6 +12831,9 @@ void TEA::output_mate_fa(boost::unordered_map<string, boost::unordered_map<int8_
 			ofstream out_fa(fa_name, ios::binary);
 			for(int64_t n_id = 0; n_id < static_cast<int64_t>(the_seq_vec.size()); ++n_id) {
 				auto& a_seq = the_seq_vec[n_id];
+				if (0 == a_seq.length()) {
+					continue;
+				}
 				out_fa << (boost::format(">cr%d\n%s\n") % n_id % a_seq).str();
 			}
 		});
@@ -12873,6 +12847,9 @@ void TEA::output_mate_fa(boost::unordered_map<string, boost::unordered_map<int8_
 			ofstream out_fa(fa_name, ios::binary);
 			for(int64_t n_id = 0; n_id < static_cast<int64_t>(the_seq_vec.size()); ++n_id) {
 				auto& a_seq = the_seq_vec[n_id];
+				if (0 == a_seq.length()) {
+					continue;
+				}
 				out_fa << (boost::format(">cr%d\n%s\n") % n_id % a_seq).str();
 			}
 		});
@@ -13020,7 +12997,6 @@ void TEA::output_mate_fa(boost::unordered_map<string, boost::unordered_map<int8_
 	bool headless = false;
 	for (auto& c : chr_names) {
 		tasks.push_back([&, headless] {
-//			auto& c = c_entry.first;
 			string tmp_chr_name(c);
 			if(string::npos == tmp_chr_name.find("chr")) {
 				tmp_chr_name = "chr" + c;
@@ -13045,7 +13021,6 @@ void TEA::output_mate_fa(boost::unordered_map<string, boost::unordered_map<int8_
 				castle::StringUtils::c_string_multi_split(data[9], delim_comma, cols);
 				string key_name = data[0] + "." + data[1] + "." + data[2] + "." + data[3] + "." + cols[0];
 				string pclipped_prefix = contig_dir + "/" + key_name + ".pos.fa.cap";
-//				cout << pclipped_prefix << "\n";
 				string pclipped_contig = pclipped_prefix + ".contigs";
 				string pclipped_singlets = pclipped_prefix + ".singlets";
 
@@ -13082,8 +13057,6 @@ void TEA::output_mate_fa(boost::unordered_map<string, boost::unordered_map<int8_
 				string polyA("-");
 				string polyT("-");
 
-//				const bool debug = data[2] == "8446323";
-
 				if ("-" != pclipped) {
 					int64_t the_pos = pclipped.size();
 					the_pos -= 6;
@@ -13106,12 +13079,6 @@ void TEA::output_mate_fa(boost::unordered_map<string, boost::unordered_map<int8_
 					if(tcnt >= 5) {
 						polyT = "polyT";
 					}
-
-//					if (debug) {
-//						cout << "[TEA.output_mate_fa] data: " << key_name << "\n";
-//						cout << "[TEA.output_mate_fa] the_pos: " <<  the_pos << "\n";
-//						cout << "[TEA.output_mate_fa] the_suffix: " << the_suffix << "\n";
-//					}
 				}
 				if ("polyA" == polyA && "-" == polyT) {
 					orientation = "+";
@@ -13141,15 +13108,9 @@ void TEA::_output_mate_fa(boost::unordered_map<string, vector<string>>& positive
 //	const bool verbose = false;
 	string done_vector(calculated_n_blocks - 1, 'U');
 	set<string> block_boundary_strs;
-//	if (verbose) {
-//		for (auto itr = actual_blocks.begin(); actual_blocks.end() != itr; ++itr) {
-//			block_boundary_strs.insert((boost::format("%s %d-%d %d") % itr->read_name % itr->ref_id % itr->pos % itr->aln_flag).str());
-//		}
-//	}
-	// map<read name, pair<first read, second read>>
 	vector<boost::unordered_map<string, vector<string>>> positive_mate_reads_list(calculated_n_blocks - 1);
 	vector<boost::unordered_map<string, vector<string>>> negative_mate_reads_list(calculated_n_blocks - 1);
-//	vector<string> read_groups;
+
 	for (int64_t block_id = 0; block_id < calculated_n_blocks - 1; ++block_id) {
 		tasks.push_back([&, block_id] {
 			BamTools::BamReader local_reader;
@@ -13159,34 +13120,9 @@ void TEA::_output_mate_fa(boost::unordered_map<string, vector<string>>& positive
 			int64_t num_total = 0;
 
 			BamTools::BamAlignment local_alignment_entry;
-//			int32_t the_current_ref_id = actual_blocks[block_id].ref_id;
-//			int32_t the_current_ref_pos = actual_blocks[block_id].pos;
-//
-//			int32_t the_next_ref_id = actual_blocks[block_id + 1].ref_id;
-//			int32_t the_next_ref_pos = actual_blocks[block_id + 1].pos;
-//			uint32_t the_next_aln_flag = actual_blocks[block_id + 1].aln_flag;
+
 			string str_block_id = boost::lexical_cast<string>(block_id);
 
-//			string the_next_block_read_name = actual_blocks[block_id + 1].read_name;
-//			bool jump_success = local_reader.Jump(actual_blocks[block_id].ref_id, actual_blocks[block_id].jump_pos);
-//			if(!jump_success) {
-//				cout << (boost::format("[TEA._output_mate_fa] block-%d (Jump fail): %d:%d (%d/%d)-(%d/%d)\n")
-//						% block_id % actual_blocks[block_id].ref_id % actual_blocks[block_id].jump_pos % the_current_ref_id % the_current_ref_pos
-//						% the_next_ref_id % the_next_ref_pos).str();
-//				local_reader.Close();
-//				return;
-//			}
-//			if(verbose) {
-//				cout << (boost::format("[TEA._output_mate_fa] block-%d (start) (%d/%d)-(%d/%d)\n")
-//						% block_id % the_current_ref_id % the_current_ref_pos
-//						% the_next_ref_id % the_next_ref_pos).str();
-//			}
-//			map<string, int64_t> ref_reverse_index;
-//			const BamTools::RefVector& a_ref_vector = local_reader.GetReferenceData();
-//			for (uint64_t ref_id = 0; ref_id < a_ref_vector.size(); ++ref_id) {
-//				auto& a_ref = a_ref_vector[ref_id];
-//				ref_reverse_index[a_ref.RefName] = ref_id;
-//			}
 			int64_t the_current_ref_offset = actual_blocks[block_id].offset;
 			int64_t the_next_ref_offset = actual_blocks[block_id + 1].offset;
 			auto& m_bgzf = local_reader.GetBGZF();
@@ -13199,110 +13135,53 @@ void TEA::_output_mate_fa(boost::unordered_map<string, vector<string>>& positive
 			int64_t cur_offset = m_bgzf.Tell();
 			int64_t prev_offset = cur_offset;
 
-//			const bool is_soft_clipped = string::npos != input_BAM_name.find(".cl.disc.sorted.bam");
+			auto& local_positive_mate_reads = positive_mate_reads_list[block_id];
+			auto& local_negative_mate_reads = negative_mate_reads_list[block_id];
 
-				auto& local_positive_mate_reads = positive_mate_reads_list[block_id];
-				auto& local_negative_mate_reads = negative_mate_reads_list[block_id];
+			while (local_reader.LoadNextAlignmentCore(local_alignment_entry)) {
 
-//				const bool debug = (0 == block_id);
-				while (local_reader.LoadNextAlignmentCore(local_alignment_entry)) {
-//					if(verbose && 0 == num_total) {
-//						string a_block_boundary_str = (boost::format("%s %d-%d %d")
-//								% local_alignment_entry.Name % local_alignment_entry.RefID % local_alignment_entry.Position
-//								% local_alignment_entry.AlignmentFlag).str();
-//						if(block_boundary_strs.end() == block_boundary_strs.find(a_block_boundary_str)) {
-//							cout << (boost::format("[TEA._output_mate_fa] Block-%d (first-wrong) %s\n")
-//									% block_id % a_block_boundary_str).str();
-//						} else {
-//							cout << (boost::format("[TEA._output_mate_fa] Block-%d (first) %s\n")
-//									% block_id % a_block_boundary_str).str();
-//						}
-//					}
-//					if(local_alignment_entry.RefID == the_next_ref_id
-//							&& local_alignment_entry.Position == the_next_ref_pos
-//							&& local_alignment_entry.AlignmentFlag == the_next_aln_flag
-//							&& local_alignment_entry.Name == the_next_block_read_name
-//					) {
-//						break;
-//					}
+				cur_offset = m_bgzf.Tell();
+				if(prev_offset >= the_next_ref_offset) {
+					break;
+				}
+				prev_offset = cur_offset;
 
-					cur_offset = m_bgzf.Tell();
-					if(prev_offset >= the_next_ref_offset) {
-						break;
-					}
-					prev_offset = cur_offset;
+				++num_total;
 
-					++num_total;
+				auto the_pos_itr = a_positive_repeat_map.find(local_alignment_entry.Name);
+				auto the_neg_itr = a_negative_repeat_map.find(local_alignment_entry.Name);
+				if (a_positive_repeat_map.end() != the_pos_itr) {
+					auto& aln_pair = the_pos_itr->second;
+					int64_t the_pos = aln_pair.pos;
+					int64_t aln_pos = local_alignment_entry.Position + 1;
 
-					auto the_pos_itr = a_positive_repeat_map.find(local_alignment_entry.Name);
-					auto the_neg_itr = a_negative_repeat_map.find(local_alignment_entry.Name);
-					if (a_positive_repeat_map.end() != the_pos_itr) {
-						auto& aln_pair = the_pos_itr->second;
-						int64_t the_pos = aln_pair.pos;
-						int64_t aln_pos = local_alignment_entry.Position + 1;
-
-//					auto the_ref_id_itr = ref_reverse_index.find(aln_pair.chr);
-//					if(ref_reverse_index.end() != the_ref_id_itr) {
-//						int64_t the_ref_id = the_ref_id_itr->second;
-//						if(local_alignment_entry.Position != the_pos && local_alignment_entry.RefID == the_ref_id) {
-//						const bool debug = ("14" == aln_pair.chr) && (34139886 <= aln_pair.pos || 34140417 >= aln_pair.pos);
-//						if(debug) {
-//							cout << "[TEA._output_mate_fa] prefix: " << aln_pair.file_name_prefix << ", pos: " << aln_pair.pos << "\n";
-//						}
-						if(aln_pos != the_pos) {
-//							cout << "Pos: " << the_pos << ": " << BamWriter::GetSAMAlignment(local_alignment_entry, local_reader.GetReferenceData()) << "\n";
-							if(local_alignment_entry.IsReverseStrand()) {
-								local_alignment_entry.QueryBases = castle::StringUtils::get_reverse_complement(local_alignment_entry.QueryBases);
-							}
-							auto& the_seq_vec = local_positive_mate_reads[aln_pair.file_name_prefix];
-							the_seq_vec.push_back(local_alignment_entry.QueryBases);
+					if(aln_pos != the_pos) {
+						if(local_alignment_entry.IsReverseStrand()) {
+							local_alignment_entry.QueryBases = castle::StringUtils::get_reverse_complement(local_alignment_entry.QueryBases);
 						}
-//					}
-					}
-					if (a_negative_repeat_map.end() != the_neg_itr) {
-						auto& aln_pair = the_neg_itr->second;
-						int64_t the_pos = aln_pair.pos;
-						int64_t aln_pos = local_alignment_entry.Position + 1;
-
-//					auto the_ref_id_itr = ref_reverse_index.find(aln_pair.chr);
-//					if(ref_reverse_index.end() != the_ref_id_itr) {
-//						int64_t the_ref_id = the_ref_id_itr->second;
-//						if(local_alignment_entry.Position != the_pos && local_alignment_entry.RefID == the_ref_id) {
-						if(aln_pos != the_pos) {
-//							cout << "Neg: " << the_pos << ": " << BamWriter::GetSAMAlignment(local_alignment_entry, local_reader.GetReferenceData()) << "\n";
-							if(local_alignment_entry.IsReverseStrand()) {
-								local_alignment_entry.QueryBases = castle::StringUtils::get_reverse_complement(local_alignment_entry.QueryBases);
-							}
-							auto& the_seq_vec = local_negative_mate_reads[aln_pair.file_name_prefix];
-							the_seq_vec.push_back(local_alignment_entry.QueryBases);
-						}
-//					}
+						auto& the_seq_vec = local_positive_mate_reads[aln_pair.file_name_prefix];
+						the_seq_vec.push_back(local_alignment_entry.QueryBases);
 					}
 				}
+				if (a_negative_repeat_map.end() != the_neg_itr) {
+					auto& aln_pair = the_neg_itr->second;
+					int64_t the_pos = aln_pair.pos;
+					int64_t aln_pos = local_alignment_entry.Position + 1;
 
-				local_reader.Close();
-//				done_vector[block_id] = 'D';
+					if(aln_pos != the_pos) {
+						if(local_alignment_entry.IsReverseStrand()) {
+							local_alignment_entry.QueryBases = castle::StringUtils::get_reverse_complement(local_alignment_entry.QueryBases);
+						}
+						auto& the_seq_vec = local_negative_mate_reads[aln_pair.file_name_prefix];
+						the_seq_vec.push_back(local_alignment_entry.QueryBases);
+					}
+				}
+			}
 
-//				if(verbose) {
-//					string a_block_boundary_str = (boost::format("%s %d-%d %d")
-//							% local_alignment_entry.Name % local_alignment_entry.RefID % local_alignment_entry.Position
-//							% local_alignment_entry.AlignmentFlag).str();
-//					if(block_boundary_strs.end() == block_boundary_strs.find(a_block_boundary_str)) {
-//						cout << (boost::format("[TEA.BAM_to_FASTQ] Block-%d (last-wrong) %s\n")
-//								% block_id % a_block_boundary_str).str();
-//					} else {
-//						cout << (boost::format("[TEA.BAM_to_FASTQ] Block-%d (last) %s\n")
-//								% block_id % a_block_boundary_str).str();
-//					}
-//				} else {
-//					size_t n = count(done_vector.begin(), done_vector.end(), 'D');
-//					double processed = n/(double)done_vector.size() * 100.0;
-//					cout << (boost::format("%.2f %%\n") % processed).str();
-//				}
-			});
+			local_reader.Close();
+		});
 	}
 	castle::ParallelRunner::run_unbalanced_load(n_cores, tasks);
-//	cout << "[TEA._output_mate_fa] gather scattered information\n";
 	tasks.push_back([&, calculated_n_blocks] {
 		for (int64_t block_id = 0; block_id < calculated_n_blocks - 1; ++block_id) {
 			auto& local_positive_mate_reads = positive_mate_reads_list[block_id];
@@ -13544,6 +13423,9 @@ void TEA::output_mate_fa_v(boost::unordered_map<string, boost::unordered_map<int
 			ofstream out_fa(fa_name, ios::binary);
 			for(int64_t n_id = 0; n_id < static_cast<int64_t>(the_seq_vec.size()); ++n_id) {
 				auto& a_seq = the_seq_vec[n_id];
+				if (0 == a_seq.length()) {
+					continue;
+				}
 				out_fa << (boost::format(">cr%d\n%s\n") % n_id % a_seq).str();
 			}
 		});
@@ -13557,6 +13439,9 @@ void TEA::output_mate_fa_v(boost::unordered_map<string, boost::unordered_map<int
 			ofstream out_fa(fa_name, ios::binary);
 			for(int64_t n_id = 0; n_id < static_cast<int64_t>(the_seq_vec.size()); ++n_id) {
 				auto& a_seq = the_seq_vec[n_id];
+				if (0 == a_seq.length()) {
+					continue;
+				}
 				out_fa << (boost::format(">cr%d\n%s\n") % n_id % a_seq).str();
 			}
 		});
