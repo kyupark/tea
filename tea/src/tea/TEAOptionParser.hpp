@@ -96,6 +96,8 @@ public:
 	bool is_cleaning;
 	bool is_sampe;
 	bool is_mem;
+	bool including_head_clip;
+
 
 };
 

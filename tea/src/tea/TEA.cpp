@@ -513,23 +513,13 @@ void TEA::run_vid() {
 	auto& the_rep_is = is["all"];
 	double rmasker_filter_margin = 500;
 
-	cout << (boost::format("[TEA.run_vid] fragment: %d (mu: %d, sd: %d), intra.gap: %d, inter.gap: %d, ins.margin: %d, rmasker.filter.margin: %d\n") % the_rep_is["fr"] % the_rep_is["mu"] % the_rep_is["sd"] % the_rep_is["intra_gap"] % the_rep_is["inter_gap"] % the_rep_is["ins_margin"] %
-			rmasker_filter_margin).str();
+	cout << (boost::format("[TEA.run_vid] fragment: %d (mu: %d, sd: %d), intra.gap: %d, inter.gap: %d, ins.margin: %d, rmasker.filter.margin: %d\n") % the_rep_is["fr"] % the_rep_is["mu"] % the_rep_is["sd"] % the_rep_is["intra_gap"] % the_rep_is["inter_gap"] % the_rep_is["ins_margin"] % rmasker_filter_margin).str();
 
 	const bool rm_dup = false;
 
 	boost::unordered_map<string, boost::unordered_map<int8_t, vector<RAMRepeatEntry>>> ram;
 	load_ram(ram, rannot, rm_dup);
-	for (auto& c_entry : ram) {
-		auto& c = c_entry.first;
-		// create positive and negative ram storage for the parallelization
-		if (ram[c][1].size() > 0) {
-			;
-		}
-		if (ram[c][-1].size() > 0) {
-			;
-		}
-	}
+
 	string the_first_stat_file = options.prefix + ".firststat";
 	if (!options.working_dir.empty()) {
 		the_first_stat_file = options.working_prefix + ".firststat";
@@ -8161,7 +8151,8 @@ void TEA::_generate_cbam_files_mem() {
 							}
 							selected = true;
 //							if (!(sam_flag & 0x0010)) { // # positive strand mapping
-							if (!local_alignment_entry.IsReverseStrand()) { // # positive strand mapping
+							if (options.including_head_clip
+									||!local_alignment_entry.IsReverseStrand()) { // # positive strand mapping
 								if(debug) {
 									boost::lock_guard<boost::mutex> a_lock(print_mutex);
 									cout << "[TEA.generate_cbam_files_mem] selected 2-1\n";
@@ -8214,7 +8205,8 @@ void TEA::_generate_cbam_files_mem() {
 						}
 						selected = true;
 //						if (sam_flag & 0x0010) { // # negative strand mapping
-						if (local_alignment_entry.IsReverseStrand()) {
+						if (options.including_head_clip
+								||local_alignment_entry.IsReverseStrand()) {
 							if(debug) {
 								boost::lock_guard<boost::mutex> a_lock(print_mutex);
 								cout << "[TEA.generate_cbam_files_mem] selected 2-2\n";
@@ -8688,7 +8680,8 @@ void TEA::_generate_cbam_files_mem_alt() {
 	//							}
 									selected = true;
 	//							if (!(sam_flag & 0x0010)) { // # positive strand mapping
-									if (!local_alignment_entry.IsReverseStrand()) { // # positive strand mapping
+									if (options.including_head_clip
+											||!local_alignment_entry.IsReverseStrand()) { // # positive strand mapping
 										selected2 = true;
 										cpos = local_alignment_entry.Position;
 										//								# check whether the clipped seq has >=10
@@ -8736,7 +8729,8 @@ void TEA::_generate_cbam_files_mem_alt() {
 	//						}
 							selected = true;
 	//						if (sam_flag & 0x0010) { // # negative strand mapping
-							if (local_alignment_entry.IsReverseStrand()) {
+							if (options.including_head_clip
+									||local_alignment_entry.IsReverseStrand()) {
 								selected2 = true;
 								cpos = get_cpos(local_alignment_entry.Position, cigar, qual2, -1);
 								//							# check whether the clipped seq has >=10
@@ -9130,7 +9124,8 @@ void TEA::_generate_cbam_files_mem_alt2() {
 							}
 							selected = true;
 //							if (!(sam_flag & 0x0010)) { // # positive strand mapping
-							if (!local_alignment_entry.IsReverseStrand()) { // # positive strand mapping
+							if (options.including_head_clip
+									||!local_alignment_entry.IsReverseStrand()) { // # positive strand mapping
 								if(debug) {
 									boost::lock_guard<boost::mutex> a_lock(print_mutex);
 									cout << "[TEA.generate_cbam_files_mem_alt2] selected 2-1\n";
@@ -9182,7 +9177,8 @@ void TEA::_generate_cbam_files_mem_alt2() {
 						}
 						selected = true;
 //						if (sam_flag & 0x0010) { // # negative strand mapping
-						if (local_alignment_entry.IsReverseStrand()) {
+						if (options.including_head_clip
+								||local_alignment_entry.IsReverseStrand()) {
 							if(debug) {
 								boost::lock_guard<boost::mutex> a_lock(print_mutex);
 								cout << "[TEA.generate_cbam_files_mem_alt2] selected 2-2\n";
@@ -9299,15 +9295,7 @@ void TEA::_generate_cbam_files_mem_org() {
 	vector<meerkat::BlockBoundary> local_independent_blocks;
 	collect_boundaries_pos(local_fixed_size_blocks, local_unmapped_included_blocks, local_independent_blocks, input_bam_name, a_bai_path, a_bni_path, size_block);
 	vector<meerkat::BlockBoundary> actual_blocks = local_unmapped_included_blocks;
-//	vector<meerkat::BlockBoundary> actual_blocks;
-//	collect_boundaries(actual_blocks, input_bam_name, size_block);
 
-//	BamTools::BamReader local_reader;
-//	if (!local_reader.Open(a_path, an_index_path)) {
-//		cout << "ERROR: could not open BAM file '" << a_path << "'\n";
-//		exit(1);
-//	}
-//	find_quality_standard(local_reader);
 	{
 		string line;
 		ifstream in(firststat_name, ios::binary);
@@ -9326,14 +9314,10 @@ void TEA::_generate_cbam_files_mem_org() {
 //	const bool verbose = false;
 	string done_vector(calculated_n_blocks - 1, 'U');
 	set<string> block_boundary_strs;
-//	vector<boost::unordered_map<string, boost::unordered_map<string, RAMEntry>>>h_pos_lists(calculated_n_blocks - 1);
-//	vector<boost::unordered_map<string, string>> ram_lists(calculated_n_blocks - 1);
-	//	boost::unordered_map<string, boost::unordered_map<string, RAMEntry>> h_pos;
-	//	boost::unordered_map<string, string> ram;
 
 	vector<string> raw_bam_name_lists(calculated_n_blocks - 1);
 	vector<string> softclips_consd_cpos_name_lists(calculated_n_blocks - 1);
-//	vector<int64_t> cnt_lists(calculated_n_blocks - 1);
+
 	for (int64_t block_id = 0; block_id < calculated_n_blocks - 1; ++block_id) {
 		tasks.push_back([&, block_id] {
 			BamTools::BamReader local_reader;
@@ -9341,28 +9325,9 @@ void TEA::_generate_cbam_files_mem_org() {
 				return;
 			}
 
-//			int32_t the_current_ref_id = actual_blocks[block_id].ref_id;
-//			int32_t the_current_ref_pos = actual_blocks[block_id].pos;
-//
-//			int32_t the_next_ref_id = actual_blocks[block_id + 1].ref_id;
-//			int32_t the_next_ref_pos = actual_blocks[block_id + 1].pos;
-//			uint32_t the_next_aln_flag = actual_blocks[block_id + 1].aln_flag;
 			string str_block_id = boost::lexical_cast<string>(block_id);
-
 			string the_next_block_read_name = actual_blocks[block_id + 1].read_name;
-//			bool jump_success = local_reader.Jump(actual_blocks[block_id].ref_id, actual_blocks[block_id].jump_pos);
-//			if(!jump_success) {
-//				cout << (boost::format("[TEA.write_ram_and_bam] block-%d (Jump fail): %d:%d (%d/%d)-(%d/%d)\n")
-//						% block_id % actual_blocks[block_id].ref_id % actual_blocks[block_id].jump_pos % the_current_ref_id % the_current_ref_pos
-//						% the_next_ref_id % the_next_ref_pos).str();
-//				local_reader.Close();
-//				return;
-//			}
-//			if(verbose) {
-//				cout << (boost::format("[TEA.write_ram_and_bam] block-%d (start) (%d/%d)-(%d/%d)\n")
-//						% block_id % the_current_ref_id % the_current_ref_pos
-//						% the_next_ref_id % the_next_ref_pos).str();
-//			}
+
 			int64_t the_current_ref_offset = actual_blocks[block_id].offset;
 			int64_t the_next_ref_offset = actual_blocks[block_id + 1].offset;
 			auto& m_bgzf = local_reader.GetBGZF();
@@ -9417,209 +9382,128 @@ void TEA::_generate_cbam_files_mem_org() {
 			raw_bam_name_lists[block_id] = local_raw_sam_name;
 			softclips_consd_cpos_name_lists[block_id] = local_softclips_consd_cpos_name;
 //			bool debug = false;
-				BamTools::BamAlignment local_alignment_entry;
-				BamTools::BamWriter out_raw_sam;
-				if(0 == block_id) {
-					out_raw_sam.SAMOpen(local_raw_sam_name, header, ref_vec);
-				} else {
-					out_raw_sam.SAMOpenNoHeader(local_raw_sam_name, ref_vec);
+			BamTools::BamAlignment local_alignment_entry;
+			BamTools::BamWriter out_raw_sam;
+			if(0 == block_id) {
+				out_raw_sam.SAMOpen(local_raw_sam_name, header, ref_vec);
+			} else {
+				out_raw_sam.SAMOpenNoHeader(local_raw_sam_name, ref_vec);
+			}
+			ofstream out_consd_cpos(local_softclips_consd_cpos_name, ios::binary);
+
+			while (local_reader.LoadNextAlignmentCore(local_alignment_entry)) {
+				cur_offset = m_bgzf.Tell();
+				if(prev_offset >= the_next_ref_offset) {
+					break;
 				}
-				ofstream out_consd_cpos(local_softclips_consd_cpos_name, ios::binary);
+				prev_offset = cur_offset;
+				++num_total;
 
-				while (local_reader.LoadNextAlignmentCore(local_alignment_entry)) {
-//					if(verbose && 0 == num_total) {
-//						string a_block_boundary_str = (boost::format("%s %d-%d %d")
-//								% local_alignment_entry.Name % local_alignment_entry.RefID % local_alignment_entry.Position
-//								% local_alignment_entry.AlignmentFlag).str();
-//						if(block_boundary_strs.end() == block_boundary_strs.find(a_block_boundary_str)) {
-//							cout << (boost::format("[TEA.write_ram_and_bam] Block-%d (first-wrong) %s\n")
-//									% block_id % a_block_boundary_str).str();
-//						} else {
-//							cout << (boost::format("[TEA.write_ram_and_bam] Block-%d (first) %s\n")
-//									% block_id % a_block_boundary_str).str();
-//						}
-//					}
-//					if(local_alignment_entry.RefID == the_next_ref_id
-//							&& local_alignment_entry.Position == the_next_ref_pos
-//							&& local_alignment_entry.AlignmentFlag == the_next_aln_flag
-//							&& local_alignment_entry.Name == the_next_block_read_name
-//					) {
-//						break;
-//					}
-					cur_offset = m_bgzf.Tell();
-					if(prev_offset >= the_next_ref_offset) {
-						break;
-					}
-					prev_offset = cur_offset;
-					++num_total;
-//				debug = "DHFC08P1:370:C1784ACXX:2:1214:21254:59267" == local_alignment_entry.Name;
-//				if(!debug) {
-//					continue;
-//				}
+				uint32_t sam_flag = local_alignment_entry.AlignmentFlag;
+				if ((sam_flag & 0x400) || (sam_flag & 0x4)) {
+					continue;
+				}
 
-					//	while(<F>) {
-					//		chomp; my @a=split(/\t/);
-					//		if ($a[1] & 0x400 | $a[1] & 0x4) { next }; # skip PCR duplicate or unmapped reads
-					uint32_t sam_flag = local_alignment_entry.AlignmentFlag;
-					if ((sam_flag & 0x400) || (sam_flag & 0x4)) {
-						continue;
-					}
+				auto& seq = local_alignment_entry.QueryBases;
+				auto& qual = local_alignment_entry.Qualities;
 
-					auto& seq = local_alignment_entry.QueryBases;
-					auto& qual = local_alignment_entry.Qualities;
-					//		$s1 = $cigar;
-					//		$s2 = $cigar;
-					polyAT = selected = selected2 = false;
-					auto& cigar = local_alignment_entry.CigarData;
-					// # clipped in the beginning
-					auto& cigar_front_type = cigar.front().Type;
+				polyAT = selected = selected2 = false;
+				auto& cigar = local_alignment_entry.CigarData;
 
-					if ( !cigar.empty() && ('S' == cigar_front_type || 'H' == cigar_front_type) ) {
-//					if(debug) {
-//						cout << "initial clipped\n";
-//					}
-						clen = cigar.front().Length;
-						if (clen >= 5) {
-							if ('S' == cigar_front_type) {
-								qual1 = qual.substr(0, clen);
-							}
-//						if(debug) {
-//							cout << "qual1: " << qual1 << "\n";
-//						}
-							//# more than 5 good quality bases
-							int64_t n_good_quals = get_number_of_good_qualities(qual1, qcutoff);
-							if (n_good_quals >= 5 || 'H' == cigar_front_type ) {
-//							if(debug) {
-//								cout << "selected 1\n";
-//								exit(1);
-//							}
-								selected = true;
-//							if (!(sam_flag & 0x0010)) { // # positive strand mapping
-								if (!local_alignment_entry.IsReverseStrand()) { // # positive strand mapping
-									selected2 = true;
-									cpos = local_alignment_entry.Position;
-									//								# check whether the clipped seq has >=10
-									if ('S' == cigar_front_type) {
-										cseq1 = seq.substr(0, clen);
-									}
-									if (string::npos != cseq1.find(poly_a_str)) {
-										polyAT = true;
-									}
-								}
-							}
-						}
-					}
-					// # clipping in the end
-					clen = 0;
-//				for (auto& a_cigar : cigar) {
-//					if ('D' == a_cigar.Type) {
-//						clen = a_cigar.Length;
-//						break;
-//					}
-//				}
-					auto& cigar_back_type = cigar.back().Type;
+				// # clipped in the beginning
+				auto& cigar_front_type = cigar.front().Type;
+				auto& cigar_back_type = cigar.back().Type;
 
-					if( !cigar.empty() && ('S' == cigar_back_type || 'H' == cigar_back_type) ) {
-						clen = cigar.back().Length;
-					}
+				if ( !cigar.empty() && ('S' == cigar_front_type || 'H' == cigar_front_type) ) {
+					clen = cigar.front().Length;
 					if (clen >= 5) {
-						int64_t the_qual_sub_str_pos = qual.size() - clen;
-						if (the_qual_sub_str_pos > 0 && 'S' == cigar_front_type) {
-							qual2 = qual.substr(the_qual_sub_str_pos);
-						} else {
-							qual2 = qual;
+						if ('S' == cigar_front_type) {
+							qual1 = qual.substr(0, clen);
 						}
-//					if(debug) {
-//						cout << "qual2: " << qual2 << "\n";
-//					}
-						int64_t n_good_quals = get_number_of_good_qualities(qual2, qcutoff);
-						//		if ($qual2 =~ m/([^#]+)/) {
-						//				if (length($1) >= 5 ) {
-						if (n_good_quals >= 5) {
-//						if(debug) {
-//							cout << "selected: true\n";
-//						}
+						//# more than 5 good quality bases
+						int64_t n_good_quals = get_number_of_good_qualities(qual1, qcutoff);
+						if (n_good_quals >= 5 || 'H' == cigar_front_type ) {
 							selected = true;
-//						if (sam_flag & 0x0010) { // # negative strand mapping
-							if (local_alignment_entry.IsReverseStrand()) {
+							if (options.including_head_clip
+									|| !local_alignment_entry.IsReverseStrand()) { // # positive strand mapping
 								selected2 = true;
-								cpos = get_cpos(local_alignment_entry.Position, cigar, qual2, -1);
-								//							# check whether the clipped seq has >=10
-								int64_t the_seq_sub_str_pos = seq.size() - clen;
+								cpos = local_alignment_entry.Position;
+								//								# check whether the clipped seq has >=10
 								if ('S' == cigar_front_type) {
-									cseq2 = seq.substr(the_seq_sub_str_pos);
+									cseq1 = seq.substr(0, clen);
 								}
-								//							if ($cseq2 =~ m/T{$min_polyAT,}/) { $polyAT = 1 }
-								if (string::npos != cseq2.find(poly_t_str)) {
+								if (string::npos != cseq1.find(poly_a_str)) {
 									polyAT = true;
 								}
 							}
 						}
 					}
-
-					//	# if there is not >=10 A/T bases in the clipped sequence, apply NM and MD filters
-					if (!polyAT) {
-						//        # check max_mismatches
-						local_alignment_entry.GetEditDistance(nm);
-						if (nm > max_mismatches) {
-							continue;
-						};
-
-						string md_str;
-						local_alignment_entry.GetTag("MD", md_str);
-						//        $md = $_;
-
-						//        # check min_matches is satisfied
-
-						//        $md =~  s/.*\sMD:Z:([\w^]+)($|\s.*)/$1/;
-						//        my @b=split(/[A-Za-z^]/, $md);
-						//				cout << local_alignment_entry.Name << "/" << md_str << "\n";
-						castle::StringUtils::c_string_multi_split(md_str, delim_all_stopwords, b);
-						int64_t summed_n_bases = 0;
-						for (auto a_value_str : b) {
-							summed_n_bases += boost::lexical_cast<int64_t>(a_value_str);
-						}
-						if (summed_n_bases < min_matches) {
-							continue;
-						}
-					}
-
-					if (selected2) {
-						out_raw_sam.SaveSAMAlignment(local_alignment_entry);
-						out_consd_cpos << (boost::format("%s\t%s\n") % ref_vec[local_alignment_entry.RefID].RefName % cpos).str();
-					}
-
 				}
-				local_reader.Close();
-				out_raw_sam.Close();
-				//				done_vector[block_id] = 'D';
 
-				//				if(verbose) {
-				//					string a_block_boundary_str = (boost::format("%s %d-%d %d")
-				//							% local_alignment_entry.Name % local_alignment_entry.RefID % local_alignment_entry.Position
-				//							% local_alignment_entry.AlignmentFlag).str();
-				//					if(block_boundary_strs.end() == block_boundary_strs.find(a_block_boundary_str)) {
-				//						cout << (boost::format("[TEA.BAM_to_FASTQ] Block-%d (last-wrong) %s\n")
-				//								% block_id % a_block_boundary_str).str();
-				//					} else {
-				//						cout << (boost::format("[TEA.BAM_to_FASTQ] Block-%d (last) %s\n")
-				//								% block_id % a_block_boundary_str).str();
-				//					}
-				//				} else {
-				//					size_t n = count(done_vector.begin(), done_vector.end(), 'D');
-				//					double processed = n/(double)done_vector.size() * 100.0;
-				//					cout << (boost::format("%.2f %%\n") % processed).str();
-				//				}
-			});
+				// # clipping in the end
+				clen = 0;
+				if( !cigar.empty() && ('S' == cigar_back_type || 'H' == cigar_back_type) ) {
+					clen = cigar.back().Length;
+				}
+				if (clen >= 5) {
+					int64_t the_qual_sub_str_pos = qual.size() - clen;
+					if (the_qual_sub_str_pos > 0 && 'S' == cigar_back_type) {
+						qual2 = qual.substr(the_qual_sub_str_pos);
+					} else {
+						qual2 = qual;
+					}
+					int64_t n_good_quals = get_number_of_good_qualities(qual2, qcutoff);
+					if (n_good_quals >= 5) {
+						selected = true;
+						if (options.including_head_clip
+								||local_alignment_entry.IsReverseStrand()) {
+							selected2 = true;
+							cpos = get_cpos(local_alignment_entry.Position, cigar, qual2, -1);
+//							# check whether the clipped seq has >=10
+							int64_t the_seq_sub_str_pos = seq.size() - clen;
+							if ('S' == cigar_back_type) {
+								cseq2 = seq.substr(the_seq_sub_str_pos);
+							}
+							if (string::npos != cseq2.find(poly_t_str)) {
+								polyAT = true;
+							}
+						}
+					}
+				}
+
+				//	# if there is not >=10 A/T bases in the clipped sequence, apply NM and MD filters
+				if (!polyAT) {
+					//        # check max_mismatches
+					local_alignment_entry.GetEditDistance(nm);
+					if (nm > max_mismatches) {
+						continue;
+					};
+
+					string md_str;
+					local_alignment_entry.GetTag("MD", md_str);
+
+					castle::StringUtils::c_string_multi_split(md_str, delim_all_stopwords, b);
+					int64_t summed_n_bases = 0;
+					for (auto a_value_str : b) {
+						summed_n_bases += boost::lexical_cast<int64_t>(a_value_str);
+					}
+					if (summed_n_bases < min_matches) {
+						continue;
+					}
+				}
+
+				if (selected2) {
+					out_raw_sam.SaveSAMAlignment(local_alignment_entry);
+					out_consd_cpos << (boost::format("%s\t%s\n") % ref_vec[local_alignment_entry.RefID].RefName % cpos).str();
+				}
+			}
+			local_reader.Close();
+			out_raw_sam.Close();
+		});
 	}
 	// sometimes the unaligned reads are in the last portion of BAM file, hence
 	// changing the order.
-//	if (tasks.size() > 0) {
-//		swap(tasks[0], tasks.back());
-//	}
 	castle::ParallelRunner::run_unbalanced_load(n_cores, tasks);
-
-	//	cout << "[TEA.load_repeat_mapping] gather scattered information\n";
 
 	castle::IOUtils::plain_file_merge(consd_raw_sam_name, raw_bam_name_lists, n_cores, true);
 	castle::IOUtils::plain_file_merge(out_softclips_consd_cpos_name, softclips_consd_cpos_name_lists, n_cores, true);
@@ -9632,7 +9516,6 @@ void TEA::_generate_cbam_files_mem_org() {
 	system(sambamba_sort_cmd.c_str());
 	cout << "[TEA.generate_cbam_files_mem_org] done generating cbam and its index.\n";
 	cout << checker;
-
 }
 
 void TEA::_generate_cbam_files_sampe() {
@@ -9670,15 +9553,7 @@ void TEA::_generate_cbam_files_sampe() {
 	vector<meerkat::BlockBoundary> local_independent_blocks;
 	collect_boundaries_pos(local_fixed_size_blocks, local_unmapped_included_blocks, local_independent_blocks, input_bam_name, a_bai_path, a_bni_path, size_block);
 	vector<meerkat::BlockBoundary> actual_blocks = local_unmapped_included_blocks;
-//	vector<meerkat::BlockBoundary> actual_blocks;
-//	collect_boundaries(actual_blocks, input_bam_name, size_block);
 
-//	BamTools::BamReader local_reader;
-//	if (!local_reader.Open(a_path, an_index_path)) {
-//		cout << "ERROR: could not open BAM file '" << a_path << "'\n";
-//		exit(1);
-//	}
-//	find_quality_standard(local_reader);
 	{
 		string line;
 		ifstream in(firststat_name, ios::binary);
@@ -9697,14 +9572,10 @@ void TEA::_generate_cbam_files_sampe() {
 //	const bool verbose = false;
 	string done_vector(calculated_n_blocks - 1, 'U');
 	set<string> block_boundary_strs;
-//	vector<boost::unordered_map<string, boost::unordered_map<string, RAMEntry>>>h_pos_lists(calculated_n_blocks - 1);
-//	vector<boost::unordered_map<string, string>> ram_lists(calculated_n_blocks - 1);
-	//	boost::unordered_map<string, boost::unordered_map<string, RAMEntry>> h_pos;
-	//	boost::unordered_map<string, string> ram;
 
 	vector<string> raw_bam_name_lists(calculated_n_blocks - 1);
 	vector<string> softclips_consd_cpos_name_lists(calculated_n_blocks - 1);
-//	vector<int64_t> cnt_lists(calculated_n_blocks - 1);
+
 	for (int64_t block_id = 0; block_id < calculated_n_blocks - 1; ++block_id) {
 		tasks.push_back([&, block_id] {
 			BamTools::BamReader local_reader;
@@ -9712,28 +9583,9 @@ void TEA::_generate_cbam_files_sampe() {
 				return;
 			}
 
-//			int32_t the_current_ref_id = actual_blocks[block_id].ref_id;
-//			int32_t the_current_ref_pos = actual_blocks[block_id].pos;
-//
-//			int32_t the_next_ref_id = actual_blocks[block_id + 1].ref_id;
-//			int32_t the_next_ref_pos = actual_blocks[block_id + 1].pos;
-//			uint32_t the_next_aln_flag = actual_blocks[block_id + 1].aln_flag;
 			string str_block_id = boost::lexical_cast<string>(block_id);
-
 			string the_next_block_read_name = actual_blocks[block_id + 1].read_name;
-//			bool jump_success = local_reader.Jump(actual_blocks[block_id].ref_id, actual_blocks[block_id].jump_pos);
-//			if(!jump_success) {
-//				cout << (boost::format("[TEA.write_ram_and_bam] block-%d (Jump fail): %d:%d (%d/%d)-(%d/%d)\n")
-//						% block_id % actual_blocks[block_id].ref_id % actual_blocks[block_id].jump_pos % the_current_ref_id % the_current_ref_pos
-//						% the_next_ref_id % the_next_ref_pos).str();
-//				local_reader.Close();
-//				return;
-//			}
-//			if(verbose) {
-//				cout << (boost::format("[TEA.write_ram_and_bam] block-%d (start) (%d/%d)-(%d/%d)\n")
-//						% block_id % the_current_ref_id % the_current_ref_pos
-//						% the_next_ref_id % the_next_ref_pos).str();
-//			}
+
 			int64_t the_current_ref_offset = actual_blocks[block_id].offset;
 			int64_t the_next_ref_offset = actual_blocks[block_id + 1].offset;
 			auto& m_bgzf = local_reader.GetBGZF();
@@ -9789,208 +9641,153 @@ void TEA::_generate_cbam_files_sampe() {
 			softclips_consd_cpos_name_lists[block_id] = local_softclips_consd_cpos_name;
 			const bool debug = false;
 //			bool debug = false;
-				BamTools::BamAlignment local_alignment_entry;
-				BamTools::BamWriter out_raw_sam;
-				if(0 == block_id) {
-					out_raw_sam.SAMOpen(local_raw_sam_name, header, ref_vec);
-				} else {
-					out_raw_sam.SAMOpenNoHeader(local_raw_sam_name, ref_vec);
+			BamTools::BamAlignment local_alignment_entry;
+			BamTools::BamWriter out_raw_sam;
+			if(0 == block_id) {
+				out_raw_sam.SAMOpen(local_raw_sam_name, header, ref_vec);
+			} else {
+				out_raw_sam.SAMOpenNoHeader(local_raw_sam_name, ref_vec);
+			}
+			ofstream out_consd_cpos(local_softclips_consd_cpos_name, ios::binary);
+
+			while (local_reader.LoadNextAlignmentCore(local_alignment_entry)) {
+				cur_offset = m_bgzf.Tell();
+				if(prev_offset >= the_next_ref_offset) {
+					break;
 				}
-				ofstream out_consd_cpos(local_softclips_consd_cpos_name, ios::binary);
+				prev_offset = cur_offset;
+				++num_total;
 
-				while (local_reader.LoadNextAlignmentCore(local_alignment_entry)) {
-//					if(verbose && 0 == num_total) {
-//						string a_block_boundary_str = (boost::format("%s %d-%d %d")
-//								% local_alignment_entry.Name % local_alignment_entry.RefID % local_alignment_entry.Position
-//								% local_alignment_entry.AlignmentFlag).str();
-//						if(block_boundary_strs.end() == block_boundary_strs.find(a_block_boundary_str)) {
-//							cout << (boost::format("[TEA.write_ram_and_bam] Block-%d (first-wrong) %s\n")
-//									% block_id % a_block_boundary_str).str();
-//						} else {
-//							cout << (boost::format("[TEA.write_ram_and_bam] Block-%d (first) %s\n")
-//									% block_id % a_block_boundary_str).str();
-//						}
-//					}
-//					if(local_alignment_entry.RefID == the_next_ref_id
-//							&& local_alignment_entry.Position == the_next_ref_pos
-//							&& local_alignment_entry.AlignmentFlag == the_next_aln_flag
-//							&& local_alignment_entry.Name == the_next_block_read_name
-//					) {
-//						break;
-//					}
-					cur_offset = m_bgzf.Tell();
-					if(prev_offset >= the_next_ref_offset) {
-						break;
-					}
-					prev_offset = cur_offset;
-					++num_total;
-//				debug = ("HSQ700642:192:C13FVACXX:1:2101:19274:55222" == local_alignment_entry.Name || "HSQ700642:188:C0U39ACXX:8:1101:7056:89344" == local_alignment_entry.Name);
-//					debug = ("HSQ700642:192:C13FVACXX:1:2301:15557:8813" == local_alignment_entry.Name);
-//				if(!debug) {
-//					continue;
-//				}
+				uint32_t sam_flag = local_alignment_entry.AlignmentFlag;
+				if ((sam_flag & 0x400) || (sam_flag & 0x4)) {
+					continue;
+				}
 
-					//	while(<F>) {
-					//		chomp; my @a=split(/\t/);
-					//		if ($a[1] & 0x400 | $a[1] & 0x4) { next }; # skip PCR duplicate or unmapped reads
-					uint32_t sam_flag = local_alignment_entry.AlignmentFlag;
-					if ((sam_flag & 0x400) || (sam_flag & 0x4)) {
-						continue;
-					}
+				auto& seq = local_alignment_entry.QueryBases;
+				auto& qual = local_alignment_entry.Qualities;
 
-					auto& seq = local_alignment_entry.QueryBases;
-					auto& qual = local_alignment_entry.Qualities;
-					//		$s1 = $cigar;
-					//		$s2 = $cigar;
-					polyAT = selected = selected2 = false;
-					auto& cigar = local_alignment_entry.CigarData;
-					// # clipped in the beginning
-					if (!cigar.empty() && ('S' == cigar.front().Type)) {
-					if(debug) {
-						cout << "[TEA.generate_cbam_files_sampe] initial clipped: " << block_id << "\n";
-					}
-						clen = cigar.front().Length;
-						if (clen >= 5) {
-							qual1 = qual.substr(0, clen);
-						if(debug) {
-							cout << "[TEA.generate_cbam_files_sampe] qual1: " << qual1 << "\n";
-						}
-							//# more than 5 good quality bases
-							int64_t n_good_quals = get_number_of_good_qualities(qual1, qcutoff);
-							if (n_good_quals >= 5) {
-							if(debug) {
-								cout << "[TEA.generate_cbam_files_sampe] selected 1-1: qual > 5\n";
-							}
-								selected = true;
-//							if (!(sam_flag & 0x0010)) { // # positive strand mapping
-								if (!local_alignment_entry.IsReverseStrand()) { // # positive strand mapping
-									selected2 = true;
-									cpos = local_alignment_entry.Position;
-									//								# check whether the clipped seq has >=10
-									cseq1 = seq.substr(0, clen);
-									if (string::npos != cseq1.find(poly_a_str)) {
-										if(debug) {
-											cout << "[TEA.generate_cbam_files_sampe] selected 1-2: poly a\n";
-										}
-										polyAT = true;
-									}
-								}
-							}
-						}
-					}
-					// # clipping in the end
-					clen = 0;
-//				for (auto& a_cigar : cigar) {
-//					if ('D' == a_cigar.Type) {
-//						clen = a_cigar.Length;
-//						break;
-//					}
-//				}
-					if(!cigar.empty() && ('S' == cigar.back().Type)) {
-						clen = cigar.back().Length;
-					}
+				polyAT = selected = selected2 = false;
+				auto& cigar = local_alignment_entry.CigarData;
+
+				// # clipped in the beginning
+				if (!cigar.empty() && ('S' == cigar.front().Type)) {
+				if(debug) {
+					cout << "[TEA.generate_cbam_files_sampe] initial clipped: " << block_id << "\n";
+				}
+					clen = cigar.front().Length;
 					if (clen >= 5) {
-						int64_t the_qual_sub_str_pos = qual.size() - clen;
-						if (the_qual_sub_str_pos > 0) {
-							qual2 = qual.substr(the_qual_sub_str_pos);
-						} else {
-							qual2 = qual;
-						}
+						qual1 = qual.substr(0, clen);
 					if(debug) {
-						cout << "[TEA.generate_cbam_files_sampe] qual2: " << qual2 << "\n";
+						cout << "[TEA.generate_cbam_files_sampe] qual1: " << qual1 << "\n";
 					}
-						int64_t n_good_quals = get_number_of_good_qualities(qual2, qcutoff);
-						//		if ($qual2 =~ m/([^#]+)/) {
-						//				if (length($1) >= 5 ) {
+						//# more than 5 good quality bases
+						int64_t n_good_quals = get_number_of_good_qualities(qual1, qcutoff);
 						if (n_good_quals >= 5) {
 						if(debug) {
-							cout << "[TEA.generate_cbam_files_sampe] selected 2-1: qual\n";
+							cout << "[TEA.generate_cbam_files_sampe] selected 1-1: qual > 5\n";
 						}
 							selected = true;
-//						if (sam_flag & 0x0010) { // # negative strand mapping
-							if (local_alignment_entry.IsReverseStrand()) {
-								if(debug) {
-									cout << "[TEA.generate_cbam_files_sampe] selected 2-2: qual\n";
-								}
+//							if (!(sam_flag & 0x0010)) { // # positive strand mapping
+							if (options.including_head_clip
+									||!local_alignment_entry.IsReverseStrand()) { // # positive strand mapping
 								selected2 = true;
-								cpos = get_cpos(local_alignment_entry.Position, cigar, qual2, -1);
-								//							# check whether the clipped seq has >=10
-								int64_t the_seq_sub_str_pos = seq.size() - clen;
-								cseq2 = seq.substr(the_seq_sub_str_pos);
-								//							if ($cseq2 =~ m/T{$min_polyAT,}/) { $polyAT = 1 }
-								if (string::npos != cseq2.find(poly_t_str)) {
+								cpos = local_alignment_entry.Position;
+								//								# check whether the clipped seq has >=10
+								cseq1 = seq.substr(0, clen);
+								if (string::npos != cseq1.find(poly_a_str)) {
 									if(debug) {
-										cout << "[TEA.generate_cbam_files_sampe] selected 2-3: poly a\n";
+										cout << "[TEA.generate_cbam_files_sampe] selected 1-2: poly a\n";
 									}
 									polyAT = true;
 								}
 							}
 						}
 					}
-
-					//	# if there is not >=10 A/T bases in the clipped sequence, apply NM and MD filters
-					if (!polyAT) {
-						//        # check max_mismatches
-						local_alignment_entry.GetEditDistance(nm);
-						if (nm > max_mismatches) {
-							if(debug) {
-								cout << "[TEA.generate_cbam_files_sampe] wrong mismatches\n";
-							}
-							continue;
-						};
-
-						string md_str;
-						local_alignment_entry.GetTag("MD", md_str);
-						//        $md = $_;
-
-						//        # check min_matches is satisfied
-
-						//        $md =~  s/.*\sMD:Z:([\w^]+)($|\s.*)/$1/;
-						//        my @b=split(/[A-Za-z^]/, $md);
-						//				cout << local_alignment_entry.Name << "/" << md_str << "\n";
-						castle::StringUtils::c_string_multi_split(md_str, delim_all_stopwords, b);
-						int64_t summed_n_bases = 0;
-						for (auto a_value_str : b) {
-							summed_n_bases += boost::lexical_cast<int64_t>(a_value_str);
-						}
-						if (summed_n_bases < min_matches) {
-							if(debug) {
-								cout << "[TEA.generate_cbam_files_sampe] MD: " << summed_n_bases << "\n";
-							}
-							continue;
-						}
-					}
-
-					if (selected2) {
-						if(debug) {
-							cout << "[TEA.generate_cbam_files_sampe] selected 3: write\n";
-						}
-						out_raw_sam.SaveSAMAlignment(local_alignment_entry);
-						out_consd_cpos << (boost::format("%s\t%s\n") % ref_vec[local_alignment_entry.RefID].RefName % cpos).str();
-					}
-
 				}
-				local_reader.Close();
-				out_raw_sam.Close();
-				//				done_vector[block_id] = 'D';
+				// # clipping in the end
+				clen = 0;
 
-				//				if(verbose) {
-				//					string a_block_boundary_str = (boost::format("%s %d-%d %d")
-				//							% local_alignment_entry.Name % local_alignment_entry.RefID % local_alignment_entry.Position
-				//							% local_alignment_entry.AlignmentFlag).str();
-				//					if(block_boundary_strs.end() == block_boundary_strs.find(a_block_boundary_str)) {
-				//						cout << (boost::format("[TEA.BAM_to_FASTQ] Block-%d (last-wrong) %s\n")
-				//								% block_id % a_block_boundary_str).str();
-				//					} else {
-				//						cout << (boost::format("[TEA.BAM_to_FASTQ] Block-%d (last) %s\n")
-				//								% block_id % a_block_boundary_str).str();
-				//					}
-				//				} else {
-				//					size_t n = count(done_vector.begin(), done_vector.end(), 'D');
-				//					double processed = n/(double)done_vector.size() * 100.0;
-				//					cout << (boost::format("%.2f %%\n") % processed).str();
-				//				}
-			});
+				if(!cigar.empty() && ('S' == cigar.back().Type)) {
+					clen = cigar.back().Length;
+				}
+				if (clen >= 5) {
+					int64_t the_qual_sub_str_pos = qual.size() - clen;
+					if (the_qual_sub_str_pos > 0) {
+						qual2 = qual.substr(the_qual_sub_str_pos);
+					} else {
+						qual2 = qual;
+					}
+				if(debug) {
+					cout << "[TEA.generate_cbam_files_sampe] qual2: " << qual2 << "\n";
+				}
+					int64_t n_good_quals = get_number_of_good_qualities(qual2, qcutoff);
+
+					if (n_good_quals >= 5) {
+					if(debug) {
+						cout << "[TEA.generate_cbam_files_sampe] selected 2-1: qual\n";
+					}
+						selected = true;
+//						if (sam_flag & 0x0010) { // # negative strand mapping
+						if (options.including_head_clip
+								||local_alignment_entry.IsReverseStrand()) {
+							if(debug) {
+								cout << "[TEA.generate_cbam_files_sampe] selected 2-2: qual\n";
+							}
+							selected2 = true;
+							cpos = get_cpos(local_alignment_entry.Position, cigar, qual2, -1);
+							//							# check whether the clipped seq has >=10
+							int64_t the_seq_sub_str_pos = seq.size() - clen;
+							cseq2 = seq.substr(the_seq_sub_str_pos);
+							//							if ($cseq2 =~ m/T{$min_polyAT,}/) { $polyAT = 1 }
+							if (string::npos != cseq2.find(poly_t_str)) {
+								if(debug) {
+									cout << "[TEA.generate_cbam_files_sampe] selected 2-3: poly a\n";
+								}
+								polyAT = true;
+							}
+						}
+					}
+				}
+
+				//	# if there is not >=10 A/T bases in the clipped sequence, apply NM and MD filters
+				if (!polyAT) {
+					//        # check max_mismatches
+					local_alignment_entry.GetEditDistance(nm);
+					if (nm > max_mismatches) {
+						if(debug) {
+							cout << "[TEA.generate_cbam_files_sampe] wrong mismatches\n";
+						}
+						continue;
+					};
+
+					string md_str;
+					local_alignment_entry.GetTag("MD", md_str);
+
+					castle::StringUtils::c_string_multi_split(md_str, delim_all_stopwords, b);
+					int64_t summed_n_bases = 0;
+					for (auto a_value_str : b) {
+						summed_n_bases += boost::lexical_cast<int64_t>(a_value_str);
+					}
+					if (summed_n_bases < min_matches) {
+						if(debug) {
+							cout << "[TEA.generate_cbam_files_sampe] MD: " << summed_n_bases << "\n";
+						}
+						continue;
+					}
+				}
+
+				if (selected2) {
+					if(debug) {
+						cout << "[TEA.generate_cbam_files_sampe] selected 3: write\n";
+					}
+					out_raw_sam.SaveSAMAlignment(local_alignment_entry);
+					out_consd_cpos << (boost::format("%s\t%s\n") % ref_vec[local_alignment_entry.RefID].RefName % cpos).str();
+				}
+			}
+			local_reader.Close();
+			out_raw_sam.Close();
+
+		});
 	}
 	// sometimes the unaligned reads are in the last portion of BAM file, hence
 	// changing the order.
@@ -9998,8 +9795,6 @@ void TEA::_generate_cbam_files_sampe() {
 		swap(tasks[0], tasks.back());
 	}
 	castle::ParallelRunner::run_unbalanced_load(n_cores, tasks);
-
-	//	cout << "[TEA.load_repeat_mapping] gather scattered information\n";
 
 	castle::IOUtils::plain_file_merge(consd_raw_sam_name, raw_bam_name_lists, n_cores, true);
 	castle::IOUtils::plain_file_merge(out_softclips_consd_cpos_name, softclips_consd_cpos_name_lists, n_cores, true);
@@ -11155,44 +10950,25 @@ void TEA::count_clipped(
 			// e column
 			int64_t the_ram_boundary_end = negative_entry.stop + read_length;
 			int64_t start_pos = the_ram_boundary_start + read_length;
+			int64_t end_pos = negative_entry.value.pos[0] + read_length;
+			int64_t mid_point = (positive_entry.stop + negative_entry.start + read_length) / (double)2;
+
 			if (!positive_entry.value.pos.empty()) {
-//				start_pos = min(start_pos, positive_entry.value.pos.back());
 				start_pos = min(start_pos, positive_entry.value.pos.back() - read_length);
 			}
-//			int64_t end_pos = the_ram_boundary_end - read_length;
-			int64_t end_pos = negative_entry.value.pos[0] + read_length;
 			if (!negative_entry.value.pos.empty()) {
 				end_pos = max(end_pos, the_ram_boundary_end - read_length);
 			}
-			const bool debug = (ref_reverse_index["chr2"] == chr_ref_id && the_ram_boundary_start == 31058709 && 31058709 == the_ram_boundary_end);
-			if(debug) {
-				cout << (boost::format("[TEA.count_clipped] pram start: %d, pram end: %d, nram start: %d, nram end: %d\n") % positive_entry.start % positive_entry.stop % negative_entry.start % negative_entry.stop).str();
-				cout << (boost::format("[TEA.count_clipped] pram start-2: %d, pram end: %d, nram start: %d, nram end: %d\n") % positive_entry.value.pos[0] % positive_entry.value.pos.back() % negative_entry.value.pos[0] % negative_entry.value.pos.back()).str();
-				cout << (boost::format("[TEA.count_clipped] BAM start: %d, end: %d, read len.: %d\n") % start_pos % end_pos % read_length).str();
-				for(auto pos: positive_entry.value.pos) {
-					cout << (boost::format("[TEA.count_clipped] pos position: %d\n") % pos).str();
-				}
-				for(auto pos: negative_entry.value.pos) {
-					cout << (boost::format("[TEA.count_clipped] neg position: %d\n") % pos).str();
-				}
-			}
 
-			int64_t mid_point = (positive_entry.stop + negative_entry.start + read_length) / (double)2;
 			local_reader.SetRegion(chr_ref_id, start_pos, chr_ref_id, end_pos);
 			output_clipped_stat(out_p_clipped_filename, out_n_clipped_filename, out_p_mate_rname, out_n_mate_rname, out_cl, out_germline, out_clipped, contig_dir, ref_repeat_interval_tree, stat_results, gene_interval_tree, gene_results, local_reader, the_ram_boundary_start, the_ram_boundary_end, positive_entry, negative_entry, chr, prefixed_chr, read_length, rmasker_filter_margin, gene_margin, mid_point);
 		}
 	}
+
 	RepeatClusterEntry an_empty_entry;
 	RAMIntervalEntry empty_interval_entry(0, 0, an_empty_entry);
 //	cout << "[TEA.count_clipped] process positive only\n";
 	{
-//		string cl_file = cl_prefix + "." + tmp_chr_name + ".p.cluster";
-//		string clipped_file = cl_prefix + "." + tmp_chr_name + ".p.clipped";
-
-//		ofstream out_cl(cl_file, ios::binary);
-//		ofstream out_clipped(clipped_file, ios::binary);
-//		out_cl << header_cl;
-//		out_clipped << header_clipped;
 		for (int64_t r_id = 0; r_id < static_cast<int64_t>(p_cl.size()); ++r_id) {
 			if (positive_only.end() == positive_only.find(r_id)) {
 				continue;
@@ -11209,16 +10985,14 @@ void TEA::count_clipped(
 			int64_t the_ram_boundary_end = positive_entry.stop + read_length + fragment_size;
 
 			int64_t start_pos = the_ram_boundary_start + read_length;
+			int64_t end_pos = the_ram_boundary_end - read_length;
+			int64_t mid_point = positive_entry.stop + read_length;
+
 			if (!positive_entry.value.pos.empty()) {
 				start_pos = min(start_pos, positive_entry.value.pos.back());
 			}
-			int64_t end_pos = the_ram_boundary_end - read_length;
-//			if(!negative_entry.value.pos.empty()) {
-//				end_pos = max(end_pos, negative_entry.value.pos[0]);
-//			}
 
 			local_reader.SetRegion(chr_ref_id, start_pos, chr_ref_id, end_pos);
-			int64_t mid_point = positive_entry.stop + read_length;
 			output_clipped_stat(out_p_clipped_filename, out_n_clipped_filename, out_p_mate_rname, out_n_mate_rname, out_cl, out_germline, out_clipped, contig_dir, ref_repeat_interval_tree, stat_results, gene_interval_tree, gene_results, local_reader, the_ram_boundary_start, the_ram_boundary_end,
 					positive_entry, negative_entry, chr, prefixed_chr, read_length, rmasker_filter_margin, gene_margin, mid_point);
 		}
@@ -11226,12 +11000,6 @@ void TEA::count_clipped(
 
 //	cout << "[TEA.count_clipped] process negative only\n";
 	{
-//		string cl_file = cl_prefix + "." + tmp_chr_name + ".n.cluster";
-//		string clipped_file = cl_prefix + "." + tmp_chr_name + ".n.clipped";
-//		ofstream out_cl(cl_file, ios::binary);
-//		ofstream out_clipped(clipped_file, ios::binary);
-//		out_cl << header_cl;
-//		out_clipped << header_clipped;
 		for (int64_t r_id = 0; r_id < static_cast<int64_t>(n_cl.size()); ++r_id) {
 			if (negative_only.end() == negative_only.find(r_id)) {
 				continue;
@@ -11248,14 +11016,13 @@ void TEA::count_clipped(
 			int64_t the_ram_boundary_end = negative_entry.stop + read_length;
 
 			int64_t start_pos = the_ram_boundary_start + read_length;
-//			if(!positive_entry.value.pos.empty()) {
-//				start_pos = min(start_pos, positive_entry.value.pos.back());
-//			}
 			int64_t end_pos = the_ram_boundary_end - read_length;
+			int64_t mid_point = negative_entry.start;
+
 			if (!negative_entry.value.pos.empty()) {
 				end_pos = max(end_pos, negative_entry.value.pos[0]);
 			}
-			int64_t mid_point = negative_entry.start;
+
 			local_reader.SetRegion(chr_ref_id, start_pos, chr_ref_id, end_pos);
 			output_clipped_stat(out_p_clipped_filename, out_n_clipped_filename, out_p_mate_rname, out_n_mate_rname, out_cl, out_germline, out_clipped, contig_dir, ref_repeat_interval_tree, stat_results, gene_interval_tree, gene_results, local_reader, the_ram_boundary_start, the_ram_boundary_end,
 					positive_entry, negative_entry, chr, prefixed_chr, read_length, rmasker_filter_margin, gene_margin, mid_point);
@@ -11264,6 +11031,7 @@ void TEA::count_clipped(
 	local_reader.Close();
 //	cout << checker;
 }
+
 
 void TEA::count_clipped_v(
 				boost::unordered_map<string, RefRepeatIntervalVector>& ril_annot_alt,
@@ -11456,8 +11224,7 @@ void TEA::count_clipped_v(
 //		cout << checker;
 }
 
-void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& max_pos_positive, int64_t& max_pos_negative, int64_t& n_positive_clipped_reads, int64_t& n_negative_clipped_reads, int64_t& n_aligned_clipped_positive, int64_t& n_aligned_clipped_negative,
-		BamTools::BamReader& local_reader, const int64_t the_ram_boundary_start, const int64_t the_ram_boundary_end, const RAMIntervalEntry& positive_entry, const RAMIntervalEntry& negative_entry, const string& chr, const int64_t read_length, const int64_t mid_point) {
+void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& max_pos_positive, int64_t& max_pos_negative, int64_t& n_positive_clipped_reads, int64_t& n_negative_clipped_reads, int64_t& n_aligned_clipped_positive, int64_t& n_aligned_clipped_negative, BamTools::BamReader& local_reader, const int64_t the_ram_boundary_start, const int64_t the_ram_boundary_end, const RAMIntervalEntry& positive_entry, const RAMIntervalEntry& negative_entry, const string& chr, const int64_t read_length, const int64_t mid_point) {
 	string tmp_chr_name(chr);
 	if (string::npos == tmp_chr_name.find("chr")) {
 		tmp_chr_name = "chr" + chr;
@@ -11467,12 +11234,6 @@ void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& ma
 	BamTools::BamAlignment local_alignment_entry;
 	auto& ref_vec = local_reader.GetReferenceData();
 	while (local_reader.GetNextAlignment(local_alignment_entry)) {
-//		if(!debug) {
-//			debug = (string::npos != local_alignment_entry.Name.find("HSQ700642:208:D1D6WACXX:1:1313:4398:90371") || string::npos != local_alignment_entry.Name.find("HSQ700642:191:D18JJACXX:1:2111:17855:64424"));
-//		}
-		if(debug) {
-			cout << "[TEA.get_clipped_entries] entry: " << BamWriter::GetSAMAlignment(local_alignment_entry, ref_vec) << "\n";
-		}
 		auto cigars = local_alignment_entry.CigarData;
 		auto cigars_clipped_pos = cigars;
 		vector<string> the_cigar;
@@ -11480,9 +11241,7 @@ void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& ma
 			the_cigar.push_back(boost::lexical_cast<string>(c.Length) + boost::lexical_cast<string>(c.Type));
 		}
 		string cigar_original = castle::StringUtils::join(the_cigar, "");
-		if(debug) {
-			cout << "[TEA.get_clipped_entries] cigar org.: " << cigar_original << "\n";
-		}
+
 		cigars.erase(remove_if(cigars.begin(), cigars.end(), [](const BamTools::CigarOp& c) {return 'D' == c.Type;}), cigars.end());
 
 		for (int64_t c_id = 0; c_id < (static_cast<int64_t>(cigars.size()) - 1);) {
@@ -11495,9 +11254,6 @@ void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& ma
 				continue;
 			}
 			++c_id;
-		}
-		if(debug) {
-			cout << "[TEA.get_clipped_entries] cigar chg.: " << castle::StringUtils::join(the_cigar, "") << "\n";
 		}
 
 		for (int64_t c_id = 0; c_id < (static_cast<int64_t>(cigars_clipped_pos.size()) - 1);) {
@@ -11515,19 +11271,83 @@ void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& ma
 		for (auto& c : cigars) {
 			the_cigar.push_back(boost::lexical_cast<string>(c.Length) + boost::lexical_cast<string>(c.Type));
 		}
+
 		string cigar_corrected = castle::StringUtils::join(the_cigar, "");
 		string ref_seq;
-		string clipped_seq_qual_trimmed;
-		string clipped_qual_qual_trimmed;
-		string clipped_seq;
-		string clipped_qual;
-		int64_t clipped_pos = local_alignment_entry.Position;
-		int64_t clipped_pos_qual_trimmed = local_alignment_entry.Position;
-		int64_t delta = 0;
-		if (local_alignment_entry.IsReverseStrand()) {
-			if(debug) {
-				cout << "[TEA.get_clipped_entries] Rev-0\n";
+
+		if (
+				(!local_alignment_entry.IsReverseStrand() || options.including_head_clip)
+				&&
+				('S' == cigars.front().Type || 'H' == cigars.front().Type) ) {
+
+			string clipped_seq_qual_trimmed;
+			string clipped_qual_qual_trimmed;
+			string clipped_seq;
+			string clipped_qual;
+			int64_t clipped_pos = local_alignment_entry.Position + cigars.front().Length;
+			int64_t clipped_pos_qual_trimmed = local_alignment_entry.Position;
+
+			uint64_t match_idx = 1;
+
+			int64_t cigars_front_length = cigars.front().Length;
+			if ('H' == cigars.front().Type){
+				cigars_front_length = 0;
 			}
+
+			if (match_idx < cigars.size() && 'M' == cigars[match_idx].Type) {
+				int64_t match_start = cigars_front_length;
+				ref_seq = local_alignment_entry.QueryBases.substr(match_start, cigars[match_idx].Length);
+			}
+
+			clipped_seq = local_alignment_entry.QueryBases.substr(0, cigars_front_length);
+			clipped_qual = local_alignment_entry.Qualities.substr(0, cigars_front_length);
+			int64_t n_low = get_number_of_low_qualities_at_end(clipped_qual, options.qcutoff);
+			clipped_pos_qual_trimmed = clipped_pos;
+
+			if (n_low > 0) {
+				int64_t n_quality_trimmed = cigars.front().Length - n_low;
+				clipped_seq_qual_trimmed = local_alignment_entry.QueryBases.substr(0, n_quality_trimmed);
+				clipped_qual_qual_trimmed = local_alignment_entry.Qualities.substr(0, n_quality_trimmed);
+				clipped_pos_qual_trimmed -= n_low;
+			}
+
+			ClippedEntry an_entry;
+			an_entry.chr = tmp_chr_name;
+			an_entry.ram_start = the_ram_boundary_start;
+			an_entry.ram_end = the_ram_boundary_end;
+			an_entry.strand = 1;
+			set<string> alt_rep;
+			alt_rep.insert(positive_entry.value.rep_repeat.begin(), positive_entry.value.rep_repeat.end());
+			alt_rep.insert(negative_entry.value.rep_repeat.begin(), negative_entry.value.rep_repeat.end());
+			an_entry.rep_repeat = castle::StringUtils::join(alt_rep, ",");
+			an_entry.negative_pos = local_alignment_entry.Position;
+			an_entry.clipped_pos = clipped_pos;
+			an_entry.clipped_pos_qual_trimmed = clipped_pos_qual_trimmed;
+			an_entry.cigar_original = cigar_original;
+			an_entry.cigar_corrected = cigar_corrected;
+			an_entry.read_name = local_alignment_entry.Name;
+			an_entry.ref_seq = ref_seq;
+			an_entry.clipped_seq = clipped_seq;
+			an_entry.clipped_qual = clipped_qual;
+			an_entry.clipped_seq_qual_trimmed = clipped_seq_qual_trimmed;
+			an_entry.clipped_qual_qual_trimmed = clipped_qual_qual_trimmed;
+			clipped_entries.push_back(an_entry);
+
+		}
+
+		if (
+				(local_alignment_entry.IsReverseStrand() || options.including_head_clip)
+				&&
+				('S' == cigars.back().Type || 'H' == cigars.back().Type) ) {
+
+			string clipped_seq_qual_trimmed;
+			string clipped_qual_qual_trimmed;
+			string clipped_seq;
+			string clipped_qual;
+			int64_t clipped_pos = local_alignment_entry.Position;
+			int64_t clipped_pos_qual_trimmed = local_alignment_entry.Position;
+			int64_t delta = 0;
+
 			int64_t n_del = 0;
 			int64_t n_in = 0;
 			for (auto cigar : local_alignment_entry.CigarData) {
@@ -11538,122 +11358,67 @@ void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& ma
 				}
 			}
 			delta = n_del - n_in;
-			if ('S' == cigars.back().Type || 'H' == cigars.back().Type) {
-				if(debug) {
-					cout << "[TEA.get_clipped_entries] Rev-1\n";
-				}
-				int64_t match_idx = cigars.size();
-				match_idx -= 2;
 
-				int64_t cigars_back_length = cigars.back().Length;
-				if('H' == cigars.back().Type) {
-					cigars_back_length = 0;
-				}
+			int64_t match_idx = cigars.size();
+			match_idx -= 2;
 
-				if (match_idx >= 0 && 'M' == cigars[match_idx].Type) {
-					if(debug) {
-						cout << "[TEA.get_clipped_entries] Rev-2\n";
-					}
-
-
-					int64_t match_start = local_alignment_entry.QueryBases.size() - (cigars[match_idx].Length + cigars_back_length);
-
-					ref_seq = local_alignment_entry.QueryBases.substr(match_start, cigars[match_idx].Length);
-				}
-				clipped_pos += local_alignment_entry.QueryBases.size() - cigars_back_length + delta;
-				if ('S' == cigars.front().Type) {
-					if(debug) {
-						cout << "[TEA.get_clipped_entries] Rev-3\n";
-					}
-					clipped_pos -= cigars.front().Length;
-				}
-				clipped_seq = local_alignment_entry.QueryBases.substr(local_alignment_entry.QueryBases.size() - cigars_back_length);
-				clipped_qual = local_alignment_entry.Qualities.substr(local_alignment_entry.Qualities.size() - cigars_back_length);
-
-				int64_t n_low = get_number_of_low_qualities_at_begin(clipped_qual, options.qcutoff);
-				++clipped_pos;
-				clipped_pos_qual_trimmed = clipped_pos;
-				if (n_low > 0) {
-					if(debug) {
-						cout << "[TEA.get_clipped_entries] Rev-4\n";
-					}
-					int64_t n_quality_trimmed = local_alignment_entry.QueryBases.size() - cigars_back_length + n_low;
-					clipped_seq_qual_trimmed = local_alignment_entry.QueryBases.substr(n_quality_trimmed);
-					clipped_qual_qual_trimmed = local_alignment_entry.Qualities.substr(n_quality_trimmed);
-					clipped_pos_qual_trimmed += n_low;
-
-				}
+			int64_t cigars_back_length = cigars.back().Length;
+			if('H' == cigars.back().Type) {
+				cigars_back_length = 0;
 			}
-		} else {
-			if(debug) {
-				cout << "[TEA.get_clipped_entries] For-0\n";
+
+			if (match_idx >= 0 && 'M' == cigars[match_idx].Type) {
+				int64_t match_start = local_alignment_entry.QueryBases.size() - (cigars[match_idx].Length + cigars_back_length);
+				ref_seq = local_alignment_entry.QueryBases.substr(match_start, cigars[match_idx].Length);
 			}
-			if ('S' == cigars.front().Type || 'H' == cigars.front().Type) {
-				if(debug) {
-					cout << "[TEA.get_clipped_entries] For-1\n";
-				}
-				uint64_t match_idx = 1;
 
-				int64_t cigars_front_length = cigars.front().Length;
-				if ('H' == cigars.front().Type){
-					cigars_front_length = 0;
-				}
+			clipped_pos += local_alignment_entry.QueryBases.size() - cigars_back_length + delta;
 
-				if (match_idx < cigars.size() && 'M' == cigars[match_idx].Type) {
-					if(debug) {
-						cout << "[TEA.get_clipped_entries] For-2\n";
-					}
-					int64_t match_start = cigars_front_length;
+			clipped_seq = local_alignment_entry.QueryBases.substr(local_alignment_entry.QueryBases.size() - cigars_back_length);
+			clipped_qual = local_alignment_entry.Qualities.substr(local_alignment_entry.Qualities.size() - cigars_back_length);
 
-					ref_seq = local_alignment_entry.QueryBases.substr(match_start, cigars[match_idx].Length);
-				}
+			int64_t n_low = get_number_of_low_qualities_at_begin(clipped_qual, options.qcutoff);
 
-				if('H' != cigars.front().Type) {
-					clipped_seq = local_alignment_entry.QueryBases.substr(0, cigars_front_length);
-					clipped_qual = local_alignment_entry.Qualities.substr(0, cigars_front_length);
-					int64_t n_low = get_number_of_low_qualities_at_end(clipped_qual, options.qcutoff);
-					clipped_pos_qual_trimmed = clipped_pos;
-					if (n_low > 0) {
-						if(debug) {
-							cout << "[TEA.get_clipped_entries] For-3\n";
-						}
-						int64_t n_quality_trimmed = cigars.front().Length - n_low;
-						clipped_seq_qual_trimmed = local_alignment_entry.QueryBases.substr(0, n_quality_trimmed);
-						clipped_qual_qual_trimmed = local_alignment_entry.Qualities.substr(0, n_quality_trimmed);
-						clipped_pos_qual_trimmed -= n_low;
-					}
-				}
+			++clipped_pos;
+			clipped_pos_qual_trimmed = clipped_pos;
+			if (n_low > 0) {
+				int64_t n_quality_trimmed = local_alignment_entry.QueryBases.size() - cigars_back_length + n_low;
+				clipped_seq_qual_trimmed = local_alignment_entry.QueryBases.substr(n_quality_trimmed);
+				clipped_qual_qual_trimmed = local_alignment_entry.Qualities.substr(n_quality_trimmed);
+				clipped_pos_qual_trimmed += n_low;
 
+				ClippedEntry an_entry;
+				an_entry.chr = tmp_chr_name;
+				an_entry.ram_start = the_ram_boundary_start;
+				an_entry.ram_end = the_ram_boundary_end;
+				an_entry.strand = -1;
+				set<string> alt_rep;
+				alt_rep.insert(positive_entry.value.rep_repeat.begin(), positive_entry.value.rep_repeat.end());
+				alt_rep.insert(negative_entry.value.rep_repeat.begin(), negative_entry.value.rep_repeat.end());
+				an_entry.rep_repeat = castle::StringUtils::join(alt_rep, ",");
+				an_entry.negative_pos = local_alignment_entry.Position;
+				an_entry.clipped_pos = clipped_pos;
+				an_entry.clipped_pos_qual_trimmed = clipped_pos_qual_trimmed;
+				an_entry.cigar_original = cigar_original;
+				an_entry.cigar_corrected = cigar_corrected;
+				an_entry.read_name = local_alignment_entry.Name;
+				an_entry.ref_seq = ref_seq;
+				an_entry.clipped_seq = clipped_seq;
+				an_entry.clipped_qual = clipped_qual;
+				an_entry.clipped_seq_qual_trimmed = clipped_seq_qual_trimmed;
+				an_entry.clipped_qual_qual_trimmed = clipped_qual_qual_trimmed;
+				clipped_entries.push_back(an_entry);
 			}
 		}
-
-		ClippedEntry an_entry;
-		an_entry.chr = tmp_chr_name;
-		an_entry.ram_start = the_ram_boundary_start;
-		an_entry.ram_end = the_ram_boundary_end;
-		an_entry.strand = local_alignment_entry.IsReverseStrand() ? -1 : 1;
-		set<string> alt_rep;
-		alt_rep.insert(positive_entry.value.rep_repeat.begin(), positive_entry.value.rep_repeat.end());
-		alt_rep.insert(negative_entry.value.rep_repeat.begin(), negative_entry.value.rep_repeat.end());
-		an_entry.rep_repeat = castle::StringUtils::join(alt_rep, ",");
-		an_entry.negative_pos = local_alignment_entry.Position;
-		an_entry.clipped_pos = clipped_pos;
-		an_entry.clipped_pos_qual_trimmed = clipped_pos_qual_trimmed;
-		an_entry.cigar_original = cigar_original;
-		an_entry.cigar_corrected = cigar_corrected;
-		an_entry.read_name = local_alignment_entry.Name;
-		an_entry.ref_seq = ref_seq;
-		an_entry.clipped_seq = clipped_seq;
-		an_entry.clipped_qual = clipped_qual;
-		an_entry.clipped_seq_qual_trimmed = clipped_seq_qual_trimmed;
-		an_entry.clipped_qual_qual_trimmed = clipped_qual_qual_trimmed;
-		clipped_entries.push_back(an_entry);
 	}
+
 
 	map<int64_t, int64_t> pos_frequency_positive;
 	map<int64_t, int64_t> pos_frequency_negative;
 	n_positive_clipped_reads = 0;
 	n_negative_clipped_reads = 0;
+
+	//todo todo implement including-head-clip condition along with checking cigar front and back
 	for (auto& an_entry : clipped_entries) {
 		if (1 == an_entry.strand) {
 			++pos_frequency_positive[an_entry.clipped_pos];
@@ -11670,25 +11435,18 @@ void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& ma
 		}
 	}
 
-	if(debug) {
-		cout << (boost::format("[TEA.get_clipped_entries] Mid: %d\n") % mid_point).str();
-		for (auto& an_entry : pos_frequency_positive) {
-			cout << (boost::format("[TEA.get_clipped_entries] Positive pos: %d, freq: %d\n") % an_entry.first % an_entry.second).str();
-		}
-		for (auto& an_entry : pos_frequency_negative) {
-			cout << (boost::format("[TEA.get_clipped_entries] Negative pos : %d, freq: %d\n") % an_entry.first % an_entry.second).str();
-		}
-	}
 	max_pos_positive = -1;
-	int64_t max_pos_freq_positive = 0;
 	max_pos_negative = -1;
-	int64_t max_pos_freq_negative = 0;
+
+	int64_t max_pos_freq_positive = 0;
 	for (auto& a_freq : pos_frequency_positive) {
 		if (max_pos_freq_positive < a_freq.second) {
 			max_pos_positive = a_freq.first;
 			max_pos_freq_positive = a_freq.second;
 		}
 	}
+
+	int64_t max_pos_freq_negative = 0;
 	for (auto& a_freq : pos_frequency_negative) {
 		if (max_pos_freq_negative < a_freq.second) {
 			max_pos_negative = a_freq.first;
@@ -11714,9 +11472,6 @@ void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& ma
 				break;
 			}
 		}
-	}
-	if(debug) {
-		cout << (boost::format("[TEA.get_clipped_entries] # pos ties: %d, # neg ties: %d\n") % n_positive_ties % n_negative_ties).str();
 	}
 
 	// the bp in forward strand is strongly supported, but not the bp in reverse strand
@@ -11777,6 +11532,7 @@ void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& ma
 			}
 		}
 	}
+
 	// the bp in reverse strand is strongly supported, but not the bp in forward strand
 	else if(max_pos_freq_positive < max_pos_freq_negative || 1 == n_negative_ties) {
 		if(debug) {
@@ -11806,13 +11562,13 @@ void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& ma
 			for (auto& a_freq : pos_frequency_positive) {
 				int64_t candidate_pos = a_freq.first;
 //				if (max_pos_freq_positive == a_freq.second) {
-					if(max_pos_negative < candidate_pos && candidate_pos < (max_pos_negative + options.bp_margin)) {
-						if(freq_pos_positive < a_freq.second) {
-							found_positive_candidate = true;
-							freq_pos_positive = a_freq.second;
-							max_pos_positive = candidate_pos;
-						}
+				if(max_pos_negative < candidate_pos && candidate_pos < (max_pos_negative + options.bp_margin)) {
+					if(freq_pos_positive < a_freq.second) {
+						found_positive_candidate = true;
+						freq_pos_positive = a_freq.second;
+						max_pos_positive = candidate_pos;
 					}
+				}
 //				}
 			}
 			if(!found_positive_candidate) {
@@ -11832,6 +11588,7 @@ void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& ma
 			}
 		}
 	}
+
 	// neither the bp in forward strand nor in reverse strand is strongly supported
 	else {
 		if(debug) {
@@ -11906,17 +11663,9 @@ void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& ma
 					}
 					clipped_freq_trimmed += an_entry->second;
 				}
-//				cout << "d(0): " << clipped_freq << "(" << an_entry.clipped_pos << ")" << "/" << clipped_freq_trimmed << "(" << an_entry.clipped_pos_qual_trimmed << ")" << "\n";
-//				if (clipped_freq > clipped_freq_trimmed || (1 == clipped_freq && 1 == clipped_freq_trimmed)) {
-//				if (clipped_freq >= clipped_freq_trimmed) {
 					an_entry.clipped_pos_rep = an_entry.clipped_pos;
 					an_entry.clipped_seq_rep = an_entry.clipped_seq;
 					an_entry.clipped_qual_rep = an_entry.clipped_qual;
-//				} else {
-//					if(debug) {
-//						cout << (boost::format("[TEA.get_clipped_entries] freq fail - 1: %d <=> %d\n") % clipped_freq % clipped_freq_trimmed).str();
-//					}
-//				}
 			} else {
 				if(debug) {
 					cout << "[TEA.get_clipped_entries] single entry - 1\n";
@@ -11951,17 +11700,9 @@ void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& ma
 					}
 					clipped_freq_trimmed += an_entry->second;
 				}
-//				cout << "d(1): " << clipped_freq << "(" << an_entry.clipped_pos << ")" << "/" << clipped_freq_trimmed << "(" << an_entry.clipped_pos_qual_trimmed << ")" << "\n";
-//				if (clipped_freq > clipped_freq_trimmed || (1 == clipped_freq && 1 == clipped_freq_trimmed)) {
-//				if (clipped_freq >= clipped_freq_trimmed) {
 					an_entry.clipped_pos_rep = an_entry.clipped_pos;
 					an_entry.clipped_seq_rep = an_entry.clipped_seq;
 					an_entry.clipped_qual_rep = an_entry.clipped_qual;
-//				} else {
-//					if(debug) {
-//						cout << (boost::format("[TEA.get_clipped_entries] freq fail - 2: %d <=> %d\n") % clipped_freq % clipped_freq_trimmed).str();
-//					}
-//				}
 			} else {
 				if(debug) {
 					cout << "[TEA.get_clipped_entries] single entry - 2\n";
@@ -11969,17 +11710,7 @@ void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& ma
 			}
 		}
 	}
-//	for (auto& an_entry : clipped_entries) {
-//		if (1 == an_entry.strand) {
-//			if (an_entry.clipped_pos_rep == max_pos_positive) {
-//				++n_aligned_clipped_positive;
-//			}
-//		} else if (-1 == an_entry.strand) {
-//			if (an_entry.clipped_pos_rep == max_pos_negative) {
-//				++n_aligned_clipped_negative;
-//			}
-//		}
-//	}
+
 	n_aligned_clipped_positive = max_pos_freq_positive;
 	n_aligned_clipped_negative = max_pos_freq_negative;
 }
@@ -12713,10 +12444,7 @@ void TEA::output_mate_fa(boost::unordered_map<string, boost::unordered_map<int8_
 				string a_key = data[4];
 				int64_t a_pos = boost::lexical_cast<int64_t>(data[3]);
 				string file_name_prefix = naive_prefix + "." + tmp_chr_name + "." + data[0] + "." + data[1] + "." + data[2];
-//				const bool debug = ("chr14" == tmp_chr_name) && ("34139887" == data[0]) && ("34140417" == data[1]);
-//				if(debug) {
-//					cout << "[TEA.output_mate_fa] negative mate: " << a_key << ":" << data[2] << "\n";
-//				}
+
 				a_negative_repeat_map[a_key].file_name_prefix = file_name_prefix;
 				a_negative_repeat_map[a_key].pos = a_pos;
 				a_negative_repeat_map[a_key].chr = c;
@@ -12786,13 +12514,12 @@ void TEA::output_mate_fa(boost::unordered_map<string, boost::unordered_map<int8_
 //	vector<meerkat::BlockBoundary> fixed_size_blocks;
 
 	cout << "[TEA.output_mate_fa] collect mate reads from disc file\n";
-//	_output_mate_fa_serial(positive_mate_reads, negative_mate_reads, disc_file_name, a_positive_repeat_map, a_negative_repeat_map);
+
 	vector<meerkat::BlockBoundary> local_fixed_size_blocks;
 	vector<meerkat::BlockBoundary> local_unmapped_included_blocks;
 	vector<meerkat::BlockBoundary> local_independent_blocks;
 	collect_boundaries_pos(local_fixed_size_blocks, local_unmapped_included_blocks, local_independent_blocks, disc_file_name, disc_bai_name, disc_bni_name, size_block);
-//	vector<meerkat::BlockBoundary> actual_blocks = local_unmapped_included_blocks;
-//	collect_boundaries(fixed_size_blocks, disc_file_name, size_block);
+
 	_output_mate_fa(positive_mate_reads, negative_mate_reads, local_unmapped_included_blocks, disc_file_name, a_positive_repeat_map, a_negative_repeat_map);
 	bool found_clipped_reads = false;
 	for(auto& an_entry : a_positive_repeat_map) {
@@ -12814,12 +12541,12 @@ void TEA::output_mate_fa(boost::unordered_map<string, boost::unordered_map<int8_
 
 	if(found_clipped_reads) {
 		cout << "[TEA.output_mate_fa] collect mate reads from cl disc file\n";
-//		_output_mate_fa_serial(positive_mate_reads, negative_mate_reads, cl_disc_file_name, a_positive_repeat_map, a_negative_repeat_map);
+
 		vector<meerkat::BlockBoundary> local_fixed_size_blocks;
 		vector<meerkat::BlockBoundary> local_unmapped_included_blocks;
 		vector<meerkat::BlockBoundary> local_independent_blocks;
 		collect_boundaries_pos(local_fixed_size_blocks, local_unmapped_included_blocks, local_independent_blocks, cl_disc_file_name, cl_disc_bai_name, cl_disc_bni_name, size_block);
-//		collect_boundaries(fixed_size_blocks, cl_disc_file_name, size_block);
+
 		_output_mate_fa(positive_mate_reads, negative_mate_reads, local_unmapped_included_blocks, cl_disc_file_name, a_positive_repeat_map, a_negative_repeat_map);
 	}
 
@@ -12871,10 +12598,7 @@ void TEA::output_mate_fa(boost::unordered_map<string, boost::unordered_map<int8_
 					continue;
 				}
 				all_files << pos_fa_name << "\n";
-	//			string assembler_cmd = (boost::format("%s %s %s > %s.log") % options.assembler % pos_fa_name % options.assembler_param % pos_fa_name).str();
-	//			all_cmds << assembler_cmd << "\n";
-	//			system(assembler_cmd.c_str());
-	//		});
+
 		}
 		cout << "[TEA.output_mate_fa] adds reverse positive FASTA files\n";
 		for(auto& an_entry : positive_mate_reads) {
@@ -13796,20 +13520,12 @@ void TEA::_output_mate_fa_v(boost::unordered_map<string, vector<string>>& positi
 					auto the_neg_itr = a_negative_repeat_map.find(local_alignment_entry.Name);
 					if (a_positive_repeat_map.end() != the_pos_itr) {
 						auto& aln_pair = the_pos_itr->second;
-//						int64_t the_pos = aln_pair.pos;
-//						int64_t aln_pos = local_alignment_entry.Position + 1;
 
-//					auto the_ref_id_itr = ref_reverse_index.find(aln_pair.chr);
-//					if(ref_reverse_index.end() != the_ref_id_itr) {
-//						int64_t the_ref_id = the_ref_id_itr->second;
-//						if(local_alignment_entry.Position != the_pos && local_alignment_entry.RefID == the_ref_id) {
 						if(!local_alignment_entry.IsMapped()) {
 
-//						if(aln_pos != the_pos) {
-//							cout << "Pos: " << the_pos << ": " << BamWriter::GetSAMAlignment(local_alignment_entry, local_reader.GetReferenceData()) << "\n";
-//							if(local_alignment_entry.IsReverseStrand()) {
+
 							local_alignment_entry.QueryBases = castle::StringUtils::get_reverse_complement(local_alignment_entry.QueryBases);
-//							}
+
 							if(debug) {
 								cout << (boost::format("[TEA._output_mate_fa_v] %s\n") % BamWriter::GetSAMAlignment(local_alignment_entry, local_reader.GetReferenceData())).str();
 								cout << "[TEA._output_mate_fa_v] positive\n";
@@ -13817,58 +13533,32 @@ void TEA::_output_mate_fa_v(boost::unordered_map<string, vector<string>>& positi
 							auto& the_seq_vec = local_positive_mate_reads[aln_pair.file_name_prefix];
 							the_seq_vec.push_back(local_alignment_entry.QueryBases);
 						}
-//					}
+
 					}
 					if (a_negative_repeat_map.end() != the_neg_itr) {
 
 						auto& aln_pair = the_neg_itr->second;
-//						int64_t the_pos = aln_pair.pos;
-//						int64_t aln_pos = local_alignment_entry.Position + 1;
 
-//					auto the_ref_id_itr = ref_reverse_index.find(aln_pair.chr);
-//					if(ref_reverse_index.end() != the_ref_id_itr) {
-//						int64_t the_ref_id = the_ref_id_itr->second;
-//						if(local_alignment_entry.Position != the_pos && local_alignment_entry.RefID == the_ref_id) {
 						if(!local_alignment_entry.IsMapped()) {
 							if(debug) {
 								cout << (boost::format("[TEA._output_mate_fa_v] %s\n") % BamWriter::GetSAMAlignment(local_alignment_entry, local_reader.GetReferenceData())).str();
 								cout << "[TEA._output_mate_fa_v] negative\n";
 							}
-//						if(aln_pos != the_pos) {
-//							cout << "Neg: " << the_pos << ": " << BamWriter::GetSAMAlignment(local_alignment_entry, local_reader.GetReferenceData()) << "\n";
+
 							if(local_alignment_entry.IsReverseStrand()) {
 								local_alignment_entry.QueryBases = castle::StringUtils::get_reverse_complement(local_alignment_entry.QueryBases);
 							}
 							auto& the_seq_vec = local_negative_mate_reads[aln_pair.file_name_prefix];
 							the_seq_vec.push_back(local_alignment_entry.QueryBases);
 						}
-//					}
 					}
 				}
 
 				local_reader.Close();
-//				done_vector[block_id] = 'D';
-
-//				if(verbose) {
-//					string a_block_boundary_str = (boost::format("%s %d-%d %d")
-//							% local_alignment_entry.Name % local_alignment_entry.RefID % local_alignment_entry.Position
-//							% local_alignment_entry.AlignmentFlag).str();
-//					if(block_boundary_strs.end() == block_boundary_strs.find(a_block_boundary_str)) {
-//						cout << (boost::format("[TEA.BAM_to_FASTQ] Block-%d (last-wrong) %s\n")
-//								% block_id % a_block_boundary_str).str();
-//					} else {
-//						cout << (boost::format("[TEA.BAM_to_FASTQ] Block-%d (last) %s\n")
-//								% block_id % a_block_boundary_str).str();
-//					}
-//				} else {
-//					size_t n = count(done_vector.begin(), done_vector.end(), 'D');
-//					double processed = n/(double)done_vector.size() * 100.0;
-//					cout << (boost::format("%.2f %%\n") % processed).str();
-//				}
 			});
 	}
 	castle::ParallelRunner::run_unbalanced_load(n_cores, tasks);
-//	cout << "[TEA._output_mate_fa] gattter scattered information\n";
+
 	tasks.push_back([&, calculated_n_blocks] {
 		for (int64_t block_id = 0; block_id < calculated_n_blocks - 1; ++block_id) {
 			auto& local_positive_mate_reads = positive_mate_reads_list[block_id];
