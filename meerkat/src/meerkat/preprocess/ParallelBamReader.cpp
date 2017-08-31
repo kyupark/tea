@@ -3723,27 +3723,7 @@ void ParallelBamReader::output_read_groups_alt() {
 					return;
 				}
 			}
-//			bool jump_success = local_reader.Jump(actual_blocks[block_id].ref_id, actual_blocks[block_id].jump_pos);
-//			if(!jump_success) {
-//				cout << (boost::format("[ParallelBamReader.output_read_groups_alt] (Jump fail) Block-%d (%d/%d)-(%d/%d)\n")
-//						% block_id % the_current_ref_id % the_current_ref_pos
-//						% the_next_ref_id % the_next_ref_pos).str();
-//				local_reader.Close();
-//				return;
-//			}
-//if(verbose) {
-//cout << (boost::format("[ParallelBamReader.output_read_groups] (start) Block-%d (%d/%d)-(%d/%d)\n")
-//% block_id % the_current_ref_id % the_current_ref_pos
-//% the_next_ref_id % the_next_ref_pos).str();
-//}
-
-//				int32_t decoy_ref_id = -8;
-//				auto decoy_itr = ref_reverse_index.find("hs37d5");
-//				if(ref_reverse_index.end() != decoy_itr) {
-//					decoy_ref_id = decoy_itr->second;
-//				}
 				string rg_name;
-//				const RefVector& refnames = local_reader.GetReferenceData();
 				BamAlignment local_alignment_entry;
 				ReadGroup rg;
 				auto& rgs = rgs_lists[block_id];
@@ -3752,35 +3732,14 @@ void ParallelBamReader::output_read_groups_alt() {
 
 				int64_t cur_offset = m_bgzf.Tell();
 				int64_t prev_offset = cur_offset;
-//				if(cur_offset != the_current_ref_offset) {
-//					cout << (boost::format("[ParallelBamReader.output_read_groups_alt] block-%d (start) offset: jump: %d, calc: %d\n")
-//				% block_id % cur_offset % the_current_ref_offset).str();
-//				}
+
 
 				while (local_reader.LoadNextAlignmentCore(local_alignment_entry)) {
-//					if(verbose && 0 == num_total) {
-//						string a_block_boundary_str = (boost::format("%s %d-%d %d")
-//								% local_alignment_entry.Name % local_alignment_entry.RefID % local_alignment_entry.Position
-//								% local_alignment_entry.AlignmentFlag).str();
-//						cout << (boost::format("[ParallelBamReader.output_read_groups_alt] (first) Block-%d %s\n")
-//								% block_id % a_block_boundary_str).str();
-//					}
-//					if(local_alignment_entry.RefID == the_next_ref_id
-//							&& local_alignment_entry.Position == the_next_ref_pos
-//							&& local_alignment_entry.AlignmentFlag == the_next_aln_flag
-//							&& local_alignment_entry.Name == the_next_block_read_name
-//					) {
-//						break;
-//					}
 					cur_offset = m_bgzf.Tell();
 					if(prev_offset >= the_next_ref_offset) {
 						break;
 					}
 					prev_offset = cur_offset;
-					//					if(the_next_ref_id == decoy_ref_id && local_alignment_entry.RefID == decoy_ref_id) {
-//						break;
-//					}
-//					bool debug = string::npos != local_alignment_entry.Name.find("ST-E00104:502:HFJN5CCXX:1:1108:32826:10890");
 					++num_total;
 					if(!local_alignment_entry.GetReadGroup(rg_name)) {
 						rg_name = "none";
@@ -3793,33 +3752,21 @@ void ParallelBamReader::output_read_groups_alt() {
 					if(!local_alignment_entry.IsMapped()) {
 						ReadGroup::trim_read(local_alignment_entry, options.q, qenc);
 					}
-//					if(debug) {
-//						cout << "rg: here-0: " << block_id << "\n";
-//					}
+
 					int64_t local_rg_id = read_groups_reverse_index[rg_name];
 					ofstream& f1 = *read_groups_f1[local_rg_id].get();
 					ofstream& f2 = *read_groups_f2[local_rg_id].get();
 					/* 2. Handle UU pairs */
 					if (!local_alignment_entry.IsMapped() && !local_alignment_entry.IsMateMapped() && options.processUU) {
-//						if(debug) {
-//							cout << "rg: here-1\n";
-//						}
 						auto x = umbuf.find(local_alignment_entry.Name);
 						if (x == umbuf.end()) {
 							umbuf[local_alignment_entry.Name] = local_alignment_entry;
 							continue;
 						}
-//						if(debug) {
-//							cout << "rg: here-2\n";
-//						}
 						BamAlignment mate = umbuf[local_alignment_entry.Name];
 						if (!ReadGroup::isMatePair(local_alignment_entry, mate)) {
 							continue;
 						}
-
-//						if(debug) {
-//							cout << "rg: here-3\n";
-//						}
 
 						/* Both reads are trimmed by (1) before we get here */
 						rg.recordUUAlt(f1, f2, local_alignment_entry, mate, options.big_s_bps, options.n_cutoff);
@@ -3834,47 +3781,26 @@ void ParallelBamReader::output_read_groups_alt() {
 					 * ar3118743    pR2    chr21    14051775    12    75M    =    14051906    179    ACTTCACAAAGCTAAGAAATACATATGCATATACCAAGCAAAACACACCATAAGGGTAAAATGATGACTTTTTTG
 					 * ar3118743    pr1    chr21    14051906    27    48M27S    =    14051775    -179    TTAATAGGTCCAAATAACAGGTTTATGCTTTTGATTTTGCAGTGGAAGCCCAAGAGTGTGGAACTTTCCTTGGGC
 					 */
-//					if(debug) {
-//						cout << "rg: here-4\n";
-//					}
 					if (ReadGroup::isBigH(local_alignment_entry)) {
 						continue;
 					}
-//					if(debug) {
-//						cout << "rg: here-5\n";
-//					}
+
 					/* 3. Handle mapped+[softclipped|unmapped] read pairs */
 					int mate_num = 1;
 					auto it = softclips.find(local_alignment_entry.Name+"1");
 
 					if(softclips.end() == it) {
-//						if(debug) {
-//							cout << "rg: here-6\n";
-//						}
 						it = softclips.find(local_alignment_entry.Name+"2");
 						mate_num = 2;
 					}
 					if (it != softclips.end()) {
-//						if(debug) {
-//							cout << "rg: here-7\n";
-//						}
 						auto x = local_albuf.find(local_alignment_entry.Name);
 						if (x == local_albuf.end()) {
-//							if(debug) {
-//								cout << "rg: here-8\n";
-//							}
 							local_albuf[local_alignment_entry.Name] = local_alignment_entry;
 						} else if (ReadGroup::isMatePair(local_alignment_entry, x->second)) {
-//							if(debug) {
-//								cout << "rg: here-9\n";
-//							}
 							/* If we're here, then we've got both reads for
 							 * some pair that was stored in softclips */
 							BamAlignment mate = x->second;
-//							if(debug) {
-//								cout << "rg: here-9-cur: " << BamWriter::GetSAMAlignment(local_alignment_entry, refnames) << "\n";
-//								cout << "rg: here-9-mate: " << BamWriter::GetSAMAlignment(mate, refnames) << "\n";
-//							}
 							ReadGroup::trim_read(local_alignment_entry, options.q, qenc);
 							ReadGroup::trim_read(mate, options.q, qenc);
 
@@ -3929,15 +3855,6 @@ void ParallelBamReader::output_read_groups_alt() {
 							}
 
 							if (local_alignment_entry.IsMapped() && mate.IsMapped()) {
-//								if(debug) {
-//									cout << "rg: here-10-mate_num: " << static_cast<int32_t>(mate_num) << "\n";
-//									cout << "rg: here-10-cur: " << BamWriter::GetSAMAlignment(local_alignment_entry, refnames) << "\n";
-//									cout << "rg: here-10-mate: " << BamWriter::GetSAMAlignment(mate, refnames) << "\n";
-//									cout << "rg: here-10-rep_mate: " << static_cast<int32_t>(rep_mate) << "\n";
-//									cout << "rg: here-10-options.big_s_bps: " << options.big_s_bps << "\n";
-//									cout << "rg: here-10-options.frag_size: " << options.frag_size << "\n";
-//									cout << "rg: here-10-options.n_cutoff: " << options.n_cutoff << "\n";
-//								}
 								rg.recordSCAltRG(f1, f2, ReadGroup::getMateNumber(local_alignment_entry) == rep_mate ? local_alignment_entry : mate,
 										ReadGroup::getMateNumber(local_alignment_entry) == rep_mate ? mate : local_alignment_entry, mate_num, options.big_s_bps,
 										options.frag_size, options.n_cutoff);
@@ -3948,10 +3865,6 @@ void ParallelBamReader::output_read_groups_alt() {
 						}
 					}
 				}
-//				if(prev_offset != the_next_ref_offset) {
-//					cout << (boost::format("[ParallelBamReader.output_read_groups_alt] block-%d (last) offset: jump: prev(%d) cur(%d), calc: %d\n") % block_id % prev_offset % cur_offset % the_next_ref_offset).str();
-//				}
-
 				local_reader.Close();
 				done_vector[block_id] = 'D';
 				if(!silent) {
@@ -4057,52 +3970,6 @@ void ParallelBamReader::output_read_groups_alt() {
 		});
 	}
 	castle::ParallelRunner::run_unbalanced_load(n_cores, tasks);
-
-//	for (uint64_t rg_id = 0; rg_id < read_groups.size(); ++rg_id) {
-//		tasks.push_back([&, rg_id, calculated_n_blocks] {
-//			string rg_name = read_groups[rg_id];
-//			for(int64_t block_id = 0; block_id < calculated_n_blocks; ++block_id) {
-//				string str_block_id = boost::lexical_cast<string>(block_id);
-//				string filename_1 = options.prefix + "/" + rg_name + "_1." + str_block_id + ".fq";
-//				if(!options.working_dir.empty()) {
-//					filename_1 = options.working_prefix + "/" + rg_name + "_1." + str_block_id + ".fq";
-//				}
-//				if(boost::filesystem::exists(filename_1)) {
-//					boost::filesystem::remove(filename_1);
-//				}
-//			}
-//		});
-//		tasks.push_back([&, rg_id, calculated_n_blocks] {
-//			string rg_name = read_groups[rg_id];
-//			for(int64_t block_id = 0; block_id < calculated_n_blocks; ++block_id) {
-//				string str_block_id = boost::lexical_cast<string>(block_id);
-//				string filename_2 = options.prefix + "/" + rg_name + "_2." + str_block_id + ".fq";
-//				if(!options.working_dir.empty()) {
-//					filename_2 = options.working_prefix + "/" + rg_name + "_2." + str_block_id + ".fq";
-//				}
-//				if(boost::filesystem::exists(filename_2)) {
-//					boost::filesystem::remove(filename_2);
-//				}
-//			}
-//		});
-//	}
-//	tasks.push_back([&] {
-//		string filename_1 = options.prefix + "/none_1.fq";
-//		if(!options.working_dir.empty()) {
-//			filename_1 = options.working_prefix + "/none_1.fq";
-//		}
-//		if(boost::filesystem::exists(filename_1)) {
-//			boost::filesystem::remove(filename_1);
-//		}
-//		string filename_2 = options.prefix + "/none_2.fq";
-//		if(!options.working_dir.empty()) {
-//			filename_2 = options.working_prefix + "/none_2.fq";
-//		}
-//		if(boost::filesystem::exists(filename_2)) {
-//			boost::filesystem::remove(filename_2);
-//		}
-//	});
-//	castle::ParallelRunner::run_unbalanced_load(n_cores, tasks);
 
 	cout << checker;
 }

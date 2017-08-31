@@ -4525,51 +4525,20 @@ void TEA::_MEMBAM_to_FASTQ(vector<int64_t>& block_boundary, const string& input_
 			const bool debug = false;
 			while (local_reader.LoadNextAlignmentCore(al)) {
 				auto& cur_name = al.Name;
-
 				if(prev_read_name != cur_name) {
-//					const bool debug = string::npos != cur_name.find("HSQ700642:191:D18JJACXX:1:2312:4453:42941");
-		//			for(auto& an_aln : pair1_alns) {
-		//				bool has_H = an_aln.CigarData.size() > 0 && 'H' == an_aln.CigarData.back().Type;
-		//				if(an_aln.IsReverseStrand() && has_H) {
-		////					debug = true;
-		//					break;
-		//				}
-		//			}
-		//			for(auto& an_aln : pair2_alns) {
-		//				bool has_H = an_aln.CigarData.size() > 0 && 'H' == an_aln.CigarData.back().Type;
-		//				if(an_aln.IsReverseStrand() && has_H) {
-		////					debug = true;
-		//					break;
-		//				}
-		//			}
-					if(debug) {
-						for(auto& an_aln : pair1_alns) {
-							cout << "[TEA.MEMBAM_to_FASTQ] 1-1 " << (an_aln.IsReverseStrand() ? "R:" : "F:") << BamTools::BamWriter::GetSAMAlignment(an_aln, m_ref) << "\n";
-						}
-						for(auto& an_aln : pair2_alns) {
-							cout << "[TEA.MEMBAM_to_FASTQ] 1-2 " << (an_aln.IsReverseStrand() ? "R:" : "F:") << BamTools::BamWriter::GetSAMAlignment(an_aln, m_ref) << "\n";
-						}
-						cout << "\n";
-					}
 					if(pair1_alns.size() > 0 && pair2_alns.size() > 0) {
 						auto original_aln1 = pair1_alns;
 						auto original_aln2 = pair2_alns;
 						try{
 							remove_entry_enclosed_with_large_H(pair1_alns);
 							remove_entry_enclosed_with_large_H(pair2_alns);
+
 							convert_H_to_S(pair1_alns);
 							convert_H_to_S(pair2_alns);
-							if(debug) {
-								for(auto& an_aln : pair1_alns) {
-									cout << "[TEA.MEMBAM_to_FASTQ] 2-1 " << (an_aln.IsReverseStrand() ? "R:" : "F:") << BamTools::BamWriter::GetSAMAlignment(an_aln, m_ref) << "\n";
-								}
-								for(auto& an_aln : pair2_alns) {
-									cout << "[TEA.MEMBAM_to_FASTQ] 2-2 " << (an_aln.IsReverseStrand() ? "R:" : "F:") << BamTools::BamWriter::GetSAMAlignment(an_aln, m_ref) << "\n";
-								}
-								cout << "\n";
-							}
+
 							split_query_to_segments(pair1_seqs, pair1_quals, pair1_alns);
 							split_query_to_segments(pair2_seqs, pair2_quals, pair2_alns);
+
 						} catch(exception& ex) {
 							cout << ex.what() << "\n";
 							cout << cur_name << "\n";
@@ -4586,37 +4555,19 @@ void TEA::_MEMBAM_to_FASTQ(vector<int64_t>& block_boundary, const string& input_
 								cout << "[TEA.MEMBAM_to_FASTQ] 4-2 " << (an_aln.IsReverseStrand() ? "R:" : "F:") << BamTools::BamWriter::GetSAMAlignment(an_aln, m_ref) << "\n";
 							}
 						}
-						// break a query bases of pair2 alns. to each segment
-						if(debug) {
-							for(auto& an_aln : pair1_alns) {
-								cout << "[TEA.MEMBAM_to_FASTQ] 5-1 " << (an_aln.IsReverseStrand() ? "R:" : "F:") << BamTools::BamWriter::GetSAMAlignment(an_aln, m_ref) << "\n";
-							}
-							for(auto& an_aln : pair2_alns) {
-								cout << "[TEA.MEMBAM_to_FASTQ] 5-2 " << (an_aln.IsReverseStrand() ? "R:" : "F:") << BamTools::BamWriter::GetSAMAlignment(an_aln, m_ref) << "\n";
-							}
-							cout << "\n";
 
-							for(auto& a_seq : pair1_seqs) {
-								cout << a_seq << ", ";
-							}
-							cout << "\n";
-							for(auto& a_seq : pair2_seqs) {
-								cout << a_seq << ",";
-							}
-							cout << "\n";
-						}
+						// break a query bases of pair2 alns. to each segment
+
 						// write to files
 						int64_t entry_id = 1;
 						for(uint64_t s_id1 = 0; s_id1 < pair1_seqs.size(); ++s_id1) {
 							auto& a_seq = pair1_seqs[s_id1];
 							auto& a_qual = pair1_quals[s_id1];
 							for(uint64_t s_id2 = 0; s_id2 < pair2_seqs.size(); ++s_id2) {
-								string pair1_entry = (boost::format("@%s:m%d\n%s\n+\n%s\n") % prev_read_name % entry_id
-										% a_seq % a_qual).str();
+								string pair1_entry = (boost::format("@%s:m%d\n%s\n+\n%s\n") % prev_read_name % entry_id % a_seq % a_qual).str();
 								auto& a_seq2 = pair2_seqs[s_id2];
 								auto& a_qual2 = pair2_quals[s_id2];
-								string pair2_entry = (boost::format("@%s:m%d\n%s\n+\n%s\n") % prev_read_name % entry_id
-									% a_seq2 % a_qual2).str();
+								string pair2_entry = (boost::format("@%s:m%d\n%s\n+\n%s\n") % prev_read_name % entry_id % a_seq2 % a_qual2).str();
 								out_disc_1 << pair1_entry;
 								out_disc_2 << pair2_entry;
 								++entry_id;
@@ -4951,25 +4902,20 @@ void TEA::convert_H_to_S(vector<BamAlignment>& alns) {
 		}
 		if(has_H) {
 			if(an_aln.QueryBases.size() != max_len) {
+
 				for(auto& a_cigar : an_aln.CigarData) {
 					if('H' == a_cigar.Type) {
 						a_cigar.Type = 'S';
 					}
 				}
+
 				an_aln.QueryBases = max_seq;
 				an_aln.Qualities = max_qual;
+
 				if(an_aln.IsReverseStrand()) {
-//					if(an_aln.CigarData.size() > 0 && 'S' == an_aln.CigarData.back().Type) {
-//						an_aln.Position -= an_aln.CigarData.back().Length;
-//					}
 					an_aln.QueryBases = castle::StringUtils::get_reverse_complement(an_aln.QueryBases);
 					an_aln.Qualities = castle::StringUtils::get_reverse_string(an_aln.Qualities);
 				}
-//				else {
-//					if(an_aln.CigarData.size() > 0 && 'S' == an_aln.CigarData.front().Type) {
-//						an_aln.Position -= an_aln.CigarData.front().Length;
-//					}
-//				}
 			}
 		}
 	}
@@ -5025,6 +4971,7 @@ void TEA::fill_H_to_S(BamAlignment& aln, const AlnSeqQualEntry& aln_seq_entry) {
 
 void TEA::split_query_to_segments(vector<string>& seqs, vector<string>& quals, vector<BamAlignment>& alns) {
 	const bool debug = false;
+
 	for(auto& an_aln : alns) {
 		auto& a_seq = an_aln.QueryBases;
 		auto& a_qual = an_aln.Qualities;
@@ -5033,14 +4980,8 @@ void TEA::split_query_to_segments(vector<string>& seqs, vector<string>& quals, v
 			quals.push_back(a_qual);
 			continue;
 		}
-		auto& cigars = an_aln.CigarData;
-		if(debug) {
-			for(auto& a_cigar : cigars) {
-				cout << a_cigar.Length << a_cigar.Type;
-			}
-			cout << "\n";
-		}
 
+		auto& cigars = an_aln.CigarData;
 		for (int64_t c_id = 0; c_id < (static_cast<int64_t>(cigars.size()) - 1);) {
 			auto& cur_cigar = cigars[c_id];
 			auto& next_cigar = cigars[c_id + 1];
@@ -5059,24 +5000,19 @@ void TEA::split_query_to_segments(vector<string>& seqs, vector<string>& quals, v
 			}
 			++c_id;
 		}
-		if(debug) {
-			for(auto& a_cigar : cigars) {
-				cout << a_cigar.Length << a_cigar.Type;
-			}
-			cout << "\n";
-		}
+
 		if('H' == cigars.back().Type) {
 			cigars.erase(cigars.begin() + (cigars.size() - 1));
 		}
+
 		uint64_t prev_cut_pos = 0;
 		for(auto& a_cigar : an_aln.CigarData) {
 			string a_segment_seq = a_seq.substr(prev_cut_pos, a_cigar.Length);
 			string a_segment_qual = a_qual.substr(prev_cut_pos, a_cigar.Length);
-			if(debug) {
-				cout << a_cigar.Length << a_cigar.Type << "\n";
-				cout << a_segment_seq << "\n";
-			}
-			if(static_cast<int64_t>(a_segment_seq.size()) >= options.min_clipped_len) {
+
+// TODO do you want to skip if the cigar seq is less than min_clipped_len 25?
+			if(static_cast<int64_t>(a_segment_seq.size()) >= options.min_clipped_len
+					|| a_cigar.Type == 'S' || a_cigar.Type == 'H' ) {
 				if(an_aln.IsReverseStrand()) {
 					a_segment_seq = castle::StringUtils::get_reverse_complement(a_segment_seq);
 					a_segment_qual = castle::StringUtils::get_reverse_string(a_segment_qual);
@@ -13521,9 +13457,6 @@ void TEA::_output_mate_fa_serial(boost::unordered_map<string, vector<string>>& p
 	string an_index_path(a_path);
 	an_index_path += ".bai";
 
-// only for debugging
-	// map<read name, pair<first read, second read>>
-//	vector<string> read_groups;
 	BamTools::BamReader local_reader;
 	if (!local_reader.Open(a_path, an_index_path)) {
 		return;
@@ -13531,8 +13464,6 @@ void TEA::_output_mate_fa_serial(boost::unordered_map<string, vector<string>>& p
 	int64_t num_total = 0;
 
 	BamTools::BamAlignment local_alignment_entry;
-
-//		const bool is_soft_clipped = string::npos != input_BAM_name.find(".cl.disc.sorted.bam");
 
 	string target_str =
 			"DHFC08P1:370:C1784ACXX:2:1114:18204:57892,DHFC08P1:370:C1784ACXX:1:1212:15037:61907mu1,DHFC08P1:370:C1784ACXX:1:1113:17042:78731mu1,DHFC08P1:370:C1784ACXX:1:2210:3273:91802mu1,DHFC08P1:370:C1784ACXX:2:1214:6860:23842,DHFC08P1:370:C1784ACXX:1:1204:3054:21186mu1,DHFC08P1:370:C1784ACXX:1:2203:20922:42380,DHFC08P1:370:C1784ACXX:1:2306:20447:97121mu1,DHFC08P1:370:C1784ACXX:2:2215:4090:25856mu1,DHFC08P1:370:C1784ACXX:1:2115:10819:58552,HWI-ST115:415:C170UACXX:6:2202:19413:98859,HWI-ST115:415:C170UACXX:6:2204:19696:50780mu1,DHFC08P1:370:C1784ACXX:1:2314:18589:6896,HWI-ST115:415:C170UACXX:6:1312:5194:66873,DHFC08P1:370:C1784ACXX:1:2102:3399:50694,DHFC08P1:370:C1784ACXX:1:2210:3534:20988,HWI-ST115:415:C170UACXX:6:1111:12602:96456,HWI-ST115:415:C170UACXX:6:2311:15847:27338,DHFC08P1:370:C1784ACXX:2:2308:18049:12744,DHFC08P1:370:C1784ACXX:1:1306:14988:50848,DHFC08P1:370:C1784ACXX:1:1206:21023:31009,DHFC08P1:370:C1784ACXX:1:2302:6153:22406,DHFC08P1:370:C1784ACXX:1:1313:15436:14374,DHFC08P1:370:C1784ACXX:2:2314:12830:49664,DHFC08P1:370:C1784ACXX:1:2307:12504:27551,DHFC08P1:370:C1784ACXX:1:1115:10579:10756sc,DHFC08P1:370:C1784ACXX:1:1214:9958:99422,HWI-ST115:415:C170UACXX:6:2104:9922:86649sc,DHFC08P1:370:C1784ACXX:2:1109:9418:21136mu1";
@@ -13543,13 +13474,6 @@ void TEA::_output_mate_fa_serial(boost::unordered_map<string, vector<string>>& p
 
 	while (local_reader.LoadNextAlignmentCore(local_alignment_entry)) {
 		++num_total;
-//			if(is_soft_clipped) {
-//				if(string::npos == local_alignment_entry.Name.rfind("mu1") &&
-//						string::npos == local_alignment_entry.Name.rfind("mu2") &&
-//						string::npos == local_alignment_entry.Name.rfind("sc")) {
-//					continue;
-//				}
-//			}
 		auto the_pos_itr = a_positive_repeat_map.find(local_alignment_entry.Name);
 		auto the_neg_itr = a_negative_repeat_map.find(local_alignment_entry.Name);
 		const bool debug = target_set.end() != target_set.find(local_alignment_entry.Name);
@@ -13561,10 +13485,6 @@ void TEA::_output_mate_fa_serial(boost::unordered_map<string, vector<string>>& p
 				cout << (boost::format("%s\t%d\t%d<=>%d\t%s\n") % local_alignment_entry.Name % local_alignment_entry.AlignmentFlag % the_pos % aln_pos % local_alignment_entry.QueryBases).str();
 			}
 
-//					auto the_ref_id_itr = ref_reverse_index.find(aln_pair.chr);
-//					if(ref_reverse_index.end() != the_ref_id_itr) {
-//						int64_t the_ref_id = the_ref_id_itr->second;
-//						if(local_alignment_entry.Position != the_pos && local_alignment_entry.RefID == the_ref_id) {
 			if (aln_pos != the_pos) {
 				if (local_alignment_entry.IsReverseStrand()) {
 					local_alignment_entry.QueryBases = castle::StringUtils::get_reverse_complement(local_alignment_entry.QueryBases);
@@ -13572,7 +13492,6 @@ void TEA::_output_mate_fa_serial(boost::unordered_map<string, vector<string>>& p
 				auto& the_seq_vec = positive_mate_reads[aln_pair.file_name_prefix];
 				the_seq_vec.push_back(local_alignment_entry.QueryBases);
 			}
-//					}
 		}
 		if (a_negative_repeat_map.end() != the_neg_itr) {
 			auto& aln_pair = the_neg_itr->second;
@@ -13581,10 +13500,6 @@ void TEA::_output_mate_fa_serial(boost::unordered_map<string, vector<string>>& p
 			if (debug) {
 				cout << (boost::format("%s\t%d\t%d<=>%d\t%s\n") % local_alignment_entry.Name % local_alignment_entry.AlignmentFlag % the_pos % aln_pos % local_alignment_entry.QueryBases).str();
 			}
-//					auto the_ref_id_itr = ref_reverse_index.find(aln_pair.chr);
-//					if(ref_reverse_index.end() != the_ref_id_itr) {
-//						int64_t the_ref_id = the_ref_id_itr->second;
-//						if(local_alignment_entry.Position != the_pos && local_alignment_entry.RefID == the_ref_id) {
 			if (aln_pos != the_pos) {
 				if (local_alignment_entry.IsReverseStrand()) {
 					local_alignment_entry.QueryBases = castle::StringUtils::get_reverse_complement(local_alignment_entry.QueryBases);
@@ -13592,29 +13507,11 @@ void TEA::_output_mate_fa_serial(boost::unordered_map<string, vector<string>>& p
 				auto& the_seq_vec = negative_mate_reads[aln_pair.file_name_prefix];
 				the_seq_vec.push_back(local_alignment_entry.QueryBases);
 			}
-//					}
 		}
 	}
 
 	local_reader.Close();
-//				done_vector[block_id] = 'D';
 
-//				if(verbose) {
-//					string a_block_boundary_str = (boost::format("%s %d-%d %d")
-//							% local_alignment_entry.Name % local_alignment_entry.RefID % local_alignment_entry.Position
-//							% local_alignment_entry.AlignmentFlag).str();
-//					if(block_boundary_strs.end() == block_boundary_strs.find(a_block_boundary_str)) {
-//						cout << (boost::format("[TEA.BAM_to_FASTQ] Block-%d (last-wrong) %s\n")
-//								% block_id % a_block_boundary_str).str();
-//					} else {
-//						cout << (boost::format("[TEA.BAM_to_FASTQ] Block-%d (last) %s\n")
-//								% block_id % a_block_boundary_str).str();
-//					}
-//				} else {
-//					size_t n = count(done_vector.begin(), done_vector.end(), 'D');
-//					double processed = n/(double)done_vector.size() * 100.0;
-//					cout << (boost::format("%.2f %%\n") % processed).str();
-//				}
 }
 
 }
