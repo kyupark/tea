@@ -4522,7 +4522,7 @@ void TEA::_MEMBAM_to_FASTQ(vector<int64_t>& block_boundary, const string& input_
 			output_files_1[block_id] = out_path_1;
 			output_files_2[block_id] = out_path_2;
 //			const bool debug = (0 == block_id);
-			const bool debug = false;
+//			const bool debug = false;
 			while (local_reader.LoadNextAlignmentCore(al)) {
 				auto& cur_name = al.Name;
 				if(prev_read_name != cur_name) {
@@ -4970,7 +4970,7 @@ void TEA::fill_H_to_S(BamAlignment& aln, const AlnSeqQualEntry& aln_seq_entry) {
 }
 
 void TEA::split_query_to_segments(vector<string>& seqs, vector<string>& quals, vector<BamAlignment>& alns) {
-	const bool debug = false;
+//	const bool debug = false;
 
 	for(auto& an_aln : alns) {
 		auto& a_seq = an_aln.QueryBases;
@@ -9181,10 +9181,6 @@ void TEA::_generate_cbam_files_mem_org() {
 		out_softclips_consd_cpos_name = options.working_prefix + ".softclips.consd.cpos";
 	}
 
-//	if (!options.is_force && boost::filesystem::exists(out_softclips_consd_bam_name) && boost::filesystem::exists(out_softclips_consd_cpos_name)) {
-//		return;
-//	}
-
 	castle::TimeChecker checker;
 	checker.setTarget("TEA.generate_cbam_files_mem_org");
 	checker.start();
@@ -10515,7 +10511,7 @@ boost::unordered_map<string, vector<vector<int64_t>>> breakpoint_ids;
 // 	gap_cutoff check
 	for (int64_t pos_id = 0; pos_id < max_id; ++pos_id) {
 		auto& a_ram = sram[pos_id];
-		const bool debug = false;
+//		const bool debug = false;
 		auto& the_family = a_ram.repeat_family;
 
 		if ("PolyA" == the_family) {
@@ -11072,25 +11068,32 @@ void TEA::count_clipped_v(
 					end_pos = max(end_pos, negative_entry.value.pos[0]);
 				}
 				local_reader.SetRegion(chr_ref_id, start_pos, chr_ref_id, end_pos);
-				output_clipped_stat_v(out_p_clipped_filename, out_n_clipped_filename, out_p_mate_rname, out_n_mate_rname, out_cl, out_germline, out_clipped, contig_dir, ref_repeat_interval_tree, stat_results, vannot, local_reader, the_ram_boundary_start, the_ram_boundary_end,
-						positive_entry, negative_entry, chr, prefixed_chr, read_length, rmasker_filter_margin, gene_margin);
+				output_clipped_stat_v(out_p_clipped_filename, out_n_clipped_filename, out_p_mate_rname, out_n_mate_rname, out_cl, out_germline, out_clipped, contig_dir, ref_repeat_interval_tree, stat_results, vannot, local_reader, the_ram_boundary_start, the_ram_boundary_end, positive_entry, negative_entry, chr, prefixed_chr, read_length, rmasker_filter_margin, gene_margin);
 			}
 		}
 		local_reader.Close();
 //		cout << checker;
 }
 
-void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& max_pos_positive, int64_t& max_pos_negative, int64_t& n_positive_clipped_reads, int64_t& n_negative_clipped_reads, int64_t& n_aligned_clipped_positive, int64_t& n_aligned_clipped_negative, BamTools::BamReader& local_reader, const int64_t the_ram_boundary_start, const int64_t the_ram_boundary_end, const RAMIntervalEntry& positive_entry, const RAMIntervalEntry& negative_entry, const string& chr, const int64_t read_length, const int64_t mid_point) {
+void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries,
+		int64_t& max_pos_positive, int64_t& max_pos_negative, int64_t&
+		n_positive_clipped_reads, int64_t& n_negative_clipped_reads,
+		int64_t& n_aligned_clipped_positive, int64_t& n_aligned_clipped_negative,
+		BamTools::BamReader& local_reader,
+		const int64_t the_ram_boundary_start, const int64_t the_ram_boundary_end,
+		const RAMIntervalEntry& positive_entry, const RAMIntervalEntry& negative_entry,
+		const string& chr, const int64_t read_length, const int64_t mid_point) {
+
 	string tmp_chr_name(chr);
 	if (string::npos == tmp_chr_name.find("chr")) {
 		tmp_chr_name = "chr" + chr;
 	}
 
-//	const bool debug = (24828732 == the_ram_boundary_start && 24829441 == the_ram_boundary_end);
+//	const bool debug = (2221034 == the_ram_boundary_start && 2221736 == the_ram_boundary_end);
 	const bool debug = false;
 
 	BamTools::BamAlignment local_alignment_entry;
-	auto& ref_vec = local_reader.GetReferenceData();
+//	auto& ref_vec = local_reader.GetReferenceData();
 	while (local_reader.GetNextAlignment(local_alignment_entry)) {
 		auto cigars = local_alignment_entry.CigarData;
 		auto cigars_clipped_pos = cigars;
@@ -11136,17 +11139,20 @@ void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& ma
 
 		auto& cigars_front_type = cigars.front().Type;
 		auto& cigars_back_type = cigars.back().Type;
+		int64_t cigars_front_length = cigars.front().Length;
+		int64_t cigars_back_length = cigars.back().Length;
 
+		if ('H' == cigars_front_type){
+			cigars_front_length = 0;
+		}
+		if ('H' == cigars_back_type) {
+			cigars_back_length = 0;
+		}
 
 		if (
 				(!local_alignment_entry.IsReverseStrand() || options.including_head_clip)
 				&&
 				('S' == cigars_front_type || 'H' == cigars_front_type) ) {
-
-			int64_t cigars_front_length = cigars.front().Length;
-			if ('H' == cigars_front_type){
-				cigars_front_length = 0;
-			}
 
 			string clipped_seq_qual_trimmed;
 			string clipped_qual_qual_trimmed;
@@ -11168,7 +11174,7 @@ void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& ma
 			clipped_pos_qual_trimmed = clipped_pos;
 
 			if (n_low > 0) {
-				int64_t n_quality_trimmed = cigars.front().Length - n_low;
+				int64_t n_quality_trimmed = cigars_front_length - n_low;
 				clipped_seq_qual_trimmed = local_alignment_entry.QueryBases.substr(0, n_quality_trimmed);
 				clipped_qual_qual_trimmed = local_alignment_entry.Qualities.substr(0, n_quality_trimmed);
 				clipped_pos_qual_trimmed -= n_low;
@@ -11179,6 +11185,11 @@ void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& ma
 			an_entry.ram_start = the_ram_boundary_start;
 			an_entry.ram_end = the_ram_boundary_end;
 			an_entry.strand = 1;
+			// Forward tail clips are positive 1.
+			// Reverse head clips are positive 2, because they are considered as forward(positive)
+			if (local_alignment_entry.IsReverseStrand()) {
+				an_entry.strand = 2;
+			}
 			set<string> alt_rep;
 			alt_rep.insert(positive_entry.value.rep_repeat.begin(), positive_entry.value.rep_repeat.end());
 			alt_rep.insert(negative_entry.value.rep_repeat.begin(), negative_entry.value.rep_repeat.end());
@@ -11206,79 +11217,83 @@ void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& ma
 			&&
 			('S' == cigars_back_type || 'H' == cigars_back_type) ) {
 
-		int64_t cigars_back_length = cigars.back().Length;
-		if('H' == cigars_back_type) {
-			cigars_back_length = 0;
-		}
 
-		int64_t delta = 0;
-		int64_t n_del = 0;
-		int64_t n_in = 0;
-		for (auto cigar : local_alignment_entry.CigarData) {
-			if ('D' == cigar.Type) {
-				n_del += cigar.Length;
-			} else if ('I' == cigar.Type) {
-				n_in += cigar.Length;
+			int64_t delta = 0;
+			int64_t n_del = 0;
+			int64_t n_in = 0;
+			for (auto cigar : local_alignment_entry.CigarData) {
+				if ('D' == cigar.Type) {
+					n_del += cigar.Length;
+				} else if ('I' == cigar.Type) {
+					n_in += cigar.Length;
+				}
+			}
+			delta = n_del - n_in;
+
+			string clipped_seq_qual_trimmed;
+			string clipped_qual_qual_trimmed;
+			string clipped_seq;
+			string clipped_qual;
+
+			int64_t clipped_pos = local_alignment_entry.Position + local_alignment_entry.QueryBases.size() - cigars_back_length + delta + 1;
+			int64_t clipped_pos_qual_trimmed;
+
+			int64_t match_idx = cigars.size();
+			match_idx -= 2;
+
+			if ('S' == cigars_front_type ) {
+				clipped_pos -= cigars_front_length;
+			}
+
+			if (match_idx >= 0 && 'M' == cigars[match_idx].Type) {
+				int64_t match_start = local_alignment_entry.QueryBases.size() - (cigars[match_idx].Length + cigars_back_length);
+				ref_seq = local_alignment_entry.QueryBases.substr(match_start, cigars[match_idx].Length);
+			}
+
+			clipped_seq = local_alignment_entry.QueryBases.substr(local_alignment_entry.QueryBases.size() - cigars_back_length);
+			clipped_qual = local_alignment_entry.Qualities.substr(local_alignment_entry.Qualities.size() - cigars_back_length);
+
+			int64_t n_low = get_number_of_low_qualities_at_begin(clipped_qual, options.qcutoff);
+
+			clipped_pos_qual_trimmed = clipped_pos;
+			if (n_low > 0) {
+				int64_t n_quality_trimmed = local_alignment_entry.QueryBases.size() - cigars_back_length + n_low;
+				clipped_seq_qual_trimmed = local_alignment_entry.QueryBases.substr(n_quality_trimmed);
+				clipped_qual_qual_trimmed = local_alignment_entry.Qualities.substr(n_quality_trimmed);
+				clipped_pos_qual_trimmed += n_low;
+			}
+
+			ClippedEntry an_entry;
+			an_entry.chr = tmp_chr_name;
+			an_entry.ram_start = the_ram_boundary_start;
+			an_entry.ram_end = the_ram_boundary_end;
+			an_entry.strand = -1;
+			// Reverse tail clips are negative -1.
+			// Forward head clips are negative -2, because they are considered as reverse(negative)
+			if (!local_alignment_entry.IsReverseStrand()) {
+				an_entry.strand = -2;
+			}
+			set<string> alt_rep;
+			alt_rep.insert(positive_entry.value.rep_repeat.begin(), positive_entry.value.rep_repeat.end());
+			alt_rep.insert(negative_entry.value.rep_repeat.begin(), negative_entry.value.rep_repeat.end());
+			an_entry.rep_repeat = castle::StringUtils::join(alt_rep, ",");
+			an_entry.negative_pos = local_alignment_entry.Position;
+			an_entry.clipped_pos = clipped_pos;
+			an_entry.clipped_pos_qual_trimmed = clipped_pos_qual_trimmed;
+			an_entry.cigar_original = cigar_original;
+			an_entry.cigar_corrected = cigar_corrected;
+			an_entry.read_name = local_alignment_entry.Name;
+			an_entry.ref_seq = ref_seq;
+			an_entry.clipped_seq = clipped_seq;
+			an_entry.clipped_qual = clipped_qual;
+			an_entry.clipped_seq_qual_trimmed = clipped_seq_qual_trimmed;
+			an_entry.clipped_qual_qual_trimmed = clipped_qual_qual_trimmed;
+			clipped_entries.push_back(an_entry);
+
+			if(debug) {
+				cout << "-" << clipped_pos << "\n";
 			}
 		}
-		delta = n_del - n_in;
-
-		string clipped_seq_qual_trimmed ;
-		string clipped_qual_qual_trimmed;
-		string clipped_seq;
-		string clipped_qual;
-
-		int64_t clipped_pos = local_alignment_entry.Position + local_alignment_entry.QueryBases.size() - cigars_back_length + delta;
-		int64_t clipped_pos_qual_trimmed = local_alignment_entry.Position;
-
-		int64_t match_idx = cigars.size();
-		match_idx -= 2;
-
-		if (match_idx >= 0 && 'M' == cigars[match_idx].Type) {
-			int64_t match_start = local_alignment_entry.QueryBases.size() - (cigars[match_idx].Length + cigars_back_length);
-			ref_seq = local_alignment_entry.QueryBases.substr(match_start, cigars[match_idx].Length);
-		}
-
-		clipped_seq = local_alignment_entry.QueryBases.substr(local_alignment_entry.QueryBases.size() - cigars_back_length);
-		clipped_qual = local_alignment_entry.Qualities.substr(local_alignment_entry.Qualities.size() - cigars_back_length);
-
-		int64_t n_low = get_number_of_low_qualities_at_begin(clipped_qual, options.qcutoff);
-
-		clipped_pos_qual_trimmed = clipped_pos;
-		if (n_low > 0) {
-			int64_t n_quality_trimmed = local_alignment_entry.QueryBases.size() - cigars_back_length + n_low;
-			clipped_seq_qual_trimmed = local_alignment_entry.QueryBases.substr(n_quality_trimmed);
-			clipped_qual_qual_trimmed = local_alignment_entry.Qualities.substr(n_quality_trimmed);
-			clipped_pos_qual_trimmed += n_low;
-		}
-
-		ClippedEntry an_entry;
-		an_entry.chr = tmp_chr_name;
-		an_entry.ram_start = the_ram_boundary_start;
-		an_entry.ram_end = the_ram_boundary_end;
-		an_entry.strand = -1;
-		set<string> alt_rep;
-		alt_rep.insert(positive_entry.value.rep_repeat.begin(), positive_entry.value.rep_repeat.end());
-		alt_rep.insert(negative_entry.value.rep_repeat.begin(), negative_entry.value.rep_repeat.end());
-		an_entry.rep_repeat = castle::StringUtils::join(alt_rep, ",");
-		an_entry.negative_pos = local_alignment_entry.Position;
-		an_entry.clipped_pos = clipped_pos;
-		an_entry.clipped_pos_qual_trimmed = clipped_pos_qual_trimmed;
-		an_entry.cigar_original = cigar_original;
-		an_entry.cigar_corrected = cigar_corrected;
-		an_entry.read_name = local_alignment_entry.Name;
-		an_entry.ref_seq = ref_seq;
-		an_entry.clipped_seq = clipped_seq;
-		an_entry.clipped_qual = clipped_qual;
-		an_entry.clipped_seq_qual_trimmed = clipped_seq_qual_trimmed;
-		an_entry.clipped_qual_qual_trimmed = clipped_qual_qual_trimmed;
-		clipped_entries.push_back(an_entry);
-
-		if(debug) {
-			cout << "-" << clipped_pos << "\n";
-		}
-
-	}
 
 
 	}
@@ -11291,16 +11306,18 @@ void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& ma
 
 	for (auto& an_entry : clipped_entries) {
 
-		if (1 == an_entry.strand) {
+		if (an_entry.strand > 0) {
 			++pos_frequency_positive[an_entry.clipped_pos];
+
 			if(an_entry.clipped_pos != an_entry.clipped_pos_qual_trimmed) {
 				++pos_frequency_positive[an_entry.clipped_pos_qual_trimmed];
 			}
 			++n_positive_clipped_reads;
 		}
 
-		else if (-1 == an_entry.strand) {
+		else if (an_entry.strand < 0) {
 			++pos_frequency_negative[an_entry.clipped_pos];
+
 			if(an_entry.clipped_pos != an_entry.clipped_pos_qual_trimmed) {
 				++pos_frequency_negative[an_entry.clipped_pos_qual_trimmed];
 			}
@@ -11356,13 +11373,17 @@ void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& ma
 		bool found_negative_candidate = false;
 		// check the positive bp position which is within the right bp_margin
 		int64_t freq_pos_negative = 0;
+
 		for (auto& a_freq : pos_frequency_negative) {
 			int64_t candidate_pos = a_freq.first;
-			if(max_pos_positive <= candidate_pos && candidate_pos < (max_pos_positive + options.bp_margin)) {
+			if(max_pos_positive <= candidate_pos
+					&& candidate_pos < (max_pos_positive + options.bp_margin)) {
 				if(freq_pos_negative < a_freq.second) {
-					max_pos_negative = candidate_pos;
 					freq_pos_negative = a_freq.second;
 					found_negative_candidate = true;
+
+					max_pos_negative = candidate_pos;
+					max_pos_freq_negative = a_freq.second;
 				}
 			}
 		}
@@ -11370,18 +11391,21 @@ void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& ma
 			if(debug) {
 				cout << "[TEA.get_clipped_entries] strong pos, weak neg - 2\n";
 			}
-			freq_pos_negative = 0;
+//			freq_pos_negative = 0;
 			// check the negative bp position which is within the left bp_margin
 			for (auto& a_freq : pos_frequency_negative) {
 				int64_t candidate_pos = a_freq.first;
 				if(debug) {
 					cout << "[TEA.get_clipped_entries] strong pos, weak neg - 2: " << candidate_pos << "\n";
 				}
-				if((max_pos_positive - options.bp_margin) <= candidate_pos && candidate_pos < max_pos_positive) {
+				if((max_pos_positive - options.bp_margin) <= candidate_pos
+						&& candidate_pos < max_pos_positive) {
 					if(freq_pos_negative < a_freq.second) {
 						found_negative_candidate = true;
 						freq_pos_negative = a_freq.second;
+
 						max_pos_negative = candidate_pos;
+						max_pos_freq_negative = a_freq.second;
 					}
 				}
 			}
@@ -11397,6 +11421,7 @@ void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& ma
 					if(delta < min_delta) {
 						min_delta = delta;
 						max_pos_negative = candidate_pos;
+						max_pos_freq_negative = a_freq.second;
 					}
 				}
 			}
@@ -11413,11 +11438,14 @@ void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& ma
 		int64_t freq_pos_positive = 0;
 		for (auto& a_freq : pos_frequency_positive) {
 			int64_t candidate_pos = a_freq.first;
-			if((max_pos_negative - options.bp_margin) < candidate_pos && candidate_pos < max_pos_negative) {
+			if((max_pos_negative - options.bp_margin) < candidate_pos
+					&& candidate_pos < max_pos_negative) {
 				if(freq_pos_positive < a_freq.second) {
 					found_positive_candidate = true;
 					freq_pos_positive = a_freq.second;
+
 					max_pos_positive = candidate_pos;
+					max_pos_freq_positive = a_freq.second;
 				}
 			}
 		}
@@ -11430,11 +11458,14 @@ void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& ma
 			for (auto& a_freq : pos_frequency_positive) {
 				int64_t candidate_pos = a_freq.first;
 //				if (max_pos_freq_positive == a_freq.second) {
-				if(max_pos_negative < candidate_pos && candidate_pos < (max_pos_negative + options.bp_margin)) {
+				if(max_pos_negative < candidate_pos
+						&& candidate_pos < (max_pos_negative + options.bp_margin)) {
 					if(freq_pos_positive < a_freq.second) {
 						found_positive_candidate = true;
 						freq_pos_positive = a_freq.second;
+
 						max_pos_positive = candidate_pos;
+						max_pos_freq_positive = a_freq.second;
 					}
 				}
 //				}
@@ -11450,7 +11481,9 @@ void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& ma
 					int64_t delta = abs(max_pos_negative - candidate_pos);
 					if(delta < min_delta) {
 						min_delta = delta;
+
 						max_pos_positive = candidate_pos;
+						max_pos_freq_positive = a_freq.second;
 					}
 				}
 			}
@@ -11471,8 +11504,8 @@ void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& ma
 			int64_t cur_delta = abs(candidate_pos - mid_point);
 			if (cur_delta < pos_delta) {
 				pos_delta = cur_delta;
-				max_pos_freq_positive = a_freq.second;
 				max_pos_positive = candidate_pos;
+				max_pos_freq_positive = a_freq.second;
 			}
 		}
 
@@ -11482,8 +11515,33 @@ void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& ma
 			int64_t cur_delta = abs(candidate_pos - mid_point);
 			if (cur_delta < neg_delta) {
 				neg_delta = cur_delta;
-				max_pos_freq_positive = a_freq.second;
 				max_pos_negative = candidate_pos;
+				max_pos_freq_negative = a_freq.second;
+			}
+		}
+	}
+
+//	n_positive_clipped_reads = max_pos_freq_positive;
+//	n_negative_clipped_reads = max_pos_freq_negative;
+
+	for (auto& an_entry : clipped_entries) {
+		if (an_entry.strand == 2) {
+			if ( max_pos_positive == an_entry.clipped_pos
+					|| max_pos_positive == an_entry.clipped_pos_qual_trimmed ) {
+				an_entry.strand = 1;
+			}
+			else {
+				--n_positive_clipped_reads;
+			}
+		}
+
+		else if (an_entry.strand == -2) {
+			if ( max_pos_negative == an_entry.clipped_pos
+					|| max_pos_negative == an_entry.clipped_pos_qual_trimmed ) {
+				an_entry.strand = -1;
+			}
+			else {
+				--n_negative_clipped_reads;
 			}
 		}
 	}
@@ -11500,7 +11558,7 @@ void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& ma
 			an_entry.clipped_qual_rep = an_entry.clipped_qual_qual_trimmed;
 		}
 
-		if (1 == an_entry.strand) {
+		if (an_entry.strand == 1) {
 			int64_t delta = abs(an_entry.clipped_pos - max_pos_positive);
 			int64_t delta_qual = abs(an_entry.clipped_pos_qual_trimmed - max_pos_positive);
 			int64_t selected_delta = min(delta, delta_qual);
@@ -11513,6 +11571,7 @@ void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& ma
 			if (max_pos_freq_positive >= 1) {
 				int64_t clipped_freq = 0;
 				int64_t clipped_freq_trimmed = 0;
+
 				for (int64_t pos = an_entry.clipped_pos - options.jittering; pos < an_entry.clipped_pos + options.jittering; ++pos) {
 					auto an_entry = pos_frequency_positive.find(pos);
 					if (pos_frequency_positive.end() == an_entry) {
@@ -11533,10 +11592,11 @@ void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& ma
 					an_entry.clipped_qual_rep = an_entry.clipped_qual;
 			} else {
 				if(debug) {
-					cout << "[TEA.get_clipped_entries] single entry - 1\n";
+					cout << "[TEA.get_clipped_entries] single entry - 2\n";
 				}
 			}
-		} else if (-1 == an_entry.strand) {
+		}
+		else if (an_entry.strand == -1 ) {
 			int64_t delta = abs(an_entry.clipped_pos - max_pos_negative);
 			int64_t delta_qual = abs(an_entry.clipped_pos_qual_trimmed - max_pos_negative);
 			int64_t selected_delta = min(delta, delta_qual);
@@ -11578,10 +11638,14 @@ void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& ma
 
 	n_aligned_clipped_positive = max_pos_freq_positive;
 	n_aligned_clipped_negative = max_pos_freq_negative;
+
+	if (debug) {
+		cout << "pacr" << n_aligned_clipped_positive << " nacr" << n_aligned_clipped_negative << "\n";
+	}
+
 }
 
-void TEA::output_clipped_stat(ofstream& out_p_clipped_filename, ofstream& out_n_clipped_filename, ofstream& out_p_mate_rname, ofstream& out_n_mate_rname, ofstream& out_cl, ofstream& out_germline, ofstream& out_clipped, const string& contig_dir, RefRepeatIntervalTree& ref_repeat_interval_tree, RefRepeatIntervalVector& stat_results, GeneIntervalTree& gene_interval_tree, GeneIntervalVector& gene_results, BamTools::BamReader& local_reader, const int64_t the_ram_boundary_start, const int64_t the_ram_boundary_end, const RAMIntervalEntry& positive_entry,
-		const RAMIntervalEntry& negative_entry, const string& chr, const string& prefixed_chr, const int64_t read_length, const int64_t rmasker_filter_margin, const int64_t gene_margin, const int64_t mid_point) {
+void TEA::output_clipped_stat(ofstream& out_p_clipped_filename, ofstream& out_n_clipped_filename, ofstream& out_p_mate_rname, ofstream& out_n_mate_rname, ofstream& out_cl, ofstream& out_germline, ofstream& out_clipped, const string& contig_dir, RefRepeatIntervalTree& ref_repeat_interval_tree, RefRepeatIntervalVector& stat_results, GeneIntervalTree& gene_interval_tree, GeneIntervalVector& gene_results, BamTools::BamReader& local_reader, const int64_t the_ram_boundary_start, const int64_t the_ram_boundary_end, const RAMIntervalEntry& positive_entry, const RAMIntervalEntry& negative_entry, const string& chr, const string& prefixed_chr, const int64_t read_length, const int64_t rmasker_filter_margin, const int64_t gene_margin, const int64_t mid_point) {
 	vector<ClippedEntry> clipped_entries;
 	int64_t max_pos_positive = 0;
 	int64_t max_pos_negative = 0;
@@ -11696,16 +11760,14 @@ void TEA::output_clipped_stat(ofstream& out_p_clipped_filename, ofstream& out_n_
 	}
 	bool debug = false;
 	for (auto& an_entry : clipped_entries) {
-		if("chr1" == an_entry.chr && 1508219 == an_entry.ram_start && 1508937 == an_entry.ram_end) {
-			debug = true;
-		}
-		if (1 == an_entry.strand) {
+		if (an_entry.strand == -1) {
 			int64_t delta = abs(an_entry.clipped_pos_rep - a_stat_entry.pbp);
 			if (delta <= options.jittering) {
 				an_entry.aligned = 1;
 			}
 //				df1$cpos[i] - ccnt$pbp
-		} else if (-1 == an_entry.strand) {
+		}
+		else if (an_entry.strand == 1) {
 			int64_t delta = abs(an_entry.clipped_pos_rep - a_stat_entry.nbp);
 			if (delta <= options.jittering) {
 				an_entry.aligned = 1;
@@ -11805,8 +11867,9 @@ void TEA::output_clipped_stat(ofstream& out_p_clipped_filename, ofstream& out_n_
 			a_stat_entry.conf = 2;
 		}
 	}
+
 	if (2 == a_stat_entry.conf) {
-		if (a_stat_entry.acrr >= options.min_acrr) {
+		if (a_stat_entry.ram >= options.ram_cutoff) {
 			if(debug) {
 				cout << "[TEA.output_clipped_stat] conf 3\n";
 			}
@@ -11814,25 +11877,25 @@ void TEA::output_clipped_stat(ofstream& out_p_clipped_filename, ofstream& out_n_
 		}
 	}
 	if (3 == a_stat_entry.conf) {
-		if (debug) {
-			cout << "tsd=" << a_stat_entry.tsd << "\n";
-		}
-		if (a_stat_entry.tsd >= options.min_tsd && a_stat_entry.tsd <= options.max_tsd) {
+		if (a_stat_entry.acrr >= options.min_acrr) {
 			if(debug) {
 				cout << "[TEA.output_clipped_stat] conf 4\n";
 			}
 			a_stat_entry.conf = 4;
 		}
 	}
-
 	if (4 == a_stat_entry.conf) {
-		if (a_stat_entry.ram >= options.ram_cutoff) {
+		if (debug) {
+			cout << "tsd=" << a_stat_entry.tsd << "\n";
+		}
+		if (a_stat_entry.tsd >= options.min_tsd && a_stat_entry.tsd <= options.max_tsd) {
 			if(debug) {
 				cout << "[TEA.output_clipped_stat] conf 5\n";
 			}
 			a_stat_entry.conf = 5;
 		}
 	}
+
 	if(options.no_oi && 0 == a_stat_entry.oi) {
 		if(debug) {
 			cout << "[TEA.output_clipped_stat] conf 0 due to oi == 0\n";
@@ -11862,7 +11925,7 @@ void TEA::output_clipped_stat(ofstream& out_p_clipped_filename, ofstream& out_n_
 	if(has_written_germline) {
 		int64_t n_valid_entries = 0;
 		for (auto& an_entry : clipped_entries) {
-			if (1 != an_entry.aligned || 1 != an_entry.strand || 0 == an_entry.clipped_seq.length()) {
+			if (1 != an_entry.aligned || an_entry.strand != 1 || 0 == an_entry.clipped_seq.length()) {
 				continue;
 			}
 			++n_valid_entries;
@@ -11874,7 +11937,7 @@ void TEA::output_clipped_stat(ofstream& out_p_clipped_filename, ofstream& out_n_
 			ofstream out_fq(fq_name, ios::binary);
 			int64_t n_cnt = 0;
 			for (auto& an_entry : clipped_entries) {
-				if (1 != an_entry.aligned || 1 != an_entry.strand || 0 == an_entry.clipped_seq.length() ) {
+				if (1 != an_entry.aligned || an_entry.strand != 1 || 0 == an_entry.clipped_seq.length() ) {
 					continue;
 				}
 				out_fq << (boost::format(">cr%d\n%s\n") % n_cnt % an_entry.clipped_seq).str();
@@ -11891,7 +11954,7 @@ void TEA::output_clipped_stat(ofstream& out_p_clipped_filename, ofstream& out_n_
 	if(has_written_germline) {
 		int64_t n_valid_entries = 0;
 		for (auto& an_entry : clipped_entries) {
-			if (1 != an_entry.aligned || -1 != an_entry.strand || 0 == an_entry.clipped_seq.length()) {
+			if (1 != an_entry.aligned || an_entry.strand != -1 || 0 == an_entry.clipped_seq.length()) {
 				continue;
 			}
 			++n_valid_entries;
@@ -11903,7 +11966,7 @@ void TEA::output_clipped_stat(ofstream& out_p_clipped_filename, ofstream& out_n_
 			ofstream out_fq(fq_name, ios::binary);
 			int64_t n_cnt = 0;
 			for (auto& an_entry : clipped_entries) {
-				if (1 != an_entry.aligned || -1 != an_entry.strand || 0 == an_entry.clipped_seq.length()) {
+				if (1 != an_entry.aligned || an_entry.strand != -1 || 0 == an_entry.clipped_seq.length()) {
 					continue;
 				}
 				out_fq << (boost::format(">cr%d\n%s\n") % n_cnt % an_entry.clipped_seq).str();
@@ -12031,18 +12094,18 @@ void TEA::output_clipped_stat_v(ofstream& out_p_clipped_filename, ofstream& out_
 			if (s2n_clipped < 0) {
 				s2n_clipped = 0;
 			}
-
 			a_stat_entry.s2n += 3 * s2n_clipped;
 		}
 	}
 	for (auto& an_entry : clipped_entries) {
-		if (1 == an_entry.strand) {
+		if (an_entry.strand == -1) {
 			int64_t delta = abs(an_entry.clipped_pos_rep - a_stat_entry.pbp);
 			if (delta <= options.jittering) {
 				an_entry.aligned = 1;
 			}
 //				df1$cpos[i] - ccnt$pbp
-		} else if (-1 == an_entry.strand) {
+		}
+		else if (an_entry.strand == 1) {
 			int64_t delta = abs(an_entry.clipped_pos_rep - a_stat_entry.nbp);
 			if (delta <= options.jittering) {
 				an_entry.aligned = 1;
@@ -12146,7 +12209,7 @@ void TEA::output_clipped_stat_v(ofstream& out_p_clipped_filename, ofstream& out_
 	{
 		int64_t n_valid_entries = 0;
 		for (auto& an_entry : clipped_entries) {
-			if (1 != an_entry.aligned || 1 != an_entry.strand || 0 == an_entry.clipped_seq.length()) {
+			if (1 != an_entry.aligned || an_entry.strand != 1 || 0 == an_entry.clipped_seq.length()) {
 				continue;
 			}
 			++n_valid_entries;
@@ -12158,7 +12221,7 @@ void TEA::output_clipped_stat_v(ofstream& out_p_clipped_filename, ofstream& out_
 			ofstream out_fq(fq_name, ios::binary);
 			int64_t n_cnt = 0;
 			for (auto& an_entry : clipped_entries) {
-				if (1 != an_entry.aligned || 1 != an_entry.strand || 0 == an_entry.clipped_seq.length()) {
+				if (1 != an_entry.aligned || an_entry.strand != 1 || 0 == an_entry.clipped_seq.length()) {
 					continue;
 				}
 				out_fq << (boost::format(">cr%d\n%s\n") % n_cnt % an_entry.clipped_seq).str();
@@ -12175,7 +12238,7 @@ void TEA::output_clipped_stat_v(ofstream& out_p_clipped_filename, ofstream& out_
 	{
 		int64_t n_valid_entries = 0;
 		for (auto& an_entry : clipped_entries) {
-			if (1 != an_entry.aligned || -1 != an_entry.strand || 0 == an_entry.clipped_seq.length()) {
+			if (1 != an_entry.aligned || an_entry.strand != -1 || 0 == an_entry.clipped_seq.length()) {
 				continue;
 			}
 			++n_valid_entries;
@@ -12187,7 +12250,7 @@ void TEA::output_clipped_stat_v(ofstream& out_p_clipped_filename, ofstream& out_
 			ofstream out_fq(fq_name, ios::binary);
 			int64_t n_cnt = 0;
 			for (auto& an_entry : clipped_entries) {
-				if (1 != an_entry.aligned || -1 != an_entry.strand || 0 == an_entry.clipped_seq.length()) {
+				if (1 != an_entry.aligned || an_entry.strand != -1 || 0 == an_entry.clipped_seq.length()) {
 					continue;
 				}
 				out_fq << (boost::format(">cr%d\n%s\n") % n_cnt % an_entry.clipped_seq).str();
