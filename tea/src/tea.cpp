@@ -13,7 +13,7 @@
 using namespace std;
 
 int main(int argc, char **argv) {
-	cout << "tea main tea-170814-3-cap3-slipage-issue \n";
+	cout << "tea main tea-b170920-pre_hc_and_otherbugfix \n";
 	setvbuf(stdout, NULL, _IONBF, 0);
 	tea::TEAOptionParser option_parser(argc, argv);
 	castle::TimeChecker checker;

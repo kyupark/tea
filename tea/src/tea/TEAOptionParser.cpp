@@ -78,7 +78,7 @@ void TEAOptionParser::show_help() {
 	exit(1);
 }
 TEAOptionParser::TEAOptionParser() :
-		prefix("-"), aln_param("-l 40 -k 2 -n 3"), samse_param("-n 1000"), ref("hg19"), rasym("ra"), assembler("cap3"),
+		prefix("-"), aln_param(""), samse_param("-n 1000"), ref("hg19"), rasym("ra"), assembler("cap3"),
 		assembler_param("-i 21 -j 31 -o 16 -s 251 -p 70"), start_step("FASTA"),
 		n_cores(1), qcutoff(2), max_mismatches(9), min_matches(25), min_polyAT(10),
 		min_ram(3), ram_cutoff(6), jittering(2), bp_margin(50), min_acr(2), min_acrr(0.4), min_tsd(-20), max_tsd(50), min_out_conf(5), min_clipped_len(25),
@@ -96,7 +96,7 @@ TEAOptionParser::TEAOptionParser() :
 	sub_name_map["rid"] = 4;
 }
 
-TEAOptionParser::TEAOptionParser(int argc, char **argv) : prefix("-"), aln_param("-l 40 -k 2 -n 3"), samse_param("-n 1000"), ref("hg19"), rasym("ra"), assembler("cap3"),
+TEAOptionParser::TEAOptionParser(int argc, char **argv) : prefix("-"), aln_param(""), samse_param("-n 1000"), ref("hg19"), rasym("ra"), assembler("cap3"),
 		assembler_param("-i 21 -j 31 -o 16 -s 251 -p 70"), start_step("FASTA"),
 		qcutoff(2), max_mismatches(9), min_matches(25), min_polyAT(10),
 		min_ram(3), ram_cutoff(6), jittering(2), bp_margin(50), min_acr(2), min_acrr(0.4), min_tsd(-20), max_tsd(50), min_out_conf(5), min_clipped_len(25),

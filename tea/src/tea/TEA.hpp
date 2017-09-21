@@ -289,7 +289,6 @@ inline int64_t TEA::get_number_of_low_qualities_at_end(const string& a_qual, con
 
 inline int64_t TEA::get_cpos(int32_t pos, std::vector<BamTools::CigarOp>& cigar, const string& qual, int8_t strand) {
 	int32_t cpos = pos;
-//	#print "pos: $pos, cigar: $cigar, qual: $qual, strand: $strand\n";
 
 	if (1 == strand) {
 		return cpos;
@@ -311,16 +310,9 @@ inline int64_t TEA::get_cpos(int32_t pos, std::vector<BamTools::CigarOp>& cigar,
 		}
 		gap += a_cigar.Length;
 	}
-//	$cigar =~ s/^\d+S(.*)/$1/;
-//	my @cnt = split(/[MINHPSD]/, $cigar);
-//	my @chr = split(/\d+/, $cigar);
-//	shift @chr;
-//	for (my $i=0; $i<@chr; $i++) {
-//		if ($chr[$i] ne "I" && $chr[$i] ne "S") { $gap += $cnt[$i] }
-//	}
+
 	cpos += gap;
-//	#print "gap:$gap\n";
-//	#print "cpos: $cpos\n";
+
 	return -cpos;
 }
 
