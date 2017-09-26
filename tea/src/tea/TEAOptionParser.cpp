@@ -78,11 +78,8 @@ void TEAOptionParser::show_help() {
 	exit(1);
 }
 TEAOptionParser::TEAOptionParser() :
-		prefix("-"), aln_param(""), samse_param("-n 1000"), ref("hg19"), rasym("ra"), assembler("cap3"),
-		assembler_param("-i 21 -j 31 -o 16 -s 251 -p 70"), start_step("FASTA"),
-		n_cores(1), qcutoff(2), max_mismatches(9), min_matches(25), min_polyAT(10),
-		min_ram(3), ram_cutoff(6), jittering(2), bp_margin(50), min_acr(2), min_acrr(0.4), min_tsd(-20), max_tsd(50), min_out_conf(5), min_clipped_len(25),
-		is_force(false), no_clipped(false), oneside_ram(false), exo(false), bam_chr(true), merge_family(true), annot_oi(true), stringent_pair(false), annot_gene(true), no_oi(true), is_transduction(false), is_orphan(false), is_cleaning(false), is_sampe(false), is_mem(false) {
+		prefix("-"), aln_param(""), samse_param("-n 1000"), ref("hg19"), rasym("ra"), assembler("cap3"), assembler_param("-i 21 -j 31 -o 16 -s 251 -p 70"), start_step("FASTA"), n_cores(1), qcutoff(2), max_mismatches(9), min_matches(25), min_polyAT(10),	min_ram(3), ram_cutoff(6), jittering(2), bp_margin(50), min_acr(2), min_acrr(0.4), min_tsd(-20), max_tsd(50), min_out_conf(5), min_clipped_len(25), is_force(false), no_clipped(false), oneside_ram(false), exo(false), bam_chr(true), merge_family(true), annot_oi(true), stringent_pair(false), annot_gene(true), no_oi(true), is_transduction(false), is_orphan(false), is_cleaning(false), is_sampe(false), is_mem(false), including_head_clip(false) {
+
 	ram_cutoff = min_ram;
 	sub_name_map["FASTA"] = 0;
 	sub_name_map["fasta"] = 0;
@@ -96,11 +93,8 @@ TEAOptionParser::TEAOptionParser() :
 	sub_name_map["rid"] = 4;
 }
 
-TEAOptionParser::TEAOptionParser(int argc, char **argv) : prefix("-"), aln_param(""), samse_param("-n 1000"), ref("hg19"), rasym("ra"), assembler("cap3"),
-		assembler_param("-i 21 -j 31 -o 16 -s 251 -p 70"), start_step("FASTA"),
-		qcutoff(2), max_mismatches(9), min_matches(25), min_polyAT(10),
-		min_ram(3), ram_cutoff(6), jittering(2), bp_margin(50), min_acr(2), min_acrr(0.4), min_tsd(-20), max_tsd(50), min_out_conf(5), min_clipped_len(25),
-		is_force(false), no_clipped(false), oneside_ram(false), exo(false), bam_chr(true), merge_family(true), annot_oi(true), stringent_pair(false), annot_gene(true), no_oi(true), is_transduction(false), is_orphan(false), is_cleaning(false), is_sampe(false), is_mem(false) {
+TEAOptionParser::TEAOptionParser(int argc, char **argv) : prefix("-"), aln_param(""), samse_param("-n 1000"), ref("hg19"), rasym("ra"), assembler("cap3"), assembler_param("-i 21 -j 31 -o 16 -s 251 -p 70"), start_step("FASTA"), qcutoff(2), max_mismatches(9), min_matches(25), min_polyAT(10), min_ram(3), ram_cutoff(6), jittering(2), bp_margin(50), min_acr(2), min_acrr(0.4), min_tsd(-20), max_tsd(50), min_out_conf(5), min_clipped_len(25), is_force(false), no_clipped(false), oneside_ram(false), exo(false), bam_chr(true), merge_family(true), annot_oi(true), stringent_pair(false), annot_gene(true), no_oi(true), is_transduction(false), is_orphan(false), is_cleaning(false), is_sampe(false), is_mem(false), including_head_clip(false) {
+
 	string cmd = "[TEAOptionParser.TEAOptionParser] cmd: ";
 	for(int i = 0; i < argc; ++i) {
 		cmd += string(argv[i]) + " ";
@@ -257,6 +251,8 @@ TEAOptionParser::TEAOptionParser(int argc, char **argv) : prefix("-"), aln_param
 			} else if("--comp" == argument) {
 				string value(argv[i + 1]);
 				comp_out = value;
+			} else if("--include_head_clip" == argument) {
+				including_head_clip = true;
 			}
 		} catch (exception& ex) {
 			cout << ex.what() << "\n";
