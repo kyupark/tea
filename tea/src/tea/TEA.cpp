@@ -11418,9 +11418,9 @@ void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& ma
 				an_entry.chr = tmp_chr_name;
 				an_entry.ram_start = the_ram_boundary_start;
 				an_entry.ram_end = the_ram_boundary_end;
-				an_entry.strand = -1;
+				an_entry.strand = 1;
 				if (local_alignment_entry.IsReverseStrand()) {
-					an_entry.strand = -2;
+					an_entry.strand = 2;
 				}
 
 				set<string> alt_rep;
@@ -11499,9 +11499,9 @@ void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& ma
 				an_entry.chr = tmp_chr_name;
 				an_entry.ram_start = the_ram_boundary_start;
 				an_entry.ram_end = the_ram_boundary_end;
-				an_entry.strand = 1;
+				an_entry.strand = -1;
 				if (!local_alignment_entry.IsReverseStrand()) {
-					an_entry.strand = 2;
+					an_entry.strand = -2;
 				}
 				set<string> alt_rep;
 				alt_rep.insert(positive_entry.value.rep_repeat.begin(), positive_entry.value.rep_repeat.end());
@@ -11724,7 +11724,7 @@ void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& ma
 			an_entry.clipped_qual_rep = an_entry.clipped_qual_qual_trimmed;
 		}
 
-		if (1 == an_entry.strand) {
+		if (an_entry.strand > 0) {
 			int64_t delta = abs(an_entry.clipped_pos - max_pos_positive);
 			int64_t delta_qual = abs(an_entry.clipped_pos_qual_trimmed - max_pos_positive);
 			int64_t selected_delta = min(delta, delta_qual);
@@ -11760,7 +11760,7 @@ void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& ma
 					cout << "[TEA.get_clipped_entries] single entry - 1\n";
 				}
 			}
-		} else if (-1 == an_entry.strand) {
+		} else if (an_entry.strand < 0) {
 			int64_t delta = abs(an_entry.clipped_pos - max_pos_negative);
 			int64_t delta_qual = abs(an_entry.clipped_pos_qual_trimmed - max_pos_negative);
 			int64_t selected_delta = min(delta, delta_qual);
