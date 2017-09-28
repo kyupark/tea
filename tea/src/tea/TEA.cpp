@@ -152,7 +152,6 @@ void TEA::run_rid() {
 		cbam_file = options.prefix + ".softclips.consd.bam";
 	}
 
-//	string cl_dir = options.prefix + "/cluster_" + options.rasym + "m";
 	string cl_dir = options.output_dir + "-" + options.rasym + "m";
 	string naive_prefix = options.naive_prefix;
 	string contig_dir = options.prefix + "/assembly_" + options.rasym + "m";
@@ -161,7 +160,6 @@ void TEA::run_rid() {
 		if (!options.no_clipped && (options.is_sampe || options.is_mem)) {
 			cbam_file = options.working_prefix + ".softclips.consd.bam";
 		}
-//		cl_dir = options.working_prefix + "/cluster_" + options.rasym + "m";
 		cl_dir = options.output_dir + "-" + options.rasym + "m";
 		contig_dir = options.working_prefix + "/assembly_" + options.rasym + "m";
 	}
@@ -11332,7 +11330,6 @@ void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& ma
 	while (local_reader.GetNextAlignment(local_alignment_entry)) {
 		auto cigars = local_alignment_entry.CigarData;
 		auto cigars_clipped_pos = cigars;
-
 		vector<string> the_cigar;
 		for (auto c : cigars) {
 			the_cigar.push_back(boost::lexical_cast<string>(c.Length) + boost::lexical_cast<string>(c.Type));
@@ -11534,14 +11531,14 @@ void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& ma
 			if(an_entry.clipped_pos != an_entry.clipped_pos_qual_trimmed) {
 				++pos_frequency_positive[an_entry.clipped_pos_qual_trimmed];
 			}
-			++n_positive_clipped_reads;
+//			++n_positive_clipped_reads;
 		}
 		else if (an_entry.strand < 0) {
 			++pos_frequency_negative[an_entry.clipped_pos];
 			if(an_entry.clipped_pos != an_entry.clipped_pos_qual_trimmed) {
 				++pos_frequency_negative[an_entry.clipped_pos_qual_trimmed];
 			}
-			++n_negative_clipped_reads;
+//			++n_negative_clipped_reads;
 		}
 	}
 
@@ -11583,7 +11580,6 @@ void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& ma
 			}
 		}
 	}
-
 
 	// the bp in forward strand is strongly supported, but not the bp in reverse strand
 	if(max_pos_freq_positive > max_pos_freq_negative || 1 == n_positive_ties) {
@@ -11713,7 +11709,6 @@ void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& ma
 	}
 
 	// if it were not caught by the above conditional statements, then both signals would be strongly supported.
-
 	for (auto& an_entry : clipped_entries) {
 		an_entry.clipped_pos_rep = an_entry.clipped_pos;
 		an_entry.clipped_seq_rep = an_entry.clipped_seq;
@@ -11799,19 +11794,28 @@ void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& ma
 			}
 		}
 	}
-//	for (auto& an_entry : clipped_entries) {
-//		if (1 == an_entry.strand) {
-//			if (an_entry.clipped_pos_rep == max_pos_positive) {
-//				++n_aligned_clipped_positive;
-//			}
-//		} else if (-1 == an_entry.strand) {
-//			if (an_entry.clipped_pos_rep == max_pos_negative) {
-//				++n_aligned_clipped_negative;
-//			}
-//		}
-//	}
+
 	n_aligned_clipped_positive = max_pos_freq_positive;
 	n_aligned_clipped_negative = max_pos_freq_negative;
+
+	for (auto& an_entry : clipped_entries) {
+		if (an_entry.strand > 0) {
+			if(an_entry.strand == 1
+					|| max_pos_positive == an_entry.clipped_pos
+					|| max_pos_positive == an_entry.clipped_pos_qual_trimmed) {
+				++n_positive_clipped_reads;
+			}
+		}
+		else if (an_entry.strand < 0) {
+			if(an_entry.strand == -1
+					|| max_pos_negative == an_entry.clipped_pos
+					|| max_pos_negative == an_entry.clipped_pos_qual_trimmed) {
+				++n_negative_clipped_reads;
+			}
+		}
+	}
+
+
 }
 
 void TEA::output_clipped_stat(ofstream& out_p_clipped_filename, ofstream& out_n_clipped_filename, ofstream& out_p_mate_rname, ofstream& out_n_mate_rname, ofstream& out_cl, ofstream& out_germline, ofstream& out_clipped, const string& contig_dir, RefRepeatIntervalTree& ref_repeat_interval_tree,
@@ -12492,11 +12496,7 @@ void TEA::output_mate_fa(boost::unordered_map<string, boost::unordered_map<int8_
 	vector<function<void()> > tasks;
 
 	tasks.push_back([&] {
-//		string c = "22";
 		for(auto& c : chr_names) {
-//			auto& c = c_entry.first;
-
-
 			string tmp_chr_name(c);
 			if(string::npos == tmp_chr_name.find("chr")) {
 				tmp_chr_name = "chr" + c;
@@ -12506,19 +12506,12 @@ void TEA::output_mate_fa(boost::unordered_map<string, boost::unordered_map<int8_
 			string line;
 			string clipped_file = cl_prefix + "." + tmp_chr_name + ".p.mate.rname";
 			ifstream in_clipped(clipped_file, ios::binary);
-			// to ignore the first line
-//			if(!headless) {
-//				getline(in_clipped, line);
-//			}
+
 			while(getline(in_clipped, line, '\n')) {
 				castle::StringUtils::tokenize(line, delim_tab, data);
 				string a_key = data[4];
 				int64_t a_pos = boost::lexical_cast<int64_t>(data[3]);
 				string file_name_prefix = naive_prefix + "." + tmp_chr_name + "." + data[0] + "." + data[1] + "." + data[2];
-//				const bool debug = ("chr14" == tmp_chr_name) && ("34139887" == data[0]) && ("34140417" == data[1]);
-//				if(debug) {
-//					cout << "[TEA.output_mate_fa] positive mate: " << a_key << ":" << data[2] << "\n";
-//				}
 				a_positive_repeat_map[a_key].file_name_prefix = file_name_prefix;
 				a_positive_repeat_map[a_key].pos = a_pos;
 				a_positive_repeat_map[a_key].chr = c;
@@ -12527,7 +12520,6 @@ void TEA::output_mate_fa(boost::unordered_map<string, boost::unordered_map<int8_
 	});
 
 	tasks.push_back([&] {
-//		string c = "22";
 		for(auto& c_entry : ram) {
 			auto& c = c_entry.first;
 			string tmp_chr_name(c);
@@ -12539,17 +12531,12 @@ void TEA::output_mate_fa(boost::unordered_map<string, boost::unordered_map<int8_
 			string line;
 			string clipped_file = cl_prefix + "." + tmp_chr_name + ".n.mate.rname";
 			ifstream in_clipped(clipped_file, ios::binary);
-			// to ignore the first line
-//			getline(in_clipped, line);
+
 			while(getline(in_clipped, line, '\n')) {
 				castle::StringUtils::tokenize(line, delim_tab, data);
 				string a_key = data[4];
 				int64_t a_pos = boost::lexical_cast<int64_t>(data[3]);
 				string file_name_prefix = naive_prefix + "." + tmp_chr_name + "." + data[0] + "." + data[1] + "." + data[2];
-//				const bool debug = ("chr14" == tmp_chr_name) && ("34139887" == data[0]) && ("34140417" == data[1]);
-//				if(debug) {
-//					cout << "[TEA.output_mate_fa] negative mate: " << a_key << ":" << data[2] << "\n";
-//				}
 				a_negative_repeat_map[a_key].file_name_prefix = file_name_prefix;
 				a_negative_repeat_map[a_key].pos = a_pos;
 				a_negative_repeat_map[a_key].chr = c;
@@ -12557,7 +12544,6 @@ void TEA::output_mate_fa(boost::unordered_map<string, boost::unordered_map<int8_
 		}
 	});
 	tasks.push_back([&] {
-		//		string c = "22";
 		string line;
 		for(auto& c_entry : ram) {
 			auto& c = c_entry.first;
@@ -12573,7 +12559,6 @@ void TEA::output_mate_fa(boost::unordered_map<string, boost::unordered_map<int8_
 		}
 	});
 	tasks.push_back([&] {
-		//		string c = "22";
 		string line;
 		for(auto& c_entry : ram) {
 			auto& c = c_entry.first;
@@ -12593,13 +12578,10 @@ void TEA::output_mate_fa(boost::unordered_map<string, boost::unordered_map<int8_
 			<< ", # negative mates: " << a_negative_repeat_map.size() << "\n";
 
 	string disc_file_name = options.prefix + ".disc.num.bam";
-
 	string cl_disc_file_name = options.prefix + ".cl.sorted.disc.num.bam";
-
 	if("tea_v" == options.program_name) {
 		disc_file_name = options.prefix + ".cl.sorted.bam";
 	}
-
 	if (!options.working_dir.empty()) {
 		disc_file_name = options.working_prefix + ".disc.num.bam";
 		if("tea_v" == options.program_name) {
@@ -12607,6 +12589,7 @@ void TEA::output_mate_fa(boost::unordered_map<string, boost::unordered_map<int8_
 		}
 		cl_disc_file_name = options.working_prefix + ".cl.sorted.disc.num.bam";
 	}
+
 	string disc_bai_name = disc_file_name + ".bai";
 	string disc_bni_name = disc_file_name + ".bni";
 	string cl_disc_bai_name = cl_disc_file_name + ".bai";
@@ -12616,16 +12599,13 @@ void TEA::output_mate_fa(boost::unordered_map<string, boost::unordered_map<int8_
 	boost::unordered_map<string, vector<string>> negative_mate_reads;
 
 	int64_t size_block = 8192000;
-//	vector<meerkat::BlockBoundary> fixed_size_blocks;
 
 	cout << "[TEA.output_mate_fa] collect mate reads from disc file\n";
-//	_output_mate_fa_serial(positive_mate_reads, negative_mate_reads, disc_file_name, a_positive_repeat_map, a_negative_repeat_map);
+
 	vector<meerkat::BlockBoundary> local_fixed_size_blocks;
 	vector<meerkat::BlockBoundary> local_unmapped_included_blocks;
 	vector<meerkat::BlockBoundary> local_independent_blocks;
 	collect_boundaries_pos(local_fixed_size_blocks, local_unmapped_included_blocks, local_independent_blocks, disc_file_name, disc_bai_name, disc_bni_name, size_block);
-//	vector<meerkat::BlockBoundary> actual_blocks = local_unmapped_included_blocks;
-//	collect_boundaries(fixed_size_blocks, disc_file_name, size_block);
 	_output_mate_fa(positive_mate_reads, negative_mate_reads, local_unmapped_included_blocks, disc_file_name, a_positive_repeat_map, a_negative_repeat_map);
 	bool found_clipped_reads = false;
 	for(auto& an_entry : a_positive_repeat_map) {
@@ -12647,7 +12627,7 @@ void TEA::output_mate_fa(boost::unordered_map<string, boost::unordered_map<int8_
 
 	if(found_clipped_reads) {
 		cout << "[TEA.output_mate_fa] collect mate reads from cl disc file\n";
-//		_output_mate_fa_serial(positive_mate_reads, negative_mate_reads, cl_disc_file_name, a_positive_repeat_map, a_negative_repeat_map);
+
 		vector<meerkat::BlockBoundary> local_fixed_size_blocks;
 		vector<meerkat::BlockBoundary> local_unmapped_included_blocks;
 		vector<meerkat::BlockBoundary> local_independent_blocks;
@@ -12697,86 +12677,61 @@ void TEA::output_mate_fa(boost::unordered_map<string, boost::unordered_map<int8_
 		ofstream all_files(all_assembly_files, ios::binary);
 		cout << "[TEA.output_mate_fa] adds positive FASTA files\n";
 		for(auto& an_entry : positive_mate_reads) {
-	//		tasks.push_back([&]{
-				auto& file_name_prefix = an_entry.first;
-				string pos_fa_name = (boost::format("%s/%s.pos.fa") % contig_dir % file_name_prefix).str();
-				if(!boost::filesystem::exists(pos_fa_name)) {
-					continue;
-				}
-				all_files << pos_fa_name << "\n";
-	//			string assembler_cmd = (boost::format("%s %s %s > %s.log") % options.assembler % pos_fa_name % options.assembler_param % pos_fa_name).str();
-	//			all_cmds << assembler_cmd << "\n";
-	//			system(assembler_cmd.c_str());
-	//		});
+			auto& file_name_prefix = an_entry.first;
+			string pos_fa_name = (boost::format("%s/%s.pos.fa") % contig_dir % file_name_prefix).str();
+			if(!boost::filesystem::exists(pos_fa_name)) {
+				continue;
+			}
+			all_files << pos_fa_name << "\n";
 		}
 		cout << "[TEA.output_mate_fa] adds reverse positive FASTA files\n";
 		for(auto& an_entry : positive_mate_reads) {
-	//		tasks.push_back([&]{
-				auto& file_name_prefix = an_entry.first;
-				string rpos_fa_name = (boost::format("%s/%s.rpos.fa") % contig_dir % file_name_prefix).str();
-				if(!boost::filesystem::exists(rpos_fa_name)) {
-					continue;
-				}
-				all_files << rpos_fa_name << "\n";
-	//			string assembler_cmd = (boost::format("%s %s %s > %s.log") % options.assembler % rpos_fa_name % options.assembler_param % rpos_fa_name).str();
-	//			system(assembler_cmd.c_str());
-	//		});
+			auto& file_name_prefix = an_entry.first;
+			string rpos_fa_name = (boost::format("%s/%s.rpos.fa") % contig_dir % file_name_prefix).str();
+			if(!boost::filesystem::exists(rpos_fa_name)) {
+				continue;
+			}
+			all_files << rpos_fa_name << "\n";
 		}
 		cout << "[TEA.output_mate_fa] adds negative FASTA files\n";
 		for(auto& an_entry : negative_mate_reads) {
-	//		tasks.push_back([&]{
-				auto& file_name_prefix = an_entry.first;
-				string neg_fa_name = (boost::format("%s/%s.neg.fa") % contig_dir % file_name_prefix).str();
-				if(!boost::filesystem::exists(neg_fa_name)) {
-					continue;
-				}
-				all_files << neg_fa_name << "\n";
-	//			string assembler_cmd = (boost::format("%s %s %s > %s.log") % options.assembler % neg_fa_name % options.assembler_param % neg_fa_name).str();
-	//			system(assembler_cmd.c_str());
-	//		});
+			auto& file_name_prefix = an_entry.first;
+			string neg_fa_name = (boost::format("%s/%s.neg.fa") % contig_dir % file_name_prefix).str();
+			if(!boost::filesystem::exists(neg_fa_name)) {
+				continue;
+			}
+			all_files << neg_fa_name << "\n";
 		}
 		cout << "[TEA.output_mate_fa] adds reverse negative FASTA files\n";
 		for(auto& an_entry : negative_mate_reads) {
-	//		tasks.push_back([&]{
-				auto& file_name_prefix = an_entry.first;
-				string rneg_fa_name = (boost::format("%s/%s.rneg.fa") % contig_dir % file_name_prefix).str();
-				if(!boost::filesystem::exists(rneg_fa_name)) {
-					continue;
-				}
-				all_files << rneg_fa_name << "\n";
-	//			string assembler_cmd = (boost::format("%s %s %s > %s.log") % options.assembler % rneg_fa_name % options.assembler_param % rneg_fa_name).str();
-	//			system(assembler_cmd.c_str());
-	//		});
+			auto& file_name_prefix = an_entry.first;
+			string rneg_fa_name = (boost::format("%s/%s.rneg.fa") % contig_dir % file_name_prefix).str();
+			if(!boost::filesystem::exists(rneg_fa_name)) {
+				continue;
+			}
+			all_files << rneg_fa_name << "\n";
 		}
 		cout << "[TEA.output_mate_fa] adds positive clipped FASTA files\n";
 		for(auto& a_prefix: a_positive_clipped_prefixes) {
-	//		tasks.push_back([&]{
-				string pos_fa_name = (boost::format("%s/%s.pos.fa") % contig_dir % a_prefix).str();
-				if(!boost::filesystem::exists(pos_fa_name)) {
-					continue;
-				}
-				all_files << pos_fa_name << "\n";
-	//			string assembler_cmd = (boost::format("%s %s %s > %s.log") % options.assembler % pos_fa_name % options.assembler_param % pos_fa_name).str();
-	//			system(assembler_cmd.c_str());
-	//		});
+			string pos_fa_name = (boost::format("%s/%s.pos.fa") % contig_dir % a_prefix).str();
+			if(!boost::filesystem::exists(pos_fa_name)) {
+				continue;
+			}
+			all_files << pos_fa_name << "\n";
 		}
 
 		cout << "[TEA.output_mate_fa] adds negative clipped FASTA files\n";
 		for(auto& a_prefix: a_negative_clipped_prefixes) {
-	//		tasks.push_back([&]{
-				string neg_fa_name = (boost::format("%s/%s.neg.fa") % contig_dir % a_prefix).str();
-				if(!boost::filesystem::exists(neg_fa_name)) {
-					continue;
-				}
-				all_files << neg_fa_name << "\n";
-	//			string assembler_cmd = (boost::format("%s %s %s > %s.log") % options.assembler % neg_fa_name % options.assembler_param % neg_fa_name).str();
-	//			system(assembler_cmd.c_str());
-	//		});
+			string neg_fa_name = (boost::format("%s/%s.neg.fa") % contig_dir % a_prefix).str();
+			if(!boost::filesystem::exists(neg_fa_name)) {
+				continue;
+			}
+			all_files << neg_fa_name << "\n";
 		}
 		cout << "[TEA.output_mate_fa] adds germline FASTA files\n";
 		bool headless = false;
+
 		for (auto& c : chr_names) {
-//			auto& c = c_entry.first;
 			string tmp_chr_name(c);
 			if(string::npos == tmp_chr_name.find("chr")) {
 				tmp_chr_name = "chr" + c;
@@ -12817,7 +12772,6 @@ void TEA::output_mate_fa(boost::unordered_map<string, boost::unordered_map<int8_
 			headless = true;
 		}
 	}
-//	castle::ParallelRunner::run_unbalanced_load(n_cores, tasks);
 	cout << "[TEA.output_mate_fa] runs assembling\n";
 	string out_log_file = options.prefix + ".assemblies.log";
 	if(!options.working_dir.empty()) {
