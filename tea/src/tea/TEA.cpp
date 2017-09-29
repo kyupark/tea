@@ -12030,54 +12030,56 @@ void TEA::output_clipped_stat(ofstream& out_p_clipped_filename, ofstream& out_n_
 	}
 	const int64_t half_min_acr = options.min_acr / (double) 2;
 	if (!positive_entry.value.pos.empty() && !negative_entry.value.pos.empty()) {
-		if (a_stat_entry.acr >= options.min_acr && a_stat_entry.pacr >= half_min_acr && a_stat_entry.nacr >= half_min_acr) {
-			if(debug) {
-				cout << "[TEA.output_clipped_stat] conf 2-1\n";
-			}
-			a_stat_entry.conf = 2;
-		}
-	} else {
-		if (a_stat_entry.acr >= options.min_acr) {
-			if(debug) {
-				cout << "[TEA.output_clipped_stat] conf 2-2\n";
-			}
-			a_stat_entry.conf = 2;
-		}
-	}
-	if (2 == a_stat_entry.conf) {
-		if (a_stat_entry.acrr >= options.min_acrr) {
-			if(debug) {
-				cout << "[TEA.output_clipped_stat] conf 3\n";
-			}
-			a_stat_entry.conf = 3;
-		}
-	}
-	if (3 == a_stat_entry.conf) {
-		if (debug) {
-			cout << "tsd=" << a_stat_entry.tsd << "\n";
-		}
-		if (a_stat_entry.tsd >= options.min_tsd && a_stat_entry.tsd <= options.max_tsd) {
-			if(debug) {
-				cout << "[TEA.output_clipped_stat] conf 4\n";
-			}
-			a_stat_entry.conf = 4;
-		}
-	}
+	        if (a_stat_entry.acr >= options.min_acr && a_stat_entry.pacr >= half_min_acr && a_stat_entry.nacr >= half_min_acr) {
+	            if(debug) {
+	                cout << "[TEA.output_clipped_stat] conf 2-1\n";
+	            }
+	            a_stat_entry.conf = 2;
+	        }
+	    } else {
+	        if (a_stat_entry.acr >= options.min_acr) {
+	            if(debug) {
+	                cout << "[TEA.output_clipped_stat] conf 2-2\n";
+	            }
+	            a_stat_entry.conf = 2;
+	        }
+	    }
 
-	if (4 == a_stat_entry.conf) {
-		if (a_stat_entry.ram >= options.ram_cutoff) {
-			if(debug) {
-				cout << "[TEA.output_clipped_stat] conf 5\n";
-			}
-			a_stat_entry.conf = 5;
-		}
-	}
-	if(options.no_oi && 0 == a_stat_entry.oi) {
-		if(debug) {
-			cout << "[TEA.output_clipped_stat] conf 0 due to oi == 0\n";
-		}
-		a_stat_entry.conf = 0;
-	}
+	    if (2 == a_stat_entry.conf) {
+	        if (a_stat_entry.ram >= options.ram_cutoff) {
+	            if(debug) {
+	                cout << "[TEA.output_clipped_stat] conf 3\n";
+	            }
+	            a_stat_entry.conf = 3;
+	        }
+	    }
+	    if (3 == a_stat_entry.conf) {
+	        if (a_stat_entry.acrr >= options.min_acrr) {
+	            if(debug) {
+	                cout << "[TEA.output_clipped_stat] conf 4\n";
+	            }
+	            a_stat_entry.conf = 4;
+	        }
+	    }
+	    if (4 == a_stat_entry.conf) {
+	        if (debug) {
+	            cout << "tsd=" << a_stat_entry.tsd << "\n";
+	        }
+	        if (a_stat_entry.tsd >= options.min_tsd && a_stat_entry.tsd <= options.max_tsd) {
+	            if(debug) {
+	                cout << "[TEA.output_clipped_stat] conf 5\n";
+	            }
+	            a_stat_entry.conf = 5;
+	        }
+	    }
+
+	    if(options.no_oi && 0 == a_stat_entry.oi) {
+	        if(debug) {
+	            cout << "[TEA.output_clipped_stat] conf 0 due to oi == 0\n";
+	        }
+	        a_stat_entry.conf = 0;
+	    }
+
 	bool has_written_germline = false;
 	if(options.oneside_ram) {
 		if (a_stat_entry.conf >= options.min_out_conf) {
