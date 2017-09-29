@@ -13,7 +13,7 @@
 using namespace std;
 
 int main(int argc, char **argv) {
-	cout << "tea main tea-d170929d-conf_logic \n";
+	cout << "tea main tea-d170929e-conf_logic-removed_tie \n";
 	setvbuf(stdout, NULL, _IONBF, 0);
 	tea::TEAOptionParser option_parser(argc, argv);
 	castle::TimeChecker checker;
