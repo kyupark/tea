@@ -11630,7 +11630,102 @@ void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& ma
 	}
 
 	// the bp in reverse strand is strongly supported, but not the bp in forward strand
-	else if(max_pos_freq_positive < max_pos_freq_negative || 1 == n_negative_ties) {
+	else if (max_pos_freq_positive < max_pos_freq_negative ) {
+		bool found_positive_candidate = false;
+		// check the negative bp position which is within the left bp_margin
+		int64_t freq_pos_positive = 0;
+		for (auto& a_freq : pos_frequency_positive) {
+			int64_t candidate_pos = a_freq.first;
+			if((max_pos_negative - options.bp_margin) < candidate_pos
+					&& candidate_pos < max_pos_negative) {
+				if(freq_pos_positive < a_freq.second) {
+					found_positive_candidate = true;
+					freq_pos_positive = a_freq.second;
+					max_pos_positive = candidate_pos;
+					max_pos_freq_positive = a_freq.second;
+				}
+			}
+		}
+
+		if(!found_positive_candidate) {
+			freq_pos_positive = 0;
+			// check the positive bp position which is within the right bp_margin
+			for (auto& a_freq : pos_frequency_positive) {
+				int64_t candidate_pos = a_freq.first;
+				if(max_pos_negative < candidate_pos
+						&& candidate_pos < (max_pos_negative + options.bp_margin)) {
+					if(freq_pos_positive < a_freq.second) {
+						found_positive_candidate = true;
+						freq_pos_positive = a_freq.second;
+						max_pos_positive = candidate_pos;
+						max_pos_freq_positive = a_freq.second;
+					}
+				}
+			}
+			if(!found_positive_candidate) {
+				int64_t min_delta = numeric_limits<int64_t>::max();
+				// the closest entry to the positive breakpoint
+				for (auto& a_freq : pos_frequency_positive) {
+					int64_t candidate_pos = a_freq.first;
+					int64_t delta = abs(max_pos_negative - candidate_pos);
+					if(delta < min_delta) {
+						min_delta = delta;
+						max_pos_positive = candidate_pos;
+						max_pos_freq_positive = a_freq.second;
+					}
+				}
+			}
+		}
+	}
+
+	else if (n_positive_ties == 1 && n_negative_ties > 1) {
+		bool found_negative_candidate = false;
+		// check the positive bp position which is within the right bp_margin
+		int64_t freq_pos_negative = 0;
+		for (auto& a_freq : pos_frequency_negative) {
+			int64_t candidate_pos = a_freq.first;
+			if(max_pos_positive <= candidate_pos
+					&& candidate_pos < (max_pos_positive + options.bp_margin)) {
+				if(freq_pos_negative < a_freq.second) {
+					max_pos_negative = candidate_pos;
+					freq_pos_negative = a_freq.second;
+					max_pos_freq_negative = a_freq.second;
+					found_negative_candidate = true;
+				}
+			}
+		}
+		if(!found_negative_candidate) {
+			freq_pos_negative = 0;
+			// check the negative bp position which is within the left bp_margin
+			for (auto& a_freq : pos_frequency_negative) {
+				int64_t candidate_pos = a_freq.first;
+				if((max_pos_positive - options.bp_margin) <= candidate_pos
+						&& candidate_pos < max_pos_positive) {
+					if(freq_pos_negative < a_freq.second) {
+						found_negative_candidate = true;
+						freq_pos_negative = a_freq.second;
+						max_pos_negative = candidate_pos;
+						max_pos_freq_negative = a_freq.second;
+					}
+				}
+			}
+			if(!found_negative_candidate) {
+				int64_t min_delta = numeric_limits<int64_t>::max();
+				// the closest entry to the positive breakpoint
+				for (auto& a_freq : pos_frequency_negative) {
+					int64_t candidate_pos = a_freq.first;
+					int64_t delta = abs(max_pos_positive - candidate_pos);
+					if(delta < min_delta) {
+						min_delta = delta;
+						max_pos_negative = candidate_pos;
+						max_pos_freq_negative = a_freq.second;
+					}
+				}
+			}
+		}
+	}
+
+	else if (n_negative_ties == 1 && n_positive_ties > 1) {
 		bool found_positive_candidate = false;
 		// check the negative bp position which is within the left bp_margin
 		int64_t freq_pos_positive = 0;
@@ -11709,6 +11804,7 @@ void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& ma
 	}
 
 	// if it were not caught by the above conditional statements, then both signals would be strongly supported.
+
 	for (auto& an_entry : clipped_entries) {
 		an_entry.clipped_pos_rep = an_entry.clipped_pos;
 		an_entry.clipped_seq_rep = an_entry.clipped_seq;
