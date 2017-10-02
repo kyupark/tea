@@ -11539,15 +11539,22 @@ void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& ma
 			if(an_entry.clipped_pos != an_entry.clipped_pos_qual_trimmed) {
 				++pos_frequency_positive[an_entry.clipped_pos_qual_trimmed];
 			}
-//			++n_positive_clipped_reads;
+			++n_positive_clipped_reads;
 		}
 		else if (an_entry.strand < 0) {
 			++pos_frequency_negative[an_entry.clipped_pos];
 			if(an_entry.clipped_pos != an_entry.clipped_pos_qual_trimmed) {
 				++pos_frequency_negative[an_entry.clipped_pos_qual_trimmed];
 			}
-//			++n_negative_clipped_reads;
+			++n_negative_clipped_reads;
 		}
+	}
+
+	if (debug) {
+		cout << "[TEA.get_clipped_entries] \n";
+		cout << "clipped_entries.size: " << clipped_entries.size() << "\n";
+		cout << "n_positive_clipped_reads: " << n_positive_clipped_reads << "\n";
+		cout << "n_negative_clipped_reads: " << n_negative_clipped_reads << "\n";
 	}
 
 	max_pos_positive = -1;
@@ -11557,7 +11564,7 @@ void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& ma
 	int64_t max_pos_freq_negative = 0;
 
 	if (debug) {
-		cout << "[TEA::get_clipped_entries] printing pos_frequency_positive\n";
+		cout << "[TEA.get_clipped_entries] printing pos_frequency_positive\n";
 	}
 	for (auto& a_freq : pos_frequency_positive) {
 		if (debug) {
@@ -11569,9 +11576,9 @@ void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& ma
 		}
 	}
 	if (debug) {
-		cout << "[TEA::get_clipped_entries] max_pos_positive: " << max_pos_positive << "\n";
-		cout << "[TEA::get_clipped_entries] max_pos_freq_positive: " << max_pos_freq_positive << "\n";
-		cout << "[TEA::get_clipped_entries] printing pos_frequency_negative\n";
+		cout << "[TEA.get_clipped_entries] max_pos_positive: " << max_pos_positive << "\n";
+		cout << "[TEA.get_clipped_entries] max_pos_freq_positive: " << max_pos_freq_positive << "\n";
+		cout << "[TEA.get_clipped_entries] printing pos_frequency_negative\n";
 	}
 	for (auto& a_freq : pos_frequency_negative) {
 		if (debug) {
@@ -11583,16 +11590,32 @@ void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& ma
 		}
 	}
 	if (debug) {
-		cout << "[TEA::get_clipped_entries] max_pos_positive: " << max_pos_positive << "\n";
-		cout << "[TEA::get_clipped_entries] max_pos_freq_positive: " << max_pos_freq_positive << "\n";
+		cout << "[TEA.get_clipped_entries] max_pos_positive: " << max_pos_positive << "\n";
+		cout << "[TEA.get_clipped_entries] max_pos_freq_positive: " << max_pos_freq_positive << "\n";
+	}
+
+	int32_t n_positive_ties = 0;
+	for (auto& a_freq : pos_frequency_positive) {
+		if (max_pos_freq_positive == a_freq.second) {
+			++n_positive_ties;
+			if(n_positive_ties > 1) {
+				break;
+			}
+		}
+	}
+
+	int32_t n_negative_ties = 0;
+	for (auto& a_freq : pos_frequency_negative) {
+		if (max_pos_freq_negative == a_freq.second) {
+			++n_negative_ties;
+			if(n_negative_ties > 1) {
+				break;
+			}
+		}
 	}
 
 	// the bp in forward strand is strongly supported, but not the bp in reverse strand
-	if (max_pos_freq_positive > max_pos_freq_negative) {
-		if (debug) {
-			cout << "[TEA::get_clipped_entries] (1-1) max_pos_freq_positive > max_pos_freq_negative\t" <<  max_pos_freq_positive << "\t" << max_pos_freq_negative << "\n";
-		}
-
+	if(max_pos_freq_positive > max_pos_freq_negative || 1 == n_positive_ties) {
 		bool found_negative_candidate = false;
 		// check the positive bp position which is within the right bp_margin
 		int64_t freq_pos_negative = 0;
@@ -11637,20 +11660,10 @@ void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& ma
 				}
 			}
 		}
-
-		if (debug) {
-			cout << "[TEA::get_clipped_entries] (1-1) max_pos_positive: " << max_pos_positive << "\n";
-			cout << "[TEA::get_clipped_entries] (1-1) max_pos_freq_positive: " << max_pos_freq_positive << "\n";
-			cout << "[TEA::get_clipped_entries] (1-1) max_pos_negative: " << max_pos_negative << "\n";
-			cout << "[TEA::get_clipped_entries] (1-1) max_pos_freq_negative: " << max_pos_freq_negative << "\n";
-		}
 	}
 
 	// the bp in reverse strand is strongly supported, but not the bp in forward strand
 	else if (max_pos_freq_positive < max_pos_freq_negative ) {
-		if (debug) {
-			cout << "[TEA::get_clipped_entries] (1-2) max_pos_freq_positive < max_pos_freq_negative\t" << max_pos_freq_positive << "\t" << max_pos_freq_negative << "\n";
-		}
 		bool found_positive_candidate = false;
 		// check the negative bp position which is within the left bp_margin
 		int64_t freq_pos_positive = 0;
@@ -11696,19 +11709,36 @@ void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& ma
 				}
 			}
 		}
-		if (debug) {
-			cout << "[TEA::get_clipped_entries] (1-2) max_pos_positive: " << max_pos_positive << "\n";
-			cout << "[TEA::get_clipped_entries] (1-2) max_pos_freq_positive: " << max_pos_freq_positive << "\n";
-			cout << "[TEA::get_clipped_entries] (1-2) max_pos_negative: " << max_pos_negative << "\n";
-			cout << "[TEA::get_clipped_entries] (1-2) max_pos_freq_negative: " << max_pos_freq_negative << "\n";
+	}
+
+	else if (n_positive_ties == 1 && n_negative_ties > 1) {
+		int64_t min_delta = numeric_limits<int64_t>::max();
+		// the closest entry to the positive breakpoint
+		for (auto& a_freq : pos_frequency_negative) {
+			int64_t candidate_pos = a_freq.first;
+			int64_t delta = abs(max_pos_positive - candidate_pos);
+			if(delta < min_delta && a_freq.second == max_pos_freq_negative) {
+				min_delta = delta;
+				max_pos_negative = candidate_pos;
+			}
+		}
+	}
+
+	else if (n_negative_ties == 1 && n_positive_ties > 1) {
+		int64_t min_delta = numeric_limits<int64_t>::max();
+		// the closest entry to the positive breakpoint
+		for (auto& a_freq : pos_frequency_positive) {
+			int64_t candidate_pos = a_freq.first;
+			int64_t delta = abs(max_pos_negative - candidate_pos);
+			if(delta < min_delta && a_freq.second == max_pos_freq_negative) {
+				min_delta = delta;
+				max_pos_positive = candidate_pos;
+			}
 		}
 	}
 
 	// neither the bp in forward strand nor in reverse strand is strongly supported
 	else {
-		if (debug) {
-			cout << "[TEA::get_clipped_entries] (1-3) max_pos_freq_positive == max_pos_freq_negative\t" << max_pos_freq_positive << "\t" << max_pos_freq_negative << "\n";
-				}
 		vector<int64_t> positive_candidates;
 		vector<int64_t> negative_candidates;
 
@@ -11735,13 +11765,8 @@ void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& ma
 				max_pos_freq_negative = a_freq.second;
 			}
 		}
-		if (debug) {
-			cout << "[TEA::get_clipped_entries] (1-3) max_pos_positive: " << max_pos_positive << "\n";
-			cout << "[TEA::get_clipped_entries] (1-3) max_pos_freq_positive: " << max_pos_freq_positive << "\n";
-			cout << "[TEA::get_clipped_entries] (1-3) max_pos_negative: " << max_pos_negative << "\n";
-			cout << "[TEA::get_clipped_entries] (1-3) max_pos_freq_negative: " << max_pos_freq_negative << "\n";
-		}
 	}
+
 
 	// if it were not caught by the above conditional statements, then both signals would be strongly supported.
 
@@ -11839,27 +11864,27 @@ void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& ma
 			if(an_entry.strand == 1
 					|| max_pos_positive == an_entry.clipped_pos
 					|| max_pos_positive == an_entry.clipped_pos_qual_trimmed) {
-				++n_positive_clipped_reads;
+//				++n_positive_clipped_reads;
+				an_entry.strand = 1;
 			}
 		}
 		else if (an_entry.strand < 0) {
 			if(an_entry.strand == -1
 					|| max_pos_negative == an_entry.clipped_pos
 					|| max_pos_negative == an_entry.clipped_pos_qual_trimmed) {
-				++n_negative_clipped_reads;
+//				++n_negative_clipped_reads;
+				an_entry.strand = -1;
 			}
 		}
 	}
 
 	if (debug) {
-		cout << "[TEA::get_clipped_entries] (2-1) n_aligned_clipped_positive: " << n_aligned_clipped_positive << "\n";
-		cout << "[TEA::get_clipped_entries] (2-1) n_aligned_clipped_negative: " << n_aligned_clipped_negative << "\n";
+		cout << "[TEA.get_clipped_entries] (2-1) n_aligned_clipped_positive: " << n_aligned_clipped_positive << "\n";
+		cout << "[TEA.get_clipped_entries] (2-1) n_aligned_clipped_negative: " << n_aligned_clipped_negative << "\n";
 	}
 }
 
-void TEA::output_clipped_stat(ofstream& out_p_clipped_filename, ofstream& out_n_clipped_filename, ofstream& out_p_mate_rname, ofstream& out_n_mate_rname, ofstream& out_cl, ofstream& out_germline, ofstream& out_clipped, const string& contig_dir, RefRepeatIntervalTree& ref_repeat_interval_tree,
-		RefRepeatIntervalVector& stat_results, GeneIntervalTree& gene_interval_tree, GeneIntervalVector& gene_results, BamTools::BamReader& local_reader, const int64_t the_ram_boundary_start, const int64_t the_ram_boundary_end, const RAMIntervalEntry& positive_entry,
-		const RAMIntervalEntry& negative_entry, const string& chr, const string& prefixed_chr, const int64_t read_length, const int64_t rmasker_filter_margin, const int64_t gene_margin, const int64_t mid_point) {
+void TEA::output_clipped_stat(ofstream& out_p_clipped_filename, ofstream& out_n_clipped_filename, ofstream& out_p_mate_rname, ofstream& out_n_mate_rname, ofstream& out_cl, ofstream& out_germline, ofstream& out_clipped, const string& contig_dir, RefRepeatIntervalTree& ref_repeat_interval_tree, RefRepeatIntervalVector& stat_results, GeneIntervalTree& gene_interval_tree, GeneIntervalVector& gene_results, BamTools::BamReader& local_reader, const int64_t the_ram_boundary_start, const int64_t the_ram_boundary_end, const RAMIntervalEntry& positive_entry, const RAMIntervalEntry& negative_entry, const string& chr, const string& prefixed_chr, const int64_t read_length, const int64_t rmasker_filter_margin, const int64_t gene_margin, const int64_t mid_point) {
 	vector<ClippedEntry> clipped_entries;
 	int64_t max_pos_positive = 0;
 	int64_t max_pos_negative = 0;
