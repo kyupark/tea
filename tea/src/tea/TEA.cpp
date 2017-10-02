@@ -11324,9 +11324,14 @@ void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& ma
 	if (string::npos == tmp_chr_name.find("chr")) {
 		tmp_chr_name = "chr" + chr;
 	}
-	const bool debug = (chr == "1"
-			&& the_ram_boundary_start == 88335918
-			&& the_ram_boundary_end == 88336875);
+	const bool debug = (chr == "21"
+			&& the_ram_boundary_start == 11080999
+			&& the_ram_boundary_end == 11081462);
+
+	if (debug) {
+		cout << "[TEA::get_clipped_entries] 0-0 the_ram_boundary_start\t" << the_ram_boundary_start << "\n";
+		cout << "[TEA::get_clipped_entries] 0-0 the_ram_boundary_end\t" << the_ram_boundary_end << "\n";
+	}
 
 	BamTools::BamAlignment local_alignment_entry;
 	while (local_reader.GetNextAlignment(local_alignment_entry)) {
