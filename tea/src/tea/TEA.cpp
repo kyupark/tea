@@ -9382,6 +9382,7 @@ void TEA::_generate_cbam_files_mem_org() {
 					auto& cigar_back_type = cigar.back().Type;
 					auto& cigar_front_length = cigar.front().Length;
 					auto& cigar_back_length = cigar.back().Length;
+
 					bool selected_front = false;
 					bool selected_back = false;
 					bool polyAT = false;
@@ -11053,13 +11054,13 @@ void TEA::count_clipped(
 			int64_t the_ram_boundary_end = negative_entry.stop + read_length;
 
 			int64_t start_pos = the_ram_boundary_start + read_length;
-			int64_t end_pos = negative_entry.value.pos[0] + read_length;
+			int64_t end_pos = the_ram_boundary_end - read_length ;
 
 			if (!positive_entry.value.pos.empty()) {
-				start_pos = min(start_pos, positive_entry.value.pos.back() - read_length);
+				start_pos = min(start_pos, positive_entry.stop);
 			}
 			if (!negative_entry.value.pos.empty()) {
-				end_pos = max(end_pos, the_ram_boundary_end - read_length);
+				end_pos = max(end_pos, negative_entry.start + read_length);
 			}
 
 			int64_t mid_point = (positive_entry.stop + negative_entry.start + read_length) / (double)2;
@@ -11080,19 +11081,20 @@ void TEA::count_clipped(
 			if (n_ram < options.min_ram) {
 				continue;
 			}
+
 			int64_t the_ram_boundary_start = positive_entry.start;
 			int64_t the_ram_boundary_end = positive_entry.stop + read_length + fragment_size;
 
 			int64_t start_pos = the_ram_boundary_start + read_length;
-			if (!positive_entry.value.pos.empty()) {
-				start_pos = min(start_pos, positive_entry.value.pos.back());
-			}
 			int64_t end_pos = the_ram_boundary_end - read_length;
+
+			if (!positive_entry.value.pos.empty()) {
+				start_pos = min(start_pos, positive_entry.stop);
+			}
 
 			local_reader.SetRegion(chr_ref_id, start_pos, chr_ref_id, end_pos);
 			int64_t mid_point = positive_entry.stop + read_length;
-			output_clipped_stat(out_p_clipped_filename, out_n_clipped_filename, out_p_mate_rname, out_n_mate_rname, out_cl, out_germline, out_clipped, contig_dir, ref_repeat_interval_tree, stat_results, gene_interval_tree, gene_results, local_reader, the_ram_boundary_start, the_ram_boundary_end,
-					positive_entry, negative_entry, chr, prefixed_chr, read_length, rmasker_filter_margin, gene_margin, mid_point);
+			output_clipped_stat(out_p_clipped_filename, out_n_clipped_filename, out_p_mate_rname, out_n_mate_rname, out_cl, out_germline, out_clipped, contig_dir, ref_repeat_interval_tree, stat_results, gene_interval_tree, gene_results, local_reader, the_ram_boundary_start, the_ram_boundary_end, positive_entry, negative_entry, chr, prefixed_chr, read_length, rmasker_filter_margin, gene_margin, mid_point);
 		}
 	}
 
@@ -11114,9 +11116,11 @@ void TEA::count_clipped(
 
 			int64_t start_pos = the_ram_boundary_start + read_length;
 			int64_t end_pos = the_ram_boundary_end - read_length;
+
 			if (!negative_entry.value.pos.empty()) {
-				end_pos = max(end_pos, negative_entry.value.pos[0]);
+				end_pos = max(end_pos, negative_entry.start + read_length);
 			}
+
 			int64_t mid_point = negative_entry.start;
 			local_reader.SetRegion(chr_ref_id, start_pos, chr_ref_id, end_pos);
 			output_clipped_stat(out_p_clipped_filename, out_n_clipped_filename, out_p_mate_rname, out_n_mate_rname, out_cl, out_germline, out_clipped, contig_dir, ref_repeat_interval_tree, stat_results, gene_interval_tree, gene_results, local_reader, the_ram_boundary_start, the_ram_boundary_end,
@@ -11534,6 +11538,9 @@ void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& ma
 	n_negative_clipped_reads = 0;
 
 	for (auto& an_entry : clipped_entries) {
+		if (debug) {
+			cout << an_entry.clipped_pos << "\t" << static_cast<int16_t>(an_entry.strand) << "\n";
+		}
 		if (an_entry.strand > 0) {
 			++pos_frequency_positive[an_entry.clipped_pos];
 			if(an_entry.clipped_pos != an_entry.clipped_pos_qual_trimmed) {
@@ -11582,7 +11589,7 @@ void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& ma
 	}
 	for (auto& a_freq : pos_frequency_negative) {
 		if (debug) {
-			cout << a_freq.first << "\t" << a_freq.second << "\n";
+			cout << a_freq.first << "\t" << a_freq.second << "\t" << "\n";
 		}
 		if (max_pos_freq_negative < a_freq.second) {
 			max_pos_negative = a_freq.first;
@@ -11590,8 +11597,8 @@ void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& ma
 		}
 	}
 	if (debug) {
-		cout << "[TEA.get_clipped_entries] max_pos_positive: " << max_pos_positive << "\n";
-		cout << "[TEA.get_clipped_entries] max_pos_freq_positive: " << max_pos_freq_positive << "\n";
+		cout << "[TEA.get_clipped_entries] max_pos_negative: " << max_pos_negative << "\n";
+		cout << "[TEA.get_clipped_entries] max_pos_freq_negative: " << max_pos_freq_negative << "\n";
 	}
 
 	int32_t n_positive_ties = 0;
@@ -11615,7 +11622,7 @@ void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& ma
 	}
 
 	// the bp in forward strand is strongly supported, but not the bp in reverse strand
-	if(max_pos_freq_positive > max_pos_freq_negative || 1 == n_positive_ties) {
+	if(max_pos_freq_positive > max_pos_freq_negative) {
 		bool found_negative_candidate = false;
 		// check the positive bp position which is within the right bp_margin
 		int64_t freq_pos_negative = 0;
@@ -11746,7 +11753,7 @@ void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& ma
 		for (auto& a_freq : pos_frequency_positive) {
 			int64_t candidate_pos = a_freq.first;
 			int64_t cur_delta = abs(candidate_pos - mid_point);
-			if (cur_delta < pos_delta) {
+			if (cur_delta < pos_delta && a_freq.second == max_pos_freq_negative) {
 				pos_delta = cur_delta;
 
 				max_pos_positive = candidate_pos;
@@ -11758,7 +11765,7 @@ void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& ma
 		for (auto& a_freq : pos_frequency_negative) {
 			int64_t candidate_pos = a_freq.first;
 			int64_t cur_delta = abs(candidate_pos - mid_point);
-			if (cur_delta < neg_delta) {
+			if (cur_delta < neg_delta && a_freq.second == max_pos_freq_negative) {
 				neg_delta = cur_delta;
 
 				max_pos_negative = candidate_pos;
@@ -11856,6 +11863,8 @@ void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& ma
 		}
 	}
 
+	n_positive_clipped_reads = 0;
+	n_negative_clipped_reads = 0;
 	n_aligned_clipped_positive = max_pos_freq_positive;
 	n_aligned_clipped_negative = max_pos_freq_negative;
 
@@ -11864,7 +11873,7 @@ void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& ma
 			if(an_entry.strand == 1
 					|| max_pos_positive == an_entry.clipped_pos
 					|| max_pos_positive == an_entry.clipped_pos_qual_trimmed) {
-//				++n_positive_clipped_reads;
+				++n_positive_clipped_reads;
 				an_entry.strand = 1;
 			}
 		}
@@ -11872,13 +11881,15 @@ void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& ma
 			if(an_entry.strand == -1
 					|| max_pos_negative == an_entry.clipped_pos
 					|| max_pos_negative == an_entry.clipped_pos_qual_trimmed) {
-//				++n_negative_clipped_reads;
+				++n_negative_clipped_reads;
 				an_entry.strand = -1;
 			}
 		}
 	}
 
 	if (debug) {
+		cout << "[TEA.get_clipped_entries] (2-1) n_positive_clipped_reads: " << n_positive_clipped_reads << "\n";
+		cout << "[TEA.get_clipped_entries] (2-1) n_negative_clipped_reads: " << n_negative_clipped_reads << "\n";
 		cout << "[TEA.get_clipped_entries] (2-1) n_aligned_clipped_positive: " << n_aligned_clipped_positive << "\n";
 		cout << "[TEA.get_clipped_entries] (2-1) n_aligned_clipped_negative: " << n_aligned_clipped_negative << "\n";
 	}
