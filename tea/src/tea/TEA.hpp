@@ -107,6 +107,7 @@ public:
 			const RAMIntervalVector& p_cl, const RAMIntervalVector& n_cl, const multimap<int64_t, int64_t>& pm_cl, const boost::unordered_set<int64_t>& positive_only, const boost::unordered_set<int64_t>& negative_only, const int64_t read_length, const int64_t fragment_size, const bool headless);
 	void BAM_to_FASTQ_serial(const string& input_BAM_name, const string& orphan_FASTQ_name, const string& disc_1_FASTQ_name, const string& disc_2_FASTQ_name);
 	void BAM_to_FASTQ(const string& a_path, const string& a_bai_path, const string& a_bni_path, const string& orphan_FASTQ_name, const string& disc_1_FASTQ_name, const string& disc_2_FASTQ_name);
+	void BAM_to_FASTQ__MEM(const string& a_path, const string& a_bai_path, const string& a_bni_path, const string& orphan_FASTQ_name, const string& disc_1_FASTQ_name, const string& disc_2_FASTQ_name);
 
 	void MEMBAM_to_FASTQ(const string& input_BAM_name, const string& disc_1_FASTQ_name, const string& disc_2_FASTQ_name);
 	void collect_boundaries_un(vector<meerkat::BlockBoundary>& fixed_size_blocks, const string& a_path, const string& a_bai_path, const string& a_bni_path, int64_t size_block);
@@ -116,6 +117,7 @@ public:
 //	void collect_boundaries(vector<meerkat::BlockBoundary>& fixed_size_blocks, const string& input_BAM_name, int64_t size_block, bool verbose = false);
 private:
 	void _BAM_to_FASTQ(vector<meerkat::BlockBoundary>& actual_blocks, const string& input_BAM_name, const string& orphan_FASTQ_name, const string& disc_1_FASTQ_name, const string& disc_2_FASTQ_name);
+	void _BAM_to_FASTQ__MEM(vector<meerkat::BlockBoundary>& actual_blocks, const string& input_BAM_name, const string& orphan_FASTQ_name, const string& disc_1_FASTQ_name, const string& disc_2_FASTQ_name);
 	void _MEMBAM_to_FASTQ(vector<int64_t>& block_boundary, const string& input_BAM_name, const string& disc_1_FASTQ_name, const string& disc_2_FASTQ_name);
 	void _MEMBAM_to_FASTQ_serial(const string& input_BAM_name, const string& disc_1_FASTQ_name, const string& disc_2_FASTQ_name);
 	void remove_entry_enclosed_with_large_H(vector<BamAlignment>& alns);
