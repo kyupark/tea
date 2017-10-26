@@ -172,16 +172,8 @@ using namespace std;
 		string clipped_qual_qual_trimmed;
 		string clipped_seq_rep;
 		string clipped_qual_rep;
-		string str() const {
 
-//			if(-1 == strand) {
-//				return (boost::format("%s\t%d\t%d\t%s\t-%d(-%d)\t%s(%s)\t%s\t%s\t%s\t%s") % chr % ram_start %
-//						ram_end % rep_repeat % negative_pos % clipped_pos_rep % cigar_original % cigar_corrected %
-//						read_name % ref_seq % clipped_seq_rep % clipped_qual_rep).str();
-//			}
-//			return (boost::format("%s\t%d\t%d\t%s\t%d(%d)\t%s(%s)\t%s\t%s\t%s\t%s") % chr % ram_start %
-//									ram_end % rep_repeat % negative_pos % clipped_pos_rep % cigar_original % cigar_corrected %
-//									read_name % ref_seq % clipped_seq_rep % clipped_qual_rep).str();
+		string str() const {
 			if(-1 == strand) {
 				return (boost::format("%s\t%d\t%d\t%s\t-%d\t%s\t%s\t%s\t%s\t%s\t%s") % chr % ram_start %
 						ram_end % rep_repeat % clipped_pos_rep % static_cast<int32_t>(aligned) % cigar_original %

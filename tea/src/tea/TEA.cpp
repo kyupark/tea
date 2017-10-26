@@ -60,6 +60,7 @@ void TEA::preprocess() {
 				break;
 			default:
 				break;
+
 		}
 	}
 }
@@ -265,6 +266,7 @@ void TEA::run_rid() {
 			if (ram[c][-1].size() > 0) {
 				get_cluster_alt(c, n_cl, ram[c][-1], rannot, -1, is["all"]["intra_gap"]);
 			}
+
 			multimap<int64_t, int64_t> pm_cl;
 			vector<int64_t> unpaired_pidx;
 			vector<int64_t> unpaired_nidx;
@@ -283,28 +285,6 @@ void TEA::run_rid() {
 			boost::unordered_set<int64_t> positive_paired;
 			boost::unordered_set<int64_t> negative_paired;
 
-			bool debug = false;
-//			bool debug = (c == "22");
-
-			if (debug) {
-				for (auto& cl : pm_cl) {
-					auto& en = p_cl[cl.first].value;
-					cout << "p id:" << en.global_cluster_id <<
-							"\ts:" << en.s <<
-							"\te:" << en.e <<
-							"\tram:" << en.ram <<
-							"\trep:" << castle::StringUtils::join(en.rep_repeat, ",") << "\n";
-				}
-				for (auto& cl : pm_cl) {
-					auto& en = n_cl[cl.second].value;
-					cout << "n id:" << en.global_cluster_id <<
-							"\ts:" << en.s <<
-							"\te:" << en.e <<
-							"\tram:" << en.ram <<
-							"\trep:" << castle::StringUtils::join(en.rep_repeat, ",") << "\n";
-				}
-			}
-
 			auto it = pm_cl.begin();
 //			cout << c << ":" << pm_cl.size() << "\n";
 			if (pm_cl.size() == 1) {
@@ -316,7 +296,6 @@ void TEA::run_rid() {
 			}
 			else if (pm_cl.size() > 1) {
 				while (it != prev(pm_cl.end())) {
-					if (debug) cout << "in while \n";
 					auto nx = next(it);
 					auto p = p_cl[it->first];
 					auto n = n_cl[it->second];
@@ -390,6 +369,7 @@ void TEA::run_rid() {
 		headless = true;
 	}
 	castle::ParallelRunner::run_unbalanced_load(n_cores, tasks);
+
 	output_mate_fa(ram);
 
 	vector<string> cluster_raw_files;
@@ -425,6 +405,7 @@ void TEA::run_rid() {
 		cluster_files.push_back(cluster_file);
 		germline_contig_files.push_back(germline_contig_file);
 	}
+
 	string out_cluster_raw_file = cl_prefix + ".cluster.raw";
 	string out_clipped_file = cl_prefix + ".clipped";
 	string out_germline_file = cl_prefix + ".germline";
@@ -436,7 +417,9 @@ void TEA::run_rid() {
 	castle::IOUtils::plain_file_merge(out_germline_file, germline_files, n_cores, true);
 	castle::IOUtils::plain_file_merge(out_cluster_file, cluster_files, n_cores, true);
 	castle::IOUtils::plain_file_merge(out_germline_contig_file, germline_contig_files, n_cores, true);
+
 	castle::IOUtils::remove_files(removal_files, n_cores);
+
 }
 
 void TEA::run_vid() {
@@ -3977,7 +3960,6 @@ void TEA::output_raw_file(const string& chr, const string& cl_prefix, const RAMI
 	}
 	{
 		for (auto an_entry : pm_cl) {
-
 			auto& positive_entry = p_cl[an_entry.first];
 			auto& negative_entry = n_cl[an_entry.second];
 			int64_t the_ram_boundary_start = positive_entry.start;
@@ -4042,9 +4024,6 @@ void TEA::output_raw_file(const string& chr, const string& cl_prefix, const RAMI
 		}
 	}
 	{
-//		string cl_raw_file = cl_prefix + "." + tmp_chr_name + ".cluster.p.raw";
-//		ofstream out_cl_raw(cl_raw_file, ios::binary);
-//		out_cl_raw << header_cl_raw;
 		for (int64_t r_id = 0; r_id < static_cast<int64_t>(p_cl.size()); ++r_id) {
 			if (positive_only.end() == positive_only.find(r_id)) {
 				continue;
@@ -4088,9 +4067,6 @@ void TEA::output_raw_file(const string& chr, const string& cl_prefix, const RAMI
 		}
 	}
 	{
-//		string cl_raw_file = cl_prefix + "." + tmp_chr_name + ".cluster.n.raw";
-//		ofstream out_cl_raw(cl_raw_file, ios::binary);
-//		out_cl_raw << header_cl_raw;
 		for (int64_t r_id = 0; r_id < static_cast<int64_t>(n_cl.size()); ++r_id) {
 			if (negative_only.end() == negative_only.find(r_id)) {
 				continue;
@@ -4340,8 +4316,10 @@ void TEA::_BAM_to_FASTQ(vector<meerkat::BlockBoundary>& actual_blocks, const str
 				if(local_alignment_entry.IsReverseStrand()) {
 					local_alignment_entry.QueryBases = castle::StringUtils::get_reverse_complement(local_alignment_entry.QueryBases);
 				}
-				string an_entry = (boost::format("@%s\n%s\n+\n%s\n") % local_alignment_entry.Name %
-						local_alignment_entry.QueryBases % local_alignment_entry.Qualities).str();
+				string an_entry = (boost::format("@%s\n%s\n+\n%s\n")
+						% local_alignment_entry.Name
+						% local_alignment_entry.QueryBases
+						% local_alignment_entry.Qualities).str();
 				auto the_pair_itr = local_pair.find(local_alignment_entry.Name);
 				if(local_pair.end() == the_pair_itr) {
 					if(local_alignment_entry.IsSecondMate()) {
@@ -4435,7 +4413,7 @@ void TEA::_BAM_to_FASTQ(vector<meerkat::BlockBoundary>& actual_blocks, const str
 
 void TEA::_BAM_to_FASTQ__MEM(vector<meerkat::BlockBoundary>& actual_blocks, const string& input_BAM_name, const string& orphan_FASTQ_name, const string& disc_1_FASTQ_name, const string& disc_2_FASTQ_name) {
 	castle::TimeChecker checker;
-	checker.setTarget("TEA.BAM_to_FASTQ");
+	checker.setTarget("TEA.BAM_to_FASTQ__MEM");
 	checker.start();
 
 	string a_path(input_BAM_name);
@@ -4446,10 +4424,12 @@ void TEA::_BAM_to_FASTQ__MEM(vector<meerkat::BlockBoundary>& actual_blocks, cons
 	vector<function<void()> > tasks;
 
 // only for debugging
-	const bool verbose = false;
+//	const bool verbose = false;
 	string done_vector(calculated_n_blocks - 1, 'U');
 	set<string> block_boundary_strs;
-	vector<boost::unordered_map<string, pair<string, string>>> pair_lists(calculated_n_blocks - 1);
+
+	vector<boost::unordered_map<string, pair<pair<string, int32_t>, pair<string, int32_t>>>> al_pair_lists(calculated_n_blocks - 1);
+
 	vector<string> disc_1_filenames(calculated_n_blocks - 1);
 	vector<string> disc_2_filenames(calculated_n_blocks - 1);
 	for (int64_t block_id = 0; block_id < calculated_n_blocks - 1; ++block_id) {
@@ -4474,7 +4454,7 @@ void TEA::_BAM_to_FASTQ__MEM(vector<meerkat::BlockBoundary>& actual_blocks, cons
 			int64_t cur_offset = m_bgzf.Tell();
 			int64_t prev_offset = cur_offset;
 
-			auto& local_pair = pair_lists[block_id];
+			auto& al_local_pair = al_pair_lists[block_id];
 			string out_1_name = disc_1_FASTQ_name + "." + str_block_id;
 			string out_2_name = disc_2_FASTQ_name + "." + str_block_id;
 			disc_1_filenames[block_id] = out_1_name;
@@ -4483,23 +4463,6 @@ void TEA::_BAM_to_FASTQ__MEM(vector<meerkat::BlockBoundary>& actual_blocks, cons
 			ofstream out_disc_1(out_1_name, ios::binary);
 			ofstream out_disc_2(out_2_name, ios::binary);
 			while (local_reader.LoadNextAlignmentCore(al)) {
-				if(verbose && 0 == num_total) {
-					string a_block_boundary_str = (boost::format("%s %d-%d %d")
-							% al.Name
-							% al.RefID
-							% al.Position
-							% al.AlignmentFlag).str();
-					if(block_boundary_strs.end() == block_boundary_strs.find(a_block_boundary_str)) {
-						cout << (boost::format("[TEA.BAM_to_FASTQ] Block-%d (first-wrong) %s\n")
-								% block_id
-								% a_block_boundary_str).str();
-					} else {
-						cout << (boost::format("[TEA.BAM_to_FASTQ] Block-%d (first) %s\n")
-								% block_id
-								% a_block_boundary_str).str();
-					}
-				}
-
 				cur_offset = m_bgzf.Tell();
 				if(prev_offset >= the_next_ref_offset) {
 					break;
@@ -4507,6 +4470,7 @@ void TEA::_BAM_to_FASTQ__MEM(vector<meerkat::BlockBoundary>& actual_blocks, cons
 				prev_offset = cur_offset;
 				++num_total;
 
+				auto& al_name = al.Name;
 				auto& al_bases = al.QueryBases;
 				auto& al_quals = al.Qualities;
 				auto& cigar_front_length = al.CigarData.front().Length;
@@ -4515,7 +4479,13 @@ void TEA::_BAM_to_FASTQ__MEM(vector<meerkat::BlockBoundary>& actual_blocks, cons
 				auto& cigar_back_type = al.CigarData.back().Type;
 
 				if (!al.CigarData.empty()) {
-					if ('S' == cigar_front_type) {
+					if ('S' == cigar_front_type && 'S' == cigar_back_type) {
+						al_bases = al_bases.substr(cigar_front_length);
+						al_quals = al_quals.substr(cigar_front_length);
+						al_bases = al_bases.substr(0, al_bases.size() - cigar_back_length );
+						al_quals = al_quals.substr(0, al_quals.size() - cigar_back_length );
+					}
+					else if ('S' == cigar_front_type) {
 						if (al_bases.size() - (cigar_front_length + 5) >= 30) {
 							al_bases = al_bases.substr(cigar_front_length + 5);
 							al_quals = al_quals.substr(cigar_front_length + 5);
@@ -4525,14 +4495,14 @@ void TEA::_BAM_to_FASTQ__MEM(vector<meerkat::BlockBoundary>& actual_blocks, cons
 							al_quals = al_quals.substr(cigar_front_length);
 						}
 					}
-					if ('S' == cigar_back_type) {
+					else if ('S' == cigar_back_type) {
 						if (al_bases.size() - (cigar_back_length + 5) >= 30) {
 							al_bases = al_bases.substr(0, al_bases.size() - (cigar_back_length + 5));
-							al_quals = al_quals.substr(0, al_bases.size() - (cigar_back_length + 5));
+							al_quals = al_quals.substr(0, al_quals.size() - (cigar_back_length + 5));
 						}
 						else {
 							al_bases = al_bases.substr(0, al_bases.size() - cigar_back_length );
-							al_quals = al_quals.substr(0, al_bases.size() - cigar_back_length );
+							al_quals = al_quals.substr(0, al_quals.size() - cigar_back_length );
 						}
 					}
 				}
@@ -4540,35 +4510,47 @@ void TEA::_BAM_to_FASTQ__MEM(vector<meerkat::BlockBoundary>& actual_blocks, cons
 				if(al.IsReverseStrand()) {
 					al_bases = castle::StringUtils::get_reverse_complement(al_bases);
 				}
+
 				string an_entry = (boost::format("@%s\n%s\n+\n%s\n")
-						% al.Name
+						% al_name
 						% al_bases
 						% al_quals).str();
-				auto the_pair_itr = local_pair.find(al.Name);
-				if(local_pair.end() == the_pair_itr) {
-					if(al.IsPrimaryAlignment()) {
-						if(al.IsSecondMate()) {
-							local_pair[al.Name].second = an_entry;
+
+				auto the_al_pair_itr = al_local_pair.find(al_name);
+
+				if(al_local_pair.end() == the_al_pair_itr) {
+					if(al.IsSecondMate()) {
+						al_local_pair[al_name].second.first = an_entry;
+						al_local_pair[al_name].second.second = al.RefID;
+					}
+					else {
+						al_local_pair[al_name].first.first = an_entry;
+						al_local_pair[al_name].first.second = al.RefID;
+					}
+				}
+				else {
+					if(al.IsSecondMate()) {
+						if (the_al_pair_itr->second.second.first.empty()
+								|| al.RefID == the_al_pair_itr->second.first.second) {
+							the_al_pair_itr->second.second.first = an_entry;
+							the_al_pair_itr->second.second.second = al.RefID;
 						}
-						else {
-							local_pair[al.Name].first = an_entry;
+					}
+					else {
+						if (the_al_pair_itr->second.first.first.empty()
+								|| al.RefID == the_al_pair_itr->second.second.second) {
+							the_al_pair_itr->second.first.first = an_entry;
+							the_al_pair_itr->second.first.second = al.RefID;
 						}
 					}
 
-				} else {
-					if(al.IsPrimaryAlignment()) {
-						if(al.IsSecondMate()) {
-							the_pair_itr->second.second = an_entry;
-						}
-						else {
-							the_pair_itr->second.first = an_entry;
-						}
-					}
 
-					if(!the_pair_itr->second.first.empty() && !the_pair_itr->second.second.empty()) {
-						out_disc_1 << the_pair_itr->second.first;
-						out_disc_2 << the_pair_itr->second.second;
-						local_pair.erase(the_pair_itr);
+					if(!the_al_pair_itr->second.first.first.empty()
+							&& !the_al_pair_itr->second.second.first.empty()) {
+
+						out_disc_1 << the_al_pair_itr->second.first.first;
+						out_disc_2 << the_al_pair_itr->second.second.first;
+						al_local_pair.erase(the_al_pair_itr);
 					}
 				}
 			}
@@ -4587,15 +4569,17 @@ void TEA::_BAM_to_FASTQ__MEM(vector<meerkat::BlockBoundary>& actual_blocks, cons
 	cout << "[TEA.BAM_to_FASTQ] gather scattered information\n";
 	boost::unordered_map<string, pair<string, string>> unprocessed_pair;
 	for (int64_t block_id = 0; block_id < calculated_n_blocks - 1; ++block_id) {
-		auto& local_pair = pair_lists[block_id];
-		for (auto& an_entry : local_pair) {
+		auto& al_local_pair = al_pair_lists[block_id];
+		for (auto& an_entry : al_local_pair) {
 			auto& a_read_name = an_entry.first;
 			auto& the_pair = an_entry.second;
-			if (unprocessed_pair[a_read_name].first.empty() && !the_pair.first.empty()) {
-				unprocessed_pair[a_read_name].first = the_pair.first;
+			if (unprocessed_pair[a_read_name].first.empty()
+					&& !the_pair.first.first.empty()) {
+				unprocessed_pair[a_read_name].first = the_pair.first.first;
 			}
-			if (unprocessed_pair[a_read_name].second.empty() && !the_pair.second.empty()) {
-				unprocessed_pair[a_read_name].second = the_pair.second;
+			if (unprocessed_pair[a_read_name].second.empty()
+					&& !the_pair.second.first.empty()) {
+				unprocessed_pair[a_read_name].second = the_pair.second.first;
 			}
 		}
 	}
@@ -4610,7 +4594,8 @@ void TEA::_BAM_to_FASTQ__MEM(vector<meerkat::BlockBoundary>& actual_blocks, cons
 	tasks.push_back([&] {
 		ofstream out_disc_1(the_disc_1_file_name, ios::binary | ios::app);
 		for(auto the_pair_entry: unprocessed_pair) {
-			if(!the_pair_entry.second.first.empty() && !the_pair_entry.second.second.empty()) {
+			if(!the_pair_entry.second.first.empty()
+					&& !the_pair_entry.second.second.empty()) {
 				out_disc_1 << the_pair_entry.second.first;
 			}
 		}
@@ -4618,7 +4603,8 @@ void TEA::_BAM_to_FASTQ__MEM(vector<meerkat::BlockBoundary>& actual_blocks, cons
 	tasks.push_back([&] {
 		ofstream out_disc_2(the_disc_2_file_name, ios::binary | ios::app);
 		for(auto the_pair_entry: unprocessed_pair) {
-			if(!the_pair_entry.second.first.empty() && !the_pair_entry.second.second.empty()) {
+			if(!the_pair_entry.second.first.empty()
+					&& !the_pair_entry.second.second.empty()) {
 				out_disc_2 << the_pair_entry.second.second;
 			}
 		}
@@ -4627,12 +4613,17 @@ void TEA::_BAM_to_FASTQ__MEM(vector<meerkat::BlockBoundary>& actual_blocks, cons
 	tasks.push_back([&] {
 		ofstream out_orphan(the_orphan_file_name, ios::binary);
 		for(auto the_pair_entry: unprocessed_pair) {
-			if(!the_pair_entry.second.first.empty() && !the_pair_entry.second.second.empty()) {
+			if(!the_pair_entry.second.first.empty()
+					&& !the_pair_entry.second.second.empty()) {
 				continue;
 			}
-			if(the_pair_entry.second.first.empty() && !the_pair_entry.second.second.empty()) {
+
+			if(the_pair_entry.second.first.empty()
+					&& !the_pair_entry.second.second.empty()) {
 				out_orphan << the_pair_entry.second.second;
-			} else if(the_pair_entry.second.second.empty() && !the_pair_entry.second.first.empty()) {
+			}
+			else if(the_pair_entry.second.second.empty()
+					&& !the_pair_entry.second.first.empty()) {
 				out_orphan << the_pair_entry.second.first;
 			}
 		}
@@ -5931,19 +5922,19 @@ void TEA::create_disc_FASTQs() {
 		string cl_disc_2_out_file_name = the_prefix + ".cl.disc_2.fq.gz";
 
 		if (options.is_force || (!boost::filesystem::exists(disc_1_out_file_name) && !boost::filesystem::exists(disc_2_out_file_name))) {
-			if (options.is_sampe) {
-				BAM_to_FASTQ(disc_file_name, disc_bai_name, disc_bni_name, disc_out_file_name, disc_1_out_file_name, disc_2_out_file_name);
-			}
-			else if (options.is_mem) {
+			if (options.is_mem) {
 				BAM_to_FASTQ__MEM(disc_file_name, disc_bai_name, disc_bni_name, disc_out_file_name, disc_1_out_file_name, disc_2_out_file_name);
+			}
+			else {
+				BAM_to_FASTQ(disc_file_name, disc_bai_name, disc_bni_name, disc_out_file_name, disc_1_out_file_name, disc_2_out_file_name);
 			}
 		}
 		if (options.is_force || (!boost::filesystem::exists(cl_disc_1_out_file_name) && !boost::filesystem::exists(cl_disc_2_out_file_name))) {
-			if (options.is_sampe) {
-				BAM_to_FASTQ(cl_disc_file_name, cl_disc_bai_name, cl_disc_bni_name, cl_disc_out_file_name, cl_disc_1_out_file_name, cl_disc_2_out_file_name);
-			}
-			else if (options.is_mem) {
+			if (options.is_mem) {
 				BAM_to_FASTQ__MEM(cl_disc_file_name, cl_disc_bai_name, cl_disc_bni_name, cl_disc_out_file_name, cl_disc_1_out_file_name, cl_disc_2_out_file_name);
+			}
+			else {
+				BAM_to_FASTQ(cl_disc_file_name, cl_disc_bai_name, cl_disc_bni_name, cl_disc_out_file_name, cl_disc_1_out_file_name, cl_disc_2_out_file_name);
 			}
 		}
 	}
@@ -6753,7 +6744,11 @@ void TEA::generate_ra_bams() {
 	string cl_disc_2_out_tmp_bam_name = the_prefix + ".cl.disc_2.ra.tmp.bam";
 	string cl_disc_2_out_bam_name = the_prefix + ".cl.disc_2.ra.bam";
 
-	if (!options.is_force && boost::filesystem::exists(disc_1_out_bam_name) && boost::filesystem::exists(disc_2_out_bam_name) && boost::filesystem::exists(cl_disc_1_out_bam_name) && boost::filesystem::exists(cl_disc_2_out_bam_name)) {
+	if (!options.is_force
+			&& boost::filesystem::exists(disc_1_out_bam_name)
+			&& boost::filesystem::exists(disc_2_out_bam_name)
+			&& boost::filesystem::exists(cl_disc_1_out_bam_name)
+			&& boost::filesystem::exists(cl_disc_2_out_bam_name)) {
 		return;
 	}
 
@@ -6767,7 +6762,8 @@ void TEA::generate_ra_bams() {
 
 	bc.collect_single_align_tasks(tasks, n_blocks_disc_1, disc_1_out_sam_name, options.repeat_reference, options.aln_param, options.samse_param, disc_1_file_name);
 	bc.collect_single_align_tasks(tasks, n_blocks_disc_2, disc_2_out_sam_name, options.repeat_reference, options.aln_param, options.samse_param, disc_2_file_name);
-	if(boost::filesystem::exists(cl_disc_1_file_name) && boost::filesystem::exists(cl_disc_2_file_name)) {
+	if(boost::filesystem::exists(cl_disc_1_file_name)
+			&& boost::filesystem::exists(cl_disc_2_file_name)) {
 		bc.split_FASTQ_alt(cl_disc_1_file_name, cl_disc_2_file_name);
 		n_blocks_cl_disc_1 = bc.n_blocks_1;
 		n_blocks_cl_disc_2 = bc.n_blocks_2;
@@ -6793,10 +6789,17 @@ void TEA::generate_ra_bams() {
 
 	bc.merge_SAM(disc_1_file_name, disc_1_out_tmp_bam_name, disc_1_out_sam_name, n_blocks_disc_1);
 	bc.merge_SAM(disc_2_file_name, disc_2_out_tmp_bam_name, disc_2_out_sam_name, n_blocks_disc_2);
-	string disc_1_sort_cmd = (boost::format("sambamba sort -l 1 -t %d -o %s %s") % n_cores % disc_1_out_bam_name % disc_1_out_tmp_bam_name).str();
-	string disc_2_sort_cmd = (boost::format("sambamba sort -l 1 -t %d -o %s %s") % n_cores % disc_2_out_bam_name % disc_2_out_tmp_bam_name).str();
+	string disc_1_sort_cmd = (boost::format("sambamba sort -l 1 -t %d -o %s %s")
+			% n_cores
+			% disc_1_out_bam_name
+			% disc_1_out_tmp_bam_name).str();
+	string disc_2_sort_cmd = (boost::format("sambamba sort -l 1 -t %d -o %s %s")
+			% n_cores
+			% disc_2_out_bam_name
+			% disc_2_out_tmp_bam_name).str();
 
-	if(boost::filesystem::exists(cl_disc_1_file_name) && boost::filesystem::exists(cl_disc_2_file_name)) {
+	if(boost::filesystem::exists(cl_disc_1_file_name)
+			&& boost::filesystem::exists(cl_disc_2_file_name)) {
 		vector<string> cl_disc_1_bwa_errs;
 		vector<string> cl_disc_2_bwa_errs;
 		for (int64_t block_id = 0; block_id < n_blocks_cl_disc_1; ++block_id) {
@@ -6811,8 +6814,14 @@ void TEA::generate_ra_bams() {
 		}
 		bc.merge_SAM(cl_disc_1_file_name, cl_disc_1_out_tmp_bam_name, cl_disc_1_out_sam_name, n_blocks_cl_disc_1);
 		bc.merge_SAM(cl_disc_2_file_name, cl_disc_2_out_tmp_bam_name, cl_disc_2_out_sam_name, n_blocks_cl_disc_2);
-		string cl_disc_1_sort_cmd = (boost::format("sambamba sort -l 1 -t %d -o %s %s") % n_cores % cl_disc_1_out_bam_name % cl_disc_1_out_tmp_bam_name).str();
-		string cl_disc_2_sort_cmd = (boost::format("sambamba sort -l 1 -t %d -o %s %s") % n_cores % cl_disc_2_out_bam_name % cl_disc_2_out_tmp_bam_name).str();
+		string cl_disc_1_sort_cmd = (boost::format("sambamba sort -l 1 -t %d -o %s %s")
+				% n_cores
+				% cl_disc_1_out_bam_name
+				% cl_disc_1_out_tmp_bam_name).str();
+		string cl_disc_2_sort_cmd = (boost::format("sambamba sort -l 1 -t %d -o %s %s")
+				% n_cores
+				% cl_disc_2_out_bam_name
+				% cl_disc_2_out_tmp_bam_name).str();
 		system(cl_disc_1_sort_cmd.c_str());
 		system(cl_disc_2_sort_cmd.c_str());
 		castle::IOUtils::plain_file_merge(cl_disc_1_file_name + ".bwa.err", cl_disc_1_bwa_errs, n_cores, true);
@@ -6857,8 +6866,11 @@ void TEA::generate_ram_files() {
 		cout << checker;
 		return;
 	}
+
 	generate_ram_file(refbam, rbamf, ramf, disc_1_ra_bam, disc_2_ra_bam, options.exo, false);
-	if(boost::filesystem::exists(cl_refbam) && boost::filesystem::exists(cl_disc_1_ra_bam) && boost::filesystem::exists(cl_disc_2_ra_bam)) {
+	if(boost::filesystem::exists(cl_refbam)
+			&& boost::filesystem::exists(cl_disc_1_ra_bam)
+			&& boost::filesystem::exists(cl_disc_2_ra_bam)) {
 		generate_ram_file(cl_refbam, cl_rbamf, cl_ramf, cl_disc_1_ra_bam, cl_disc_2_ra_bam, options.exo, true);
 	}
 
@@ -7127,7 +7139,6 @@ void TEA::write_ram_and_bam(const string& refbam, const string& rbamf, const str
 	vector<function<void()> > tasks;
 
 	// only for debugging
-//	const bool verbose = false;
 	string done_vector(calculated_n_blocks - 1, 'U');
 	set<string> block_boundary_strs;
 	vector<boost::unordered_map<string, boost::unordered_map<string, RAMEntry>>> h_pos_lists(calculated_n_blocks - 1);
@@ -7253,26 +7264,12 @@ void TEA::write_ram_and_bam(const string& refbam, const string& rbamf, const str
 								for (auto an_entry : h_pos_itr->second) {
 									// s represents a TE sequence that appeared before
 									auto& s = an_entry.first;
-									//					}
-									if (debug) {
-										cout << "##the same pos has rams\n";
-									}
 									bool dup = false;
-									if (debug) {
-										cout << s << "\n";
-									}
 									if (s == b[1]) {
-										if (debug) {
-											cout << "matches with " << b[1] << "\n";
-										}
-
 										dup = true;
 										auto& record = an_entry.second.bam;
-										//							# compare the mapping quality of the current ram and the rams that appeared before
+//							# compare the mapping quality of the current ram and the rams that appeared before
 										if (local_alignment_entry.MapQuality > record.MapQuality) {
-											if (debug) {
-												cout << "choose the best quality\n" << map << "\n";
-											}
 											record = local_alignment_entry;
 											an_entry.second.map = map;
 										}
@@ -7280,15 +7277,12 @@ void TEA::write_ram_and_bam(const string& refbam, const string& rbamf, const str
 									}
 									if (!dup) {
 										// no match, thus add this record
-										if (debug) {
-											cout << "no dup\n";
-										}
-
 										h_pos[current_pos][b[1]].bam = local_alignment_entry;
 										h_pos[current_pos][b[1]].map = map;
 									}
 								}
-							} else {
+							}
+							else {
 								// if there is no hash, create a hash entry
 								if (debug) {
 									cout << "no ram at the same position before. create a new record\n" << b[1] << "\n" << local_alignment_entry.Name << "\n" << map << "\n";
@@ -7296,7 +7290,8 @@ void TEA::write_ram_and_bam(const string& refbam, const string& rbamf, const str
 								h_pos[current_pos][b[1]].bam = local_alignment_entry;
 								h_pos[current_pos][b[1]].map = map;
 							}
-						} else if (!previous_pos.empty()) {
+						}
+						else if (!previous_pos.empty()) {
 							// print out rams for the previous_pos
 							if (debug) {
 								cout << "##new pos: print out rams for " << previous_pos << "\n";
@@ -7311,8 +7306,8 @@ void TEA::write_ram_and_bam(const string& refbam, const string& rbamf, const str
 									auto& record1 = the_RAM_entry.map;
 									auto& record2 = the_RAM_entry.bam;
 									castle::StringUtils::c_string_multi_split(record1, delim_tab, c);
-									// check whether the record with the same read name and ram pos exists
-									// (only differ in the last suffix 1 or 2 for mu & sc) same read name exists
+// check whether the record with the same read name and ram pos exists
+// (only differ in the last suffix 1 or 2 for mu & sc) same read name exists
 									prname = record2.Name;
 									auto the_mu_pos = prname.rfind("mu");
 									if (string::npos != the_mu_pos) {
@@ -7426,12 +7421,6 @@ void TEA::write_ram_and_bam_serial(const string& refbam, const string& rbamf, co
 	auto& ref_vec = local_reader.GetReferenceData();
 	BamTools::BamAlignment local_alignment_entry;
 	while (local_reader.LoadNextAlignmentCore(local_alignment_entry)) {
-		//		my @a = split(/\t/);
-		//		$a[2] =~ s/chr//; # drop chr
-//		debug = string::npos != local_alignment_entry.Name.find("HS2000-654_75:4:2206:13960:146767");
-		if(debug) {
-			cout << "[TEA.write_ram_and_bam_serial] " << BamWriter::GetSAMAlignment(local_alignment_entry, ref_vec) << "\n";
-		}
 		int64_t sam_flag = local_alignment_entry.AlignmentFlag;
 		if ((sam_flag & 0x4) || 0 == local_alignment_entry.MapQuality) {
 			continue;
@@ -7441,7 +7430,8 @@ void TEA::write_ram_and_bam_serial(const string& refbam, const string& rbamf, co
 		//# end:1
 		if (local_alignment_entry.IsFirstMate()) {
 			mate_key = (boost::format("2:%s") % local_alignment_entry.Name).str();
-		} else if (local_alignment_entry.IsSecondMate()) {
+		}
+		else if (local_alignment_entry.IsSecondMate()) {
 			mate_key = (boost::format("1:%s") % local_alignment_entry.Name).str();
 		}
 
@@ -7469,11 +7459,19 @@ void TEA::write_ram_and_bam_serial(const string& refbam, const string& rbamf, co
 			castle::StringUtils::c_string_multi_split(mate, delim_colon, b);
 			// the BAM is 0-index system, hence the position should be increased by 1
 			if (local_alignment_entry.IsReverseStrand()) {
-				current_pos = (boost::format("%s\t-%s") % ref_vec[local_alignment_entry.RefID].RefName % (local_alignment_entry.Position + 1)).str();
-			} else {
-				current_pos = (boost::format("%s\t%s") % ref_vec[local_alignment_entry.RefID].RefName % (local_alignment_entry.Position + 1)).str();
+				current_pos = (boost::format("%s\t-%s")
+						% ref_vec[local_alignment_entry.RefID].RefName
+						% (local_alignment_entry.Position + 1)).str();
 			}
-			map = (boost::format("%s\t%s\t%s") % local_alignment_entry.Name % current_pos % b[0]).str();					//# append the read and  TE name
+			else {
+				current_pos = (boost::format("%s\t%s")
+						% ref_vec[local_alignment_entry.RefID].RefName
+						% (local_alignment_entry.Position + 1)).str();
+			}
+			map = (boost::format("%s\t%s\t%s")
+					% local_alignment_entry.Name
+					% current_pos
+					% b[0]).str();					//# append the read and  TE name
 
 			if (debug) {
 				cout << "[TEA.write_ram_and_bam_serial] mate: " << mate << "\n";
@@ -7518,15 +7516,12 @@ void TEA::write_ram_and_bam_serial(const string& refbam, const string& rbamf, co
 						}
 						if (!dup) {
 							// no match, thus add this record
-							if (debug) {
-								cout << "[TEA.write_ram_and_bam_serial] no dup\n";
-							}
-
 							h_pos[current_pos][b[1]].bam = local_alignment_entry;
 							h_pos[current_pos][b[1]].map = map;
 						}
 					}
-				} else {
+				}
+				else {
 					// if there is no hash, create a hash entry
 					if (debug) {
 						cout << "[TEA.write_ram_and_bam_serial] no ram at the same position before. create a new record\n" << b[1] << "\n" << local_alignment_entry.Name << "\n" << map << "\n";
@@ -7559,7 +7554,8 @@ void TEA::write_ram_and_bam_serial(const string& refbam, const string& rbamf, co
 							char the_pair_id = prname[the_pair_id_pos];
 							if ('1' == the_pair_id) {
 								prname[the_pair_id_pos] = '2';
-							} else if ('2' == the_pair_id) {
+							}
+							else if ('2' == the_pair_id) {
 								prname[the_pair_id_pos] = '1';
 							}
 						}
@@ -7769,7 +7765,8 @@ void TEA::write_ram_and_bam_mem_serial(const string& refbam, const string& rbamf
 						h_pos[current_pos][b[1]].bam = local_alignment_entry;
 						h_pos[current_pos][b[1]].map = map;
 					}
-				} else if (!previous_pos.empty()) {
+				}
+				else if (!previous_pos.empty()) {
 					auto seq_itr = h_pos.find(previous_pos);
 					if (h_pos.end() != seq_itr) {
 						// print out rams for the previous_pos
@@ -7792,7 +7789,8 @@ void TEA::write_ram_and_bam_mem_serial(const string& refbam, const string& rbamf
 								char the_pair_id = prname[the_pair_id_pos];
 								if ('1' == the_pair_id) {
 									prname[the_pair_id_pos] = '2';
-								} else if ('2' == the_pair_id) {
+								}
+								else if ('2' == the_pair_id) {
 									prname[the_pair_id_pos] = '1';
 								}
 							}
@@ -7899,7 +7897,6 @@ void TEA::_generate_cbam_files_mem() {
 
 	if (!options.working_dir.empty()) {
 		firststat_name = options.working_prefix + ".firststat";
-
 		consd_raw_bam_name = options.working_prefix + ".softclips.consd.raw.bam";
 		consd_raw_sam_name = options.working_prefix + ".softclips.consd.raw.sam";
 		consd_sorted_bam_name = options.working_prefix + ".softclips.consd.sorted.bam";
@@ -10409,7 +10406,8 @@ boost::unordered_map<string, GeneIntervalVector>& gene_annot, bool out_chrl, boo
 			cout << (boost::format("[TEA.load_ref_annotation] reads gene annotations from %s\n") % gene_rfile).str();
 			read_gene_rfile(gene_annot, gene_rfile, chrl);
 //			genes = readRDS(gene.rfile)
-		} else {
+		}
+		else {
 			cout << (boost::format("[TEA.load_ref_annotation] no gene annotation file: %s\n") % gene_rfile).str();
 			exit(1);
 		}
@@ -10744,16 +10742,12 @@ void TEA::load_ram(boost::unordered_map<string, boost::unordered_map<int8_t, vec
 }
 
 void TEA::get_cluster_alt(const string& chr, RAMIntervalVector& cl, vector<RAMRepeatEntry>& sram, boost::unordered_map<string, pair<string, string>>& rannot, const int32_t strand, int64_t gap_cutoff) {
-//	castle::TimeChecker checker;
-//	checker.setTarget("TEA.get_cluster_alt");
-//	checker.start();
+
 	int64_t max_id = sram.size();
 	if (max_id < 2) {
 		if (1 == max_id) {
 			RepeatClusterEntry an_entry;
 			an_entry.ram = 1;
-			//		cout << "[TEA.get_cluster] ram size: " << an_entry.ram << "\n";
-			//		cout << "[TEA.get_cluster] the parent family: " << sram[si].repeat_family << "\n";
 			an_entry.s = sram[0].pos;
 			an_entry.e = sram[0].pos;
 			auto& r = sram[0];
@@ -10774,17 +10768,12 @@ boost::unordered_map<string, vector<vector<int64_t>>> breakpoint_ids;
 	for (int64_t pos_id = 0; pos_id < max_id; ++pos_id) {
 		auto& a_ram = sram[pos_id];
 		auto& the_family = a_ram.repeat_family;
-//		if ("PolyA" == the_family) {
-//			continue;
-//		}
 		breakpoint_ids[the_family].reserve(10000);
 	}
-//	const bool debug = false;
 
 // 	gap_cutoff check
 	for (int64_t pos_id = 0; pos_id < max_id; ++pos_id) {
 		auto& a_ram = sram[pos_id];
-//		const bool debug = chr == "1" && a_ram.pos >= 1508219 && a_ram.pos <= 1508937;
 		const bool debug = false;
 		if(debug) {
 			cout << a_ram.str() << "\n";
@@ -10794,7 +10783,6 @@ boost::unordered_map<string, vector<vector<int64_t>>> breakpoint_ids;
 
 		if ("PolyA" == the_family) {
 			for (auto& a_cluster_parent_vec_entry : breakpoint_ids) {
-//				auto& local_family = a_cluster_parent_vec_entry.first;
 				auto& a_cluster_parent_vec = a_cluster_parent_vec_entry.second;
 				if (!a_cluster_parent_vec.empty()) {
 					auto& a_cluster_vec = a_cluster_parent_vec.back();
@@ -10804,15 +10792,12 @@ boost::unordered_map<string, vector<vector<int64_t>>> breakpoint_ids;
 					int64_t the_last_pos_id = a_cluster_vec.back();
 					int64_t delta = sram[pos_id].pos - sram[the_last_pos_id].pos;
 					if (delta <= gap_cutoff) {
-//						cout << a_ram.str() << "\n";
-//						cout << "Insert(Poly) : " << local_family << ":" << a_ram.pos << "\n";
 						a_cluster_vec.push_back(pos_id);
 					}
 				}
 			}
 		}
 
-//		else {
 		if (breakpoint_ids[the_family].empty()) {
 			vector<int64_t> the_next_cluster_vec;
 			breakpoint_ids[the_family].push_back(the_next_cluster_vec);
@@ -10822,7 +10807,8 @@ boost::unordered_map<string, vector<vector<int64_t>>> breakpoint_ids;
 				cout << "Insert(New) : " << a_ram.pos << "\n";
 			}
 			breakpoint_ids[the_family].back().push_back(pos_id);
-		} else {
+		}
+		else {
 			int64_t the_last_pos_id = breakpoint_ids[the_family].back().back();
 			auto& prev_ram = sram[the_last_pos_id];
 			int64_t delta = a_ram.pos - prev_ram.pos;
@@ -10837,20 +10823,12 @@ boost::unordered_map<string, vector<vector<int64_t>>> breakpoint_ids;
 				vector<int64_t> the_next_cluster_vec;
 				breakpoint_ids[the_family].push_back(the_next_cluster_vec);
 			}
-//				else {
-//					cout << "Insert(Normal) : " << a_ram.pos << "\n";
-//				}
 			breakpoint_ids[the_family].back().push_back(pos_id);
 		}
-//		}
 	}
 
-//
-//	int64_t max_sram_id = sram.size();
 	vector<RepeatClusterEntry> cluster_entries;
 	for (auto& a_family_entry : breakpoint_ids) {
-//		auto& the_family = a_family_entry.first;
-//		cout << "[TEA.get_cluster] the parent family: " << the_family << "\n";
 		auto& the_parent_cluster_vec = a_family_entry.second;
 		for (auto& a_cluster : the_parent_cluster_vec) {
 			if (a_cluster.empty()) {
@@ -10858,15 +10836,8 @@ boost::unordered_map<string, vector<vector<int64_t>>> breakpoint_ids;
 			}
 			int64_t si = a_cluster[0];
 			int64_t ei = a_cluster.back();
-//			for(uint64_t cl_id = 0; cl_id < a_cluster.size(); ++cl_id) {
-//				int64_t point_id = a_cluster[cl_id];
-//				cout << sram[point_id].str() << "\n";
-//			}
-//			cout << "\n";
 			RepeatClusterEntry an_entry;
 			an_entry.ram = a_cluster.size();
-//		cout << "[TEA.get_cluster] ram size: " << an_entry.ram << "\n";
-//		cout << "[TEA.get_cluster] the parent family: " << sram[si].repeat_family << "\n";
 			an_entry.s = sram[si].pos;
 			an_entry.e = sram[ei].pos;
 
@@ -10892,20 +10863,15 @@ boost::unordered_map<string, vector<vector<int64_t>>> breakpoint_ids;
 			cluster_entries.push_back(an_entry);
 		}
 	}
+
 	sort(cluster_entries.begin(), cluster_entries.end());
 	for (auto& an_entry : cluster_entries) {
 		RAMIntervalEntry an_interval_entry(an_entry.s, an_entry.e, an_entry);
 		cl.push_back(an_interval_entry);
 	}
-
-//	cout << checker;
 }
 
 void TEA::pair_cluster_alt(multimap<int64_t, int64_t>& pm_cl, RAMIntervalVector& p_cl, RAMIntervalVector& n_cl, const int64_t gap_cutoff, const int64_t read_length, bool stringent_pair) {
-//	castle::TimeChecker checker;
-//	checker.setTarget("TEA.pair_cluster_alt");
-//	checker.start();
-//	cout << (boost::format("[TEA.pair_cluster_alt] gap cutoff: %d\n") % gap_cutoff).str();
 	RAMIntervalTree negative_strand_interval_tree(n_cl);
 	RAMIntervalVector results;
 	results.reserve(10000);
@@ -10914,10 +10880,6 @@ void TEA::pair_cluster_alt(multimap<int64_t, int64_t>& pm_cl, RAMIntervalVector&
 		auto& a_positive_ram_entry = p_cl[p_id];
 		RAMIntervalVector result_selected;
 		int64_t n_ram_supports = 0;
-//		int64_t ram_boundary_size = (a_ram_entry.stop - a_ram_entry.start + 1);
-//		if (ram_boundary_size < ram_boundary_limit) {
-//			continue;
-//		}
 		n_ram_supports += a_positive_ram_entry.value.ram;
 		auto& pfams = a_positive_ram_entry.value.rep_repeat;
 
@@ -10964,7 +10926,8 @@ void TEA::pair_cluster_alt(multimap<int64_t, int64_t>& pm_cl, RAMIntervalVector&
 					if (a_positive_ram_entry.start <= a_negative_ram_entry.start && a_positive_ram_entry.stop <= a_negative_ram_entry.stop) {
 						result_selected.push_back(a_negative_ram_entry);
 					}
-				} else {
+				}
+				else {
 					if (a_positive_ram_entry.start < a_negative_ram_entry.stop) {
 						result_selected.push_back(a_negative_ram_entry);
 					}
@@ -11165,7 +11128,6 @@ void TEA::count_clipped(
 	}
 
 	{
-
 		for (int64_t r_id = 0; r_id < static_cast<int64_t>(n_cl.size()); ++r_id) {
 			if (negative_only.end() == negative_only.find(r_id)) {
 				continue;
@@ -11189,8 +11151,7 @@ void TEA::count_clipped(
 
 			int64_t mid_point = negative_entry.start;
 			local_reader.SetRegion(chr_ref_id, start_pos, chr_ref_id, end_pos);
-			output_clipped_stat(out_p_clipped_filename, out_n_clipped_filename, out_p_mate_rname, out_n_mate_rname, out_cl, out_germline, out_clipped, contig_dir, ref_repeat_interval_tree, stat_results, gene_interval_tree, gene_results, local_reader, the_ram_boundary_start, the_ram_boundary_end,
-					positive_entry, negative_entry, chr, prefixed_chr, read_length, rmasker_filter_margin, gene_margin, mid_point);
+			output_clipped_stat(out_p_clipped_filename, out_n_clipped_filename, out_p_mate_rname, out_n_mate_rname, out_cl, out_germline, out_clipped, contig_dir, ref_repeat_interval_tree, stat_results, gene_interval_tree, gene_results, local_reader, the_ram_boundary_start, the_ram_boundary_end, positive_entry, negative_entry, chr, prefixed_chr, read_length, rmasker_filter_margin, gene_margin, mid_point);
 		}
 	}
 	local_reader.Close();
@@ -11309,15 +11270,7 @@ void TEA::count_clipped_v(
 		}
 		RepeatClusterEntry an_empty_entry;
 		RAMIntervalEntry empty_interval_entry(0, 0, an_empty_entry);
-	//	cout << "[TEA.count_clipped] process positive only\n";
 		{
-	//		string cl_file = cl_prefix + "." + tmp_chr_name + ".p.cluster";
-	//		string clipped_file = cl_prefix + "." + tmp_chr_name + ".p.clipped";
-
-	//		ofstream out_cl(cl_file, ios::binary);
-	//		ofstream out_clipped(clipped_file, ios::binary);
-	//		out_cl << header_cl;
-	//		out_clipped << header_clipped;
 			for (int64_t r_id = 0; r_id < static_cast<int64_t>(p_cl.size()); ++r_id) {
 				if (positive_only.end() == positive_only.find(r_id)) {
 					continue;
@@ -11338,9 +11291,6 @@ void TEA::count_clipped_v(
 					start_pos = min(start_pos, positive_entry.value.pos.back());
 				}
 				int64_t end_pos = the_ram_boundary_end - read_length;
-	//			if(!negative_entry.value.pos.empty()) {
-	//				end_pos = max(end_pos, negative_entry.value.pos[0]);
-	//			}
 
 				local_reader.SetRegion(chr_ref_id, start_pos, chr_ref_id, end_pos);
 				output_clipped_stat_v(out_p_clipped_filename, out_n_clipped_filename, out_p_mate_rname, out_n_mate_rname, out_cl, out_germline, out_clipped, contig_dir, ref_repeat_interval_tree, stat_results, vannot, local_reader, the_ram_boundary_start, the_ram_boundary_end,
@@ -11348,14 +11298,7 @@ void TEA::count_clipped_v(
 			}
 		}
 
-	//	cout << "[TEA.count_clipped] process negative only\n";
 		{
-	//		string cl_file = cl_prefix + "." + tmp_chr_name + ".n.cluster";
-	//		string clipped_file = cl_prefix + "." + tmp_chr_name + ".n.clipped";
-	//		ofstream out_cl(cl_file, ios::binary);
-	//		ofstream out_clipped(clipped_file, ios::binary);
-	//		out_cl << header_cl;
-	//		out_clipped << header_clipped;
 			for (int64_t r_id = 0; r_id < static_cast<int64_t>(n_cl.size()); ++r_id) {
 				if (negative_only.end() == negative_only.find(r_id)) {
 					continue;
@@ -11372,9 +11315,6 @@ void TEA::count_clipped_v(
 				int64_t the_ram_boundary_end = negative_entry.stop + read_length;
 
 				int64_t start_pos = the_ram_boundary_start + read_length;
-	//			if(!positive_entry.value.pos.empty()) {
-	//				start_pos = min(start_pos, positive_entry.value.pos.back());
-	//			}
 				int64_t end_pos = the_ram_boundary_end - read_length;
 				if (!negative_entry.value.pos.empty()) {
 					end_pos = max(end_pos, negative_entry.value.pos[0]);
@@ -12075,9 +12015,9 @@ void TEA::output_clipped_stat(ofstream& out_p_clipped_filename, ofstream& out_n_
 
 	bool debug = false;
 	for (auto& an_entry : clipped_entries) {
-		if("chr1" == an_entry.chr && 1508219 == an_entry.ram_start && 1508937 == an_entry.ram_end) {
-			debug = true;
-		}
+//		if("chr1" == an_entry.chr && 1508219 == an_entry.ram_start && 1508937 == an_entry.ram_end) {
+//			debug = true;
+//		}
 
 		if (an_entry.strand > 0) {
 			int64_t delta = abs(an_entry.clipped_pos_rep - a_stat_entry.pbp);
@@ -12170,56 +12110,58 @@ void TEA::output_clipped_stat(ofstream& out_p_clipped_filename, ofstream& out_n_
 		break;
 	}
 	const int64_t half_min_acr = options.min_acr / (double) 2;
+
 	if (!positive_entry.value.pos.empty() && !negative_entry.value.pos.empty()) {
-	        if (a_stat_entry.acr >= options.min_acr && a_stat_entry.pacr >= half_min_acr && a_stat_entry.nacr >= half_min_acr) {
-	            if(debug) {
-	                cout << "[TEA.output_clipped_stat] conf 2-1\n";
-	            }
-	            a_stat_entry.conf = 2;
-	        }
-	    } else {
-	        if (a_stat_entry.acr >= options.min_acr) {
-	            if(debug) {
-	                cout << "[TEA.output_clipped_stat] conf 2-2\n";
-	            }
-	            a_stat_entry.conf = 2;
-	        }
-	    }
+		if (a_stat_entry.acr >= options.min_acr && a_stat_entry.pacr >= half_min_acr && a_stat_entry.nacr >= half_min_acr) {
+			if(debug) {
+				cout << "[TEA.output_clipped_stat] conf 2-1\n";
+			}
+			a_stat_entry.conf = 2;
+		}
+	}
+	else {
+		if (a_stat_entry.acr >= options.min_acr) {
+			if(debug) {
+				cout << "[TEA.output_clipped_stat] conf 2-2\n";
+			}
+			a_stat_entry.conf = 2;
+		}
+	}
 
-	    if (2 == a_stat_entry.conf) {
-	        if (a_stat_entry.ram >= options.ram_cutoff) {
-	            if(debug) {
-	                cout << "[TEA.output_clipped_stat] conf 3\n";
-	            }
-	            a_stat_entry.conf = 3;
-	        }
-	    }
-	    if (3 == a_stat_entry.conf) {
-	        if (a_stat_entry.acrr >= options.min_acrr) {
-	            if(debug) {
-	                cout << "[TEA.output_clipped_stat] conf 4\n";
-	            }
-	            a_stat_entry.conf = 4;
-	        }
-	    }
-	    if (4 == a_stat_entry.conf) {
-	        if (debug) {
-	            cout << "tsd=" << a_stat_entry.tsd << "\n";
-	        }
-	        if (a_stat_entry.tsd >= options.min_tsd && a_stat_entry.tsd <= options.max_tsd) {
-	            if(debug) {
-	                cout << "[TEA.output_clipped_stat] conf 5\n";
-	            }
-	            a_stat_entry.conf = 5;
-	        }
-	    }
+	if (2 == a_stat_entry.conf) {
+		if (a_stat_entry.ram >= options.ram_cutoff) {
+			if(debug) {
+				cout << "[TEA.output_clipped_stat] conf 3\n";
+			}
+			a_stat_entry.conf = 3;
+		}
+	}
+	if (3 == a_stat_entry.conf) {
+		if (a_stat_entry.acrr >= options.min_acrr) {
+			if(debug) {
+				cout << "[TEA.output_clipped_stat] conf 4\n";
+			}
+			a_stat_entry.conf = 4;
+		}
+	}
+	if (4 == a_stat_entry.conf) {
+		if (debug) {
+			cout << "tsd=" << a_stat_entry.tsd << "\n";
+		}
+		if (a_stat_entry.tsd >= options.min_tsd && a_stat_entry.tsd <= options.max_tsd) {
+			if(debug) {
+				cout << "[TEA.output_clipped_stat] conf 5\n";
+			}
+			a_stat_entry.conf = 5;
+		}
+	}
 
-	    if(options.no_oi && 0 == a_stat_entry.oi) {
-	        if(debug) {
-	            cout << "[TEA.output_clipped_stat] conf 0 due to oi == 0\n";
-	        }
-	        a_stat_entry.conf = 0;
-	    }
+	if(options.no_oi && 0 == a_stat_entry.oi) {
+		if(debug) {
+			cout << "[TEA.output_clipped_stat] conf 0 due to oi == 0\n";
+		}
+		a_stat_entry.conf = 0;
+	}
 
 	bool has_written_germline = false;
 	if(options.oneside_ram) {
@@ -12242,6 +12184,7 @@ void TEA::output_clipped_stat(ofstream& out_p_clipped_filename, ofstream& out_n_
 			}
 		}
 	}
+
 	if(has_written_germline) {
 		int64_t n_valid_entries = 0;
 		for (auto& an_entry : clipped_entries) {
@@ -12257,7 +12200,7 @@ void TEA::output_clipped_stat(ofstream& out_p_clipped_filename, ofstream& out_n_
 			ofstream out_fq(fq_name, ios::binary);
 			int64_t n_cnt = 0;
 			for (auto& an_entry : clipped_entries) {
-				if (an_entry.aligned != 1|| an_entry.strand < 0 || 0 == an_entry.clipped_seq.length() ) {
+				if (an_entry.aligned != 1 || an_entry.strand < 0 || 0 == an_entry.clipped_seq.length() ) {
 					continue;
 				}
 				out_fq << (boost::format(">cr%d\n%s\n") % n_cnt % an_entry.clipped_seq).str();
@@ -12271,6 +12214,7 @@ void TEA::output_clipped_stat(ofstream& out_p_clipped_filename, ofstream& out_n_
 			}
 		}
 	}
+
 	if(has_written_germline) {
 		int64_t n_valid_entries = 0;
 		for (auto& an_entry : clipped_entries) {
@@ -12605,8 +12549,8 @@ void TEA::output_mate_fa(boost::unordered_map<string, boost::unordered_map<int8_
 	}
 	string cl_prefix = cl_dir + "/" + naive_prefix;
 
-	boost::unordered_map<string, AlnPairEntry> a_positive_repeat_map;
-	boost::unordered_map<string, AlnPairEntry> a_negative_repeat_map;
+	multimap<string, AlnPairEntry> a_positive_repeat_map;
+	multimap<string, AlnPairEntry> a_negative_repeat_map;
 	vector<string> a_positive_clipped_prefixes;
 	vector<string> a_negative_clipped_prefixes;
 
@@ -12639,7 +12583,40 @@ void TEA::output_mate_fa(boost::unordered_map<string, boost::unordered_map<int8_
 	vector<function<void()> > tasks;
 
 	tasks.push_back([&] {
-		for(auto& c : chr_names) {
+		string line;
+		for(auto& c_entry : ram) {
+			auto& c = c_entry.first;
+			string tmp_chr_name(c);
+			if(string::npos == tmp_chr_name.find("chr")) {
+				tmp_chr_name = "chr" + c;
+			}
+			string p_mate_clipped_file = cl_prefix + "." + tmp_chr_name + ".p.clipped.fname";
+			ifstream in_clipped(p_mate_clipped_file, ios::binary);
+			while(getline(in_clipped, line, '\n')) {
+				a_positive_clipped_prefixes.push_back(line);
+			}
+		}
+	});
+
+	tasks.push_back([&] {
+		string line;
+		for(auto& c_entry : ram) {
+			auto& c = c_entry.first;
+			string tmp_chr_name(c);
+			if(string::npos == tmp_chr_name.find("chr")) {
+				tmp_chr_name = "chr" + c;
+			}
+			string n_mate_clipped_file = cl_prefix + "." + tmp_chr_name + ".n.clipped.fname";
+			ifstream in_clipped(n_mate_clipped_file, ios::binary);
+			while(getline(in_clipped, line, '\n')) {
+				a_negative_clipped_prefixes.push_back(line);
+			}
+		}
+	});
+
+	tasks.push_back([&] {
+		for(auto& c_entry : ram) {
+            auto& c = c_entry.first;
 			string tmp_chr_name(c);
 			if(string::npos == tmp_chr_name.find("chr")) {
 				tmp_chr_name = "chr" + c;
@@ -12655,9 +12632,13 @@ void TEA::output_mate_fa(boost::unordered_map<string, boost::unordered_map<int8_
 				string a_key = data[4];
 				int64_t a_pos = boost::lexical_cast<int64_t>(data[3]);
 				string file_name_prefix = naive_prefix + "." + tmp_chr_name + "." + data[0] + "." + data[1] + "." + data[2];
-				a_positive_repeat_map[a_key].file_name_prefix = file_name_prefix;
-				a_positive_repeat_map[a_key].pos = a_pos;
-				a_positive_repeat_map[a_key].chr = c;
+
+				AlnPairEntry aln;
+				aln.file_name_prefix = file_name_prefix;
+				aln.pos = a_pos;
+				aln.chr = c;
+
+				a_positive_repeat_map.insert(pair<string, AlnPairEntry>(a_key, aln));
 			}
 		}
 	});
@@ -12680,43 +12661,35 @@ void TEA::output_mate_fa(boost::unordered_map<string, boost::unordered_map<int8_
 				string a_key = data[4];
 				int64_t a_pos = boost::lexical_cast<int64_t>(data[3]);
 				string file_name_prefix = naive_prefix + "." + tmp_chr_name + "." + data[0] + "." + data[1] + "." + data[2];
-				a_negative_repeat_map[a_key].file_name_prefix = file_name_prefix;
-				a_negative_repeat_map[a_key].pos = a_pos;
-				a_negative_repeat_map[a_key].chr = c;
+
+				AlnPairEntry aln;
+				aln.file_name_prefix = file_name_prefix;
+				aln.pos = a_pos;
+				aln.chr = c;
+
+				a_negative_repeat_map.insert(pair<string, AlnPairEntry>(a_key, aln));
 			}
 		}
 	});
-	tasks.push_back([&] {
-		string line;
-		for(auto& c_entry : ram) {
-			auto& c = c_entry.first;
-			string tmp_chr_name(c);
-			if(string::npos == tmp_chr_name.find("chr")) {
-				tmp_chr_name = "chr" + c;
-			}
-			string p_mate_clipped_file = cl_prefix + "." + tmp_chr_name + ".p.clipped.fname";
-			ifstream in_clipped(p_mate_clipped_file, ios::binary);
-			while(getline(in_clipped, line, '\n')) {
-				a_positive_clipped_prefixes.push_back(line);
-			}
-		}
-	});
-	tasks.push_back([&] {
-		string line;
-		for(auto& c_entry : ram) {
-			auto& c = c_entry.first;
-			string tmp_chr_name(c);
-			if(string::npos == tmp_chr_name.find("chr")) {
-				tmp_chr_name = "chr" + c;
-			}
-			string n_mate_clipped_file = cl_prefix + "." + tmp_chr_name + ".n.clipped.fname";
-			ifstream in_clipped(n_mate_clipped_file, ios::binary);
-			while(getline(in_clipped, line, '\n')) {
-				a_negative_clipped_prefixes.push_back(line);
-			}
-		}
-	});
+
 	castle::ParallelRunner::run_unbalanced_load(n_cores, tasks);
+
+
+//	for (auto& a : a_positive_repeat_map) {
+//		if (a.second.file_name_prefix == "1465-cortex_1-neuron_MDA_18.chr3.74163930.74164603.L1") {
+//			cout << "[TEA.output_mate_fa]+ " << a.first << "\t" << a.second.chr << ":" << a.second.pos << "\n";
+//		}
+//		if (a.first == "HWI-ST1221:217:D1R5UACXX:2:2203:15884:168078") {
+//			cout << "[TEA.output_mate_fa]++ " << a.second.file_name_prefix << "\t" << a.second.chr << ":" << a.second.pos << "\n";
+//		}
+//	}
+//
+//	for (auto& a : a_negative_repeat_map) {
+//		if (a.second.file_name_prefix == "1465-cortex_1-neuron_MDA_18.chr3.74163930.74164603.L1") {
+//			cout << "[TEA.output_mate_fa]- " << a.first << "\t" << a.second.chr << ":" << a.second.pos << "\n";
+//		}
+//	}
+
 	cout << "[TEA.output_mate_fa] # positive mates: " << a_positive_repeat_map.size()
 			<< ", # negative mates: " << a_negative_repeat_map.size() << "\n";
 
@@ -12750,10 +12723,13 @@ void TEA::output_mate_fa(boost::unordered_map<string, boost::unordered_map<int8_
 	vector<meerkat::BlockBoundary> local_independent_blocks;
 	collect_boundaries_pos(local_fixed_size_blocks, local_unmapped_included_blocks, local_independent_blocks, disc_file_name, disc_bai_name, disc_bni_name, size_block);
 	_output_mate_fa(positive_mate_reads, negative_mate_reads, local_unmapped_included_blocks, disc_file_name, a_positive_repeat_map, a_negative_repeat_map);
+
 	bool found_clipped_reads = false;
 	for(auto& an_entry : a_positive_repeat_map) {
 		auto& read_name = an_entry.first;
-		if(string::npos != read_name.rfind("mu1") || string::npos != read_name.rfind("mu2") || string::npos != read_name.rfind("sc")) {
+		if(string::npos != read_name.rfind("mu1")
+				|| string::npos != read_name.rfind("mu2")
+				|| string::npos != read_name.rfind("sc")) {
 			found_clipped_reads = true;
 			break;
 		}
@@ -12761,7 +12737,9 @@ void TEA::output_mate_fa(boost::unordered_map<string, boost::unordered_map<int8_
 	if(!found_clipped_reads) {
 		for(auto& an_entry : a_negative_repeat_map) {
 			auto& read_name = an_entry.first;
-			if(string::npos != read_name.rfind("mu1") || string::npos != read_name.rfind("mu2") || string::npos != read_name.rfind("sc")) {
+			if(string::npos != read_name.rfind("mu1")
+					|| string::npos != read_name.rfind("mu2")
+					|| string::npos != read_name.rfind("sc")) {
 				found_clipped_reads = true;
 				break;
 			}
@@ -12775,7 +12753,6 @@ void TEA::output_mate_fa(boost::unordered_map<string, boost::unordered_map<int8_
 		vector<meerkat::BlockBoundary> local_unmapped_included_blocks;
 		vector<meerkat::BlockBoundary> local_independent_blocks;
 		collect_boundaries_pos(local_fixed_size_blocks, local_unmapped_included_blocks, local_independent_blocks, cl_disc_file_name, cl_disc_bai_name, cl_disc_bni_name, size_block);
-//		collect_boundaries(fixed_size_blocks, cl_disc_file_name, size_block);
 		_output_mate_fa(positive_mate_reads, negative_mate_reads, local_unmapped_included_blocks, cl_disc_file_name, a_positive_repeat_map, a_negative_repeat_map);
 	}
 
@@ -12784,6 +12761,7 @@ void TEA::output_mate_fa(boost::unordered_map<string, boost::unordered_map<int8_
 			auto& file_name_prefix = an_entry.first;
 			auto& the_seq_vec = an_entry.second;
 			string fa_name = (boost::format("%s/%s.rpos.fa") % contig_dir % file_name_prefix).str();
+
 			ofstream out_fa(fa_name, ios::binary);
 			for(int64_t n_id = 0; n_id < static_cast<int64_t>(the_seq_vec.size()); ++n_id) {
 				auto& a_seq = the_seq_vec[n_id];
@@ -12800,6 +12778,7 @@ void TEA::output_mate_fa(boost::unordered_map<string, boost::unordered_map<int8_
 			auto& file_name_prefix = an_entry.first;
 			auto& the_seq_vec = an_entry.second;
 			string fa_name = (boost::format("%s/%s.rneg.fa") % contig_dir % file_name_prefix).str();
+
 			ofstream out_fa(fa_name, ios::binary);
 			for(int64_t n_id = 0; n_id < static_cast<int64_t>(the_seq_vec.size()); ++n_id) {
 				auto& a_seq = the_seq_vec[n_id];
@@ -12811,6 +12790,7 @@ void TEA::output_mate_fa(boost::unordered_map<string, boost::unordered_map<int8_
 		});
 	}
 	castle::ParallelRunner::run_unbalanced_load(n_cores, tasks);
+
 	cout << "[TEA.output_mate_fa] start assembling\n";
 	string all_assembly_files = options.prefix + ".assemblies.target";
 	if (!options.working_dir.empty()) {
@@ -12871,6 +12851,7 @@ void TEA::output_mate_fa(boost::unordered_map<string, boost::unordered_map<int8_
 			}
 			all_files << neg_fa_name << "\n";
 		}
+
 		cout << "[TEA.output_mate_fa] adds germline FASTA files\n";
 		bool headless = false;
 
@@ -13026,15 +13007,14 @@ void TEA::output_mate_fa(boost::unordered_map<string, boost::unordered_map<int8_
 	cout << checker;
 }
 
-void TEA::_output_mate_fa(boost::unordered_map<string, vector<string>>& positive_mate_reads, boost::unordered_map<string, vector<string>>& negative_mate_reads, vector<meerkat::BlockBoundary>& actual_blocks, const string& a_path,
-		const boost::unordered_map<string, AlnPairEntry>& a_positive_repeat_map, const boost::unordered_map<string, AlnPairEntry>& a_negative_repeat_map) {
+void TEA::_output_mate_fa(boost::unordered_map<string, vector<string>>& positive_mate_reads, boost::unordered_map<string, vector<string>>& negative_mate_reads, vector<meerkat::BlockBoundary>& actual_blocks, const string& a_path, const multimap<string, AlnPairEntry>& a_positive_repeat_map, const multimap<string, AlnPairEntry>& a_negative_repeat_map) {
 	string a_bai_path;
 	get_bai_index_path(a_path, a_bai_path);
 
 	int64_t calculated_n_blocks = actual_blocks.size();
 	vector<function<void()> > tasks;
 
-// only for debugging
+//  only for debugging
 //	const bool verbose = false;
 	string done_vector(calculated_n_blocks - 1, 'U');
 	set<string> block_boundary_strs;
@@ -13047,10 +13027,9 @@ void TEA::_output_mate_fa(boost::unordered_map<string, vector<string>>& positive
 			if (!local_reader.Open(a_path, a_bai_path)) {
 				return;
 			}
+
 			int64_t num_total = 0;
-
 			BamTools::BamAlignment local_alignment_entry;
-
 			string str_block_id = boost::lexical_cast<string>(block_id);
 
 			int64_t the_current_ref_offset = actual_blocks[block_id].offset;
@@ -13062,6 +13041,7 @@ void TEA::_output_mate_fa(boost::unordered_map<string, vector<string>>& positive
 					return;
 				}
 			}
+
 			int64_t cur_offset = m_bgzf.Tell();
 			int64_t prev_offset = cur_offset;
 
@@ -13069,34 +13049,51 @@ void TEA::_output_mate_fa(boost::unordered_map<string, vector<string>>& positive
 			auto& local_negative_mate_reads = negative_mate_reads_list[block_id];
 
 			while (local_reader.LoadNextAlignmentCore(local_alignment_entry)) {
-
 				cur_offset = m_bgzf.Tell();
 				if(prev_offset >= the_next_ref_offset) {
 					break;
 				}
 				prev_offset = cur_offset;
-
 				++num_total;
 
-				auto the_pos_itr = a_positive_repeat_map.find(local_alignment_entry.Name);
-				auto the_neg_itr = a_negative_repeat_map.find(local_alignment_entry.Name);
-				if (a_positive_repeat_map.end() != the_pos_itr) {
-					auto& aln_pair = the_pos_itr->second;
+				auto the_pos_itr = a_positive_repeat_map.equal_range(local_alignment_entry.Name);
+				auto the_neg_itr = a_negative_repeat_map.equal_range(local_alignment_entry.Name);
+
+				for (auto& it=the_pos_itr.first; it!=the_pos_itr.second; ++it) {
+					auto& aln_pair = it->second;
 					int64_t the_pos = aln_pair.pos;
 					int64_t aln_pos = local_alignment_entry.Position + 1;
 
-					if(aln_pos != the_pos) {
+					bool debug = false;
+//					if (aln_pair.file_name_prefix == "1465-cortex_1-neuron_MDA_18.chr3.74163930.74164603.L1") {
+//						debug = true;
+//						cout << "[TEA._output_mate_fa]+ 1465-cortex_1-neuron_MDA_18.chr3.74163930.74164603.L1 \n";
+//						cout << "[TEA._output_mate_fa]+ the_pos:" << the_pos << "\taln_pos:" << aln_pos << " \n";
+//					}
+
+					if(aln_pos != the_pos ) {
 						if(local_alignment_entry.IsReverseStrand()) {
 							local_alignment_entry.QueryBases = castle::StringUtils::get_reverse_complement(local_alignment_entry.QueryBases);
 						}
 						auto& the_seq_vec = local_positive_mate_reads[aln_pair.file_name_prefix];
 						the_seq_vec.push_back(local_alignment_entry.QueryBases);
+//						if (debug) {
+//							cout << "[TEA._output_mate_fa]+ " << local_alignment_entry.QueryBases << " \n";
+//						}
 					}
 				}
-				if (a_negative_repeat_map.end() != the_neg_itr) {
-					auto& aln_pair = the_neg_itr->second;
+
+				for (auto& it=the_neg_itr.first; it!=the_neg_itr.second; ++it) {
+					auto& aln_pair = it->second;
 					int64_t the_pos = aln_pair.pos;
 					int64_t aln_pos = local_alignment_entry.Position + 1;
+
+					bool debug = false;
+//					if (aln_pair.file_name_prefix == "1465-cortex_1-neuron_MDA_18.chr3.74163930.74164603.L1") {
+//						debug = true;
+//						cout << "[TEA._output_mate_fa]- 1465-cortex_1-neuron_MDA_18.chr3.74163930.74164603.L1 \n";
+//						cout << "[TEA._output_mate_fa]- the_pos:" << the_pos << "\taln_pos:" << aln_pos << " \n";
+//					}
 
 					if(aln_pos != the_pos) {
 						if(local_alignment_entry.IsReverseStrand()) {
@@ -13104,10 +13101,13 @@ void TEA::_output_mate_fa(boost::unordered_map<string, vector<string>>& positive
 						}
 						auto& the_seq_vec = local_negative_mate_reads[aln_pair.file_name_prefix];
 						the_seq_vec.push_back(local_alignment_entry.QueryBases);
+//						if (debug) {
+//							cout << "[TEA._output_mate_fa]- " << local_alignment_entry.QueryBases << " \n";
+//						}
+
 					}
 				}
 			}
-
 			local_reader.Close();
 		});
 	}
@@ -13124,6 +13124,7 @@ void TEA::_output_mate_fa(boost::unordered_map<string, vector<string>>& positive
 			}
 		}
 	});
+
 	tasks.push_back([&, calculated_n_blocks] {
 		for (int64_t block_id = 0; block_id < calculated_n_blocks - 1; ++block_id) {
 			auto& local_negative_mate_reads = negative_mate_reads_list[block_id];
@@ -13135,6 +13136,7 @@ void TEA::_output_mate_fa(boost::unordered_map<string, vector<string>>& positive
 			}
 		}
 	});
+
 	castle::ParallelRunner::run_unbalanced_load(n_cores, tasks);
 }
 
@@ -13142,13 +13144,11 @@ void TEA::output_mate_fa_v(boost::unordered_map<string, boost::unordered_map<int
 	castle::TimeChecker checker;
 	checker.setTarget("TEA.output_mate_fa_v");
 	checker.start();
-//	string cl_dir = options.prefix + "/cluster_" + options.rasym + "m";
 	string cl_dir = options.output_dir + "-" + options.rasym + "m";
 	string naive_prefix = options.naive_prefix;
 	string contig_dir = options.prefix + "/assembly_" + options.rasym + "m";
 
 	if (!options.working_dir.empty()) {
-//		cl_dir = options.working_prefix + "/cluster_" + options.rasym + "m";
 		cl_dir = options.output_dir + "-" + options.rasym + "m";
 		contig_dir = options.working_prefix + "/assembly_" + options.rasym + "m";
 	}
@@ -13162,7 +13162,6 @@ void TEA::output_mate_fa_v(boost::unordered_map<string, boost::unordered_map<int
 	vector<function<void()> > tasks;
 
 	tasks.push_back([&] {
-//		string c = "22";
 		for(auto& c_entry : ram) {
 			auto& c = c_entry.first;
 
@@ -13170,13 +13169,13 @@ void TEA::output_mate_fa_v(boost::unordered_map<string, boost::unordered_map<int
 			if(string::npos == tmp_chr_name.find("chr")) {
 				tmp_chr_name = "chr" + c;
 			}
+
 			const char* delim_tab = "\t";
 			const char* delim_comma = ",";
 			vector<string> data;
 			vector<string> keys;
 			string line;
 
-//			string clipped_file = cl_prefix + "." + tmp_chr_name + ".p.mate.rname";
 			string clipped_file = cl_prefix + "." + tmp_chr_name + ".cluster.raw";
 			ifstream in_clipped(clipped_file, ios::binary);
 			// to ignore the first line
@@ -13201,7 +13200,6 @@ void TEA::output_mate_fa_v(boost::unordered_map<string, boost::unordered_map<int
 	});
 
 	tasks.push_back([&] {
-//		string c = "22";
 		for(auto& c_entry : ram) {
 			auto& c = c_entry.first;
 			string tmp_chr_name(c);
@@ -13213,7 +13211,6 @@ void TEA::output_mate_fa_v(boost::unordered_map<string, boost::unordered_map<int
 			vector<string> data;
 			vector<string> keys;
 			string line;
-//			string clipped_file = cl_prefix + "." + tmp_chr_name + ".n.mate.rname";
 			string clipped_file = cl_prefix + "." + tmp_chr_name + ".cluster.raw";
 			ifstream in_clipped(clipped_file, ios::binary);
 			// to ignore the first line
@@ -13233,18 +13230,11 @@ void TEA::output_mate_fa_v(boost::unordered_map<string, boost::unordered_map<int
 					a_negative_repeat_map[a_key].pos = a_pos;
 					a_negative_repeat_map[a_key].chr = c;
 				}
-//				castle::StringUtils::c_string_multi_split(line, delim_tab, data);
-//				string a_key = data[4];
-//				int64_t a_pos = boost::lexical_cast<int64_t>(data[3]);
-//				string file_name_prefix = naive_prefix + "." + tmp_chr_name + "." + data[0] + "." + data[1] + "." + data[2];
-//				a_negative_repeat_map[a_key].file_name_prefix = file_name_prefix;
-//				a_negative_repeat_map[a_key].pos = a_pos;
-//				a_negative_repeat_map[a_key].chr = c;
 			}
 		}
 	});
+
 	tasks.push_back([&] {
-		//		string c = "22";
 		string line;
 		for(auto& c_entry : ram) {
 			auto& c = c_entry.first;
@@ -13278,22 +13268,6 @@ void TEA::output_mate_fa_v(boost::unordered_map<string, boost::unordered_map<int
 	castle::ParallelRunner::run_unbalanced_load(n_cores, tasks);
 	cout << "[TEA.output_mate_fa_v] # positive mates: " << a_positive_repeat_map.size() << ", # negative mates: " << a_negative_repeat_map.size() << "\n";
 
-
-//	string disc_file_name = options.prefix + ".disc.num.bam";
-//	string cl_disc_file_name = options.prefix + ".cl.sorted.disc.num.bam";
-
-//	if("tea_v" == options.program_name) {
-//		disc_file_name = options.prefix + ".cl.sorted.bam";
-//	}
-//
-//	if (!options.working_dir.empty()) {
-//		disc_file_name = options.working_prefix + ".disc.num.bam";
-//		if("tea_v" == options.program_name) {
-//			disc_file_name = options.working_prefix + ".cl.sorted.bam";
-//		}
-//		cl_disc_file_name = options.working_prefix + ".cl.sorted.disc.num.bam";
-//	}
-
 	string disc_file_name = options.prefix + ".um.bam";
 	if (!options.working_dir.empty()) {
 		disc_file_name = options.working_prefix + ".um.bam";
@@ -13306,45 +13280,13 @@ void TEA::output_mate_fa_v(boost::unordered_map<string, boost::unordered_map<int
 	boost::unordered_map<string, vector<string>> negative_mate_reads;
 
 	int64_t size_block = 8192000;
-//	vector<meerkat::BlockBoundary> fixed_size_blocks;
 
 	cout << "[TEA.output_mate_fa_v] collect mate reads from disc file\n";
-//	_output_mate_fa_serial(positive_mate_reads, negative_mate_reads, disc_file_name, a_positive_repeat_map, a_negative_repeat_map);
 	vector<meerkat::BlockBoundary> local_fixed_size_blocks;
 	vector<meerkat::BlockBoundary> local_unmapped_included_blocks;
 	vector<meerkat::BlockBoundary> local_independent_blocks;
 	collect_boundaries_pos(local_fixed_size_blocks, local_unmapped_included_blocks, local_independent_blocks, disc_file_name, disc_bai_name, disc_bni_name, size_block);
-//	vector<meerkat::BlockBoundary> actual_blocks = local_unmapped_included_blocks;
-//	collect_boundaries(fixed_size_blocks, disc_file_name, size_block);
 	_output_mate_fa_v(positive_mate_reads, negative_mate_reads, local_unmapped_included_blocks, disc_file_name, a_positive_repeat_map, a_negative_repeat_map);
-//	bool found_clipped_reads = false;
-//	for(auto& an_entry : a_positive_repeat_map) {
-//		auto& read_name = an_entry.first;
-//		if(string::npos != read_name.rfind("mu1") || string::npos != read_name.rfind("mu2") || string::npos != read_name.rfind("sc")) {
-//			found_clipped_reads = true;
-//			break;
-//		}
-//	}
-//	if(!found_clipped_reads) {
-//		for(auto& an_entry : a_negative_repeat_map) {
-//			auto& read_name = an_entry.first;
-//			if(string::npos != read_name.rfind("mu1") || string::npos != read_name.rfind("mu2") || string::npos != read_name.rfind("sc")) {
-//				found_clipped_reads = true;
-//				break;
-//			}
-//		}
-//	}
-
-//	if(found_clipped_reads) {
-//		cout << "[TEA.output_mate_fa_v] collect mate reads from cl disc file\n";
-////		_output_mate_fa_serial(positive_mate_reads, negative_mate_reads, cl_disc_file_name, a_positive_repeat_map, a_negative_repeat_map);
-//		vector<meerkat::BlockBoundary> local_fixed_size_blocks;
-//		vector<meerkat::BlockBoundary> local_unmapped_included_blocks;
-//		vector<meerkat::BlockBoundary> local_independent_blocks;
-//		collect_boundaries_pos(local_fixed_size_blocks, local_unmapped_included_blocks, local_independent_blocks, cl_disc_file_name, size_block);
-////		collect_boundaries(fixed_size_blocks, cl_disc_file_name, size_block);
-//		_output_mate_fa_v(positive_mate_reads, negative_mate_reads, local_unmapped_included_blocks, cl_disc_file_name, a_positive_repeat_map, a_negative_repeat_map);
-//	}
 
 	for(auto& an_entry : positive_mate_reads) {
 		tasks.push_back([&] {
@@ -13386,77 +13328,52 @@ void TEA::output_mate_fa_v(boost::unordered_map<string, boost::unordered_map<int
 	{
 		ofstream all_files(all_assembly_files, ios::binary);
 		for(auto& an_entry : positive_mate_reads) {
-	//		tasks.push_back([&]{
 				auto& file_name_prefix = an_entry.first;
 				string pos_fa_name = (boost::format("%s/%s.pos.fa") % contig_dir % file_name_prefix).str();
 				if(!boost::filesystem::exists(pos_fa_name)) {
 					continue;
 				}
 				all_files << pos_fa_name << "\n";
-	//			string assembler_cmd = (boost::format("%s %s %s > %s.log") % options.assembler % pos_fa_name % options.assembler_param % pos_fa_name).str();
-	//			all_cmds << assembler_cmd << "\n";
-	//			system(assembler_cmd.c_str());
-	//		});
 		}
 		for(auto& an_entry : positive_mate_reads) {
-	//		tasks.push_back([&]{
 				auto& file_name_prefix = an_entry.first;
 				string rpos_fa_name = (boost::format("%s/%s.rpos.fa") % contig_dir % file_name_prefix).str();
 				if(!boost::filesystem::exists(rpos_fa_name)) {
 					continue;
 				}
 				all_files << rpos_fa_name << "\n";
-	//			string assembler_cmd = (boost::format("%s %s %s > %s.log") % options.assembler % rpos_fa_name % options.assembler_param % rpos_fa_name).str();
-	//			system(assembler_cmd.c_str());
-	//		});
 		}
 		for(auto& an_entry : negative_mate_reads) {
-	//		tasks.push_back([&]{
 				auto& file_name_prefix = an_entry.first;
 				string neg_fa_name = (boost::format("%s/%s.neg.fa") % contig_dir % file_name_prefix).str();
 				if(!boost::filesystem::exists(neg_fa_name)) {
 					continue;
 				}
 				all_files << neg_fa_name << "\n";
-	//			string assembler_cmd = (boost::format("%s %s %s > %s.log") % options.assembler % neg_fa_name % options.assembler_param % neg_fa_name).str();
-	//			system(assembler_cmd.c_str());
-	//		});
 		}
 		for(auto& an_entry : negative_mate_reads) {
-	//		tasks.push_back([&]{
 				auto& file_name_prefix = an_entry.first;
 				string rneg_fa_name = (boost::format("%s/%s.rneg.fa") % contig_dir % file_name_prefix).str();
 				if(!boost::filesystem::exists(rneg_fa_name)) {
 					continue;
 				}
 				all_files << rneg_fa_name << "\n";
-	//			string assembler_cmd = (boost::format("%s %s %s > %s.log") % options.assembler % rneg_fa_name % options.assembler_param % rneg_fa_name).str();
-	//			system(assembler_cmd.c_str());
-	//		});
 		}
 
 		for(auto& a_prefix: a_positive_clipped_prefixes) {
-	//		tasks.push_back([&]{
 				string pos_fa_name = (boost::format("%s/%s.pos.fa") % contig_dir % a_prefix).str();
 				if(!boost::filesystem::exists(pos_fa_name)) {
 					continue;
 				}
 				all_files << pos_fa_name << "\n";
-	//			string assembler_cmd = (boost::format("%s %s %s > %s.log") % options.assembler % pos_fa_name % options.assembler_param % pos_fa_name).str();
-	//			system(assembler_cmd.c_str());
-	//		});
 		}
 
 		for(auto& a_prefix: a_negative_clipped_prefixes) {
-	//		tasks.push_back([&]{
 				string neg_fa_name = (boost::format("%s/%s.neg.fa") % contig_dir % a_prefix).str();
 				if(!boost::filesystem::exists(neg_fa_name)) {
 					continue;
 				}
 				all_files << neg_fa_name << "\n";
-	//			string assembler_cmd = (boost::format("%s %s %s > %s.log") % options.assembler % neg_fa_name % options.assembler_param % neg_fa_name).str();
-	//			system(assembler_cmd.c_str());
-	//		});
 		}
 		for (auto& c_entry : ram) {
 			auto& c = c_entry.first;
@@ -13727,20 +13644,9 @@ void TEA::_output_mate_fa_v(boost::unordered_map<string, vector<string>>& positi
 					auto the_neg_itr = a_negative_repeat_map.find(local_alignment_entry.Name);
 					if (a_positive_repeat_map.end() != the_pos_itr) {
 						auto& aln_pair = the_pos_itr->second;
-//						int64_t the_pos = aln_pair.pos;
-//						int64_t aln_pos = local_alignment_entry.Position + 1;
-
-//					auto the_ref_id_itr = ref_reverse_index.find(aln_pair.chr);
-//					if(ref_reverse_index.end() != the_ref_id_itr) {
-//						int64_t the_ref_id = the_ref_id_itr->second;
-//						if(local_alignment_entry.Position != the_pos && local_alignment_entry.RefID == the_ref_id) {
 						if(!local_alignment_entry.IsMapped()) {
 
-//						if(aln_pos != the_pos) {
-//							cout << "Pos: " << the_pos << ": " << BamWriter::GetSAMAlignment(local_alignment_entry, local_reader.GetReferenceData()) << "\n";
-//							if(local_alignment_entry.IsReverseStrand()) {
 							local_alignment_entry.QueryBases = castle::StringUtils::get_reverse_complement(local_alignment_entry.QueryBases);
-//							}
 							if(debug) {
 								cout << (boost::format("[TEA._output_mate_fa_v] %s\n") % BamWriter::GetSAMAlignment(local_alignment_entry, local_reader.GetReferenceData())).str();
 								cout << "[TEA._output_mate_fa_v] positive\n";
@@ -13748,58 +13654,28 @@ void TEA::_output_mate_fa_v(boost::unordered_map<string, vector<string>>& positi
 							auto& the_seq_vec = local_positive_mate_reads[aln_pair.file_name_prefix];
 							the_seq_vec.push_back(local_alignment_entry.QueryBases);
 						}
-//					}
 					}
 					if (a_negative_repeat_map.end() != the_neg_itr) {
-
 						auto& aln_pair = the_neg_itr->second;
-//						int64_t the_pos = aln_pair.pos;
-//						int64_t aln_pos = local_alignment_entry.Position + 1;
-
-//					auto the_ref_id_itr = ref_reverse_index.find(aln_pair.chr);
-//					if(ref_reverse_index.end() != the_ref_id_itr) {
-//						int64_t the_ref_id = the_ref_id_itr->second;
-//						if(local_alignment_entry.Position != the_pos && local_alignment_entry.RefID == the_ref_id) {
 						if(!local_alignment_entry.IsMapped()) {
 							if(debug) {
 								cout << (boost::format("[TEA._output_mate_fa_v] %s\n") % BamWriter::GetSAMAlignment(local_alignment_entry, local_reader.GetReferenceData())).str();
 								cout << "[TEA._output_mate_fa_v] negative\n";
 							}
-//						if(aln_pos != the_pos) {
-//							cout << "Neg: " << the_pos << ": " << BamWriter::GetSAMAlignment(local_alignment_entry, local_reader.GetReferenceData()) << "\n";
 							if(local_alignment_entry.IsReverseStrand()) {
 								local_alignment_entry.QueryBases = castle::StringUtils::get_reverse_complement(local_alignment_entry.QueryBases);
 							}
 							auto& the_seq_vec = local_negative_mate_reads[aln_pair.file_name_prefix];
 							the_seq_vec.push_back(local_alignment_entry.QueryBases);
 						}
-//					}
 					}
 				}
 
 				local_reader.Close();
-//				done_vector[block_id] = 'D';
-
-//				if(verbose) {
-//					string a_block_boundary_str = (boost::format("%s %d-%d %d")
-//							% local_alignment_entry.Name % local_alignment_entry.RefID % local_alignment_entry.Position
-//							% local_alignment_entry.AlignmentFlag).str();
-//					if(block_boundary_strs.end() == block_boundary_strs.find(a_block_boundary_str)) {
-//						cout << (boost::format("[TEA.BAM_to_FASTQ] Block-%d (last-wrong) %s\n")
-//								% block_id % a_block_boundary_str).str();
-//					} else {
-//						cout << (boost::format("[TEA.BAM_to_FASTQ] Block-%d (last) %s\n")
-//								% block_id % a_block_boundary_str).str();
-//					}
-//				} else {
-//					size_t n = count(done_vector.begin(), done_vector.end(), 'D');
-//					double processed = n/(double)done_vector.size() * 100.0;
-//					cout << (boost::format("%.2f %%\n") % processed).str();
-//				}
 			});
 	}
 	castle::ParallelRunner::run_unbalanced_load(n_cores, tasks);
-//	cout << "[TEA._output_mate_fa] gattter scattered information\n";
+
 	tasks.push_back([&, calculated_n_blocks] {
 		for (int64_t block_id = 0; block_id < calculated_n_blocks - 1; ++block_id) {
 			auto& local_positive_mate_reads = positive_mate_reads_list[block_id];
@@ -13811,6 +13687,7 @@ void TEA::_output_mate_fa_v(boost::unordered_map<string, vector<string>>& positi
 			}
 		}
 	});
+
 	tasks.push_back([&, calculated_n_blocks] {
 		for (int64_t block_id = 0; block_id < calculated_n_blocks - 1; ++block_id) {
 			auto& local_negative_mate_reads = negative_mate_reads_list[block_id];

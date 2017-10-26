@@ -387,7 +387,14 @@ void BWACaller::collect_align_tasks_alt(vector<function<void()> >& tasks, const 
 	}
 }
 
-void BWACaller::collect_single_align_tasks(vector<function<void()> >& tasks, const int64_t n_blocks, const string& sam_path, const string& reference_path, const string& aln_param, const string& samse_param, const string& file_path) {
+void BWACaller::collect_single_align_tasks(
+		vector<function<void()> >& tasks,
+		const int64_t n_blocks,
+		const string& sam_path,
+		const string& reference_path,
+		const string& aln_param,
+		const string& samse_param,
+		const string& file_path) {
 	for (int64_t block_id = 0; block_id < n_blocks; ++block_id) {
 		tasks.push_back([sam_path, reference_path, aln_param, samse_param, file_path, block_id] {
 			string str_block_id = boost::lexical_cast<string>(block_id);
@@ -399,11 +406,19 @@ void BWACaller::collect_single_align_tasks(vector<function<void()> >& tasks, con
 			string fq_sai = file_path + ".sai." + str_block_id;
 			string fq_sam = sam_path + "." + str_block_id;
 			string bwa_err = file_path + ".bwa.err." + str_block_id;
-//			if(castle::IOUtils::get_file_size(fq_sam) > 0) {
-//				return;
-//			}
-			string bwa_aln_cmd = (boost::format("bwa aln %s -t 1 %s %s >%s 2>%s") % aln_param % reference_path % fq % fq_sai % bwa_err).str();
-			string bwa_cmd_samse = (boost::format("bwa samse %s -f %s %s %s %s 2>>%s") % samse_param % fq_sam % reference_path % fq_sai % fq % bwa_err).str();
+			string bwa_aln_cmd = (boost::format("bwa aln %s -t 1 %s %s >%s 2>%s")
+					% aln_param
+					% reference_path
+					% fq
+					% fq_sai
+					% bwa_err).str();
+			string bwa_cmd_samse = (boost::format("bwa samse %s -f %s %s %s %s 2>>%s")
+					% samse_param
+					% fq_sam
+					% reference_path
+					% fq_sai
+					% fq
+					% bwa_err).str();
 			system(bwa_aln_cmd.c_str());
 			system(bwa_cmd_samse.c_str());
 		});

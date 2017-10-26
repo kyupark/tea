@@ -333,24 +333,6 @@ namespace meerkat {
 		snip(unmapped, unmapped.Length - big_s_bps, big_s_bps);
 
 		return true;
-//		if (a.IsMapped()) {
-//			// mapped=> a
-//			// unmapped => b
-//			if (b.Length < big_s_bps || a.Length < 2 * big_s_bps)
-//				return false;
-//			snip(b, 0, big_s_bps);
-//			if (b.Length < 2 * big_s_bps)
-//				return true;
-//		} else {
-//			// mapped => b
-//			// unmapped => a
-//			if (a.Length < big_s_bps || b.Length < 2 * big_s_bps)
-//				return false;
-//			snip(a, 0, big_s_bps);
-//			if (a.Length < 2 * big_s_bps)
-//				return true;
-//		}
-//		return true;
 	}
 
 	bool ReadGroup::recordUMAltRG(ostream& f1, ostream& f2,
@@ -424,7 +406,6 @@ namespace meerkat {
 			mate.Name += "sc";
 			writeFQpair(f1, copy, f2, mate, n_cutoff);
 		}
-
 		return true;
 	}
 
@@ -476,7 +457,6 @@ namespace meerkat {
 			mate.Name += "sc";
 			writeFQpair(f1, copy, f2, mate, n_cutoff);
 		}
-
 		return true;
 	}
 

@@ -1302,7 +1302,6 @@ void ParallelBamReader::classify_store_reads_in_regions(){
 			int64_t num_normal_pair = 0;
 			int64_t max_read_len = 0;
 			int bps = min(options.big_s_bps, options.frag_size);
-
 			
 			//CC: define a local map<readId, alignment>, and check within the region there are satisfied pairs.
 			//CC: here "satisfied" mean, the pairs are map-unmap, map-clip pairs, but within the region.
@@ -1470,31 +1469,7 @@ void ParallelBamReader::output_blacklist_file() {
 	int64_t calculated_n_blocks = actual_blocks.size();
 // only for debugging
 	string done_vector(calculated_n_blocks - 1, 'U');
-// find read group
-//vector<string> read_groups;
-//{
-//BamTools::BamReader local_reader;
-//if (!local_reader.Open(a_path, an_index_path)) {
-//return;
-//}
-//istringstream in(local_reader.GetHeaderText());
-//string line;
-//const char* delim = "\t:";
-//vector<string> a_cols;
-//while(getline(in, line, '\n')) {
-//if(string::npos == line.find("@RG")) {
-//continue;
-//}
-//castle::StringUtils::c_string_multi_split(line, delim, a_cols);
-//if(a_cols.size() < 2) {
-//continue;
-//}
-//read_groups.push_back(a_cols[2]);
-//}
-//local_reader.Close();
-//}
 	vector<map<string, ReadGroupAlt>> read_group_maps(calculated_n_blocks - 1);
-//max_read_len = 151;
 	vector<BlockBoundary> black_list_block_boundaries(calculated_n_blocks);
 	for (int64_t block_id = 1; block_id < calculated_n_blocks; ++block_id) {
 		black_list_block_boundaries[block_id - 1] = actual_blocks[block_id];
@@ -1512,27 +1487,13 @@ void ParallelBamReader::output_blacklist_file() {
 			int32_t the_current_ref_id = actual_blocks[block_id].ref_id;
 			int32_t the_current_ref_pos = actual_blocks[block_id].pos;
 			int32_t the_next_ref_id = actual_blocks[block_id + 1].ref_id;
-//			int32_t the_next_ref_pos = actual_blocks[block_id + 1].pos;
 			if(-1 == the_current_ref_id && -1 == the_next_ref_id) {
 				local_reader.Close();
 				return;
 			}
-//uint32_t the_next_aln_flag = actual_blocks[block_id + 1].aln_flag;
 				string str_block_id = boost::lexical_cast<string>(block_id);
-
-//ofstream blist(options.blistname + "." + str_block_id, ios::binary);
 				string the_next_block_read_name = actual_blocks[block_id + 1].read_name;
-//				bool jump_success = local_reader.Jump(actual_blocks[block_id].ref_id, actual_blocks[block_id].jump_pos);
-//				if(!jump_success) {
-//					cout << (boost::format("[ParallelBamReader.output_blacklist_file] block-%d (Jump fail): (%d/%d)-(%d/%d)\n")
-//							% block_id % the_current_ref_id % the_current_ref_pos
-//							% the_next_ref_id % the_next_ref_pos).str();
-//					local_reader.Close();
-//					return;
-//				}
-
 				int64_t the_current_ref_offset = actual_blocks[block_id].offset;
-//				int64_t the_next_ref_offset = actual_blocks[block_id + 1].offset;
 				auto& m_bgzf = local_reader.GetBGZF();
 				if(0 != block_id) {
 					if(!m_bgzf.Seek(the_current_ref_offset)) {
@@ -1549,8 +1510,6 @@ void ParallelBamReader::output_blacklist_file() {
 				}
 
 				long cur_pos = the_current_ref_pos, cur_chrom = the_current_ref_id;
-//auto& refnames = local_reader.GetReferenceData();
-//auto& local_read_group_map = read_group_maps[block_id];
 				bool terminate_search = false;
 				int64_t num_total = 0;
 				int32_t the_current_max_pos = -1;
@@ -1558,18 +1517,12 @@ void ParallelBamReader::output_blacklist_file() {
 				int64_t prev_offset = cur_offset;
 				if(cur_offset != the_current_ref_offset) {
 				cout << (boost::format("[ParallelBamReader.output_blacklist_file] block-%d (start) offset: jump: %d, calc: %d\n")
-				% block_id % cur_offset % the_current_ref_offset).str();
+						% block_id
+						% cur_offset
+						% the_current_ref_offset).str();
 				}
 
 				while (local_reader.LoadNextAlignmentWithName(local_alignment_entry)) {
-
-//if(local_alignment_entry.Name == the_next_block_read_name
-//&& local_alignment_entry.RefID == the_next_ref_id
-//&& local_alignment_entry.Position == the_next_ref_pos
-//&& local_alignment_entry.AlignmentFlag == the_next_aln_flag
-//) {
-//break;
-//}
 					if( -1 == local_alignment_entry.Position) {
 						continue;
 					}
@@ -1580,7 +1533,9 @@ void ParallelBamReader::output_blacklist_file() {
 
 					if(verbose && 0 == num_total) {
 						string a_block_boundary_str = (boost::format("%s %d-%d %d")
-								% local_alignment_entry.Name % local_alignment_entry.RefID % local_alignment_entry.Position
+								% local_alignment_entry.Name
+								% local_alignment_entry.RefID
+								% local_alignment_entry.Position
 								% local_alignment_entry.AlignmentFlag).str();
 						cout << (boost::format("[ParallelBamReader.output_blacklist_file] Block-%d (boundary first) %s\n")
 								% block_id % a_block_boundary_str).str();
@@ -1589,21 +1544,18 @@ void ParallelBamReader::output_blacklist_file() {
 					++num_total;
 					/* XXX: does not account for CIGAR string data like calDepth */
 					/* these 4 Is* conditions match calDepth's default mask */
-					if (options.coverage_cutoff > 0 && local_alignment_entry.IsMapped()
+					if (options.coverage_cutoff > 0
+							&& local_alignment_entry.IsMapped()
 							&& local_alignment_entry.IsPrimaryAlignment()
 							&& !local_alignment_entry.IsFailedQC() && !local_alignment_entry.IsDuplicate()) {
 						if (local_alignment_entry.RefID != cur_chrom && cur_chrom != -1) {
 							for (int i = 0; i < max_read_len; ++i) {
 								if (cov[i] >= options.coverage_cutoff) {
-//string a_boundary_str =
-//(boost::format("%s\t%d\t%d\n") % refnames[cur_chrom].RefName
-//% (cur_pos + i + 1) % cov[i]).str();
 									black_list_block_boundaries[block_id - 1].read_name = local_alignment_entry.Name;
 									black_list_block_boundaries[block_id - 1].ref_id = local_alignment_entry.RefID;
 									black_list_block_boundaries[block_id - 1].offset = prev_offset;
 									black_list_block_boundaries[block_id - 1].pos = local_alignment_entry.Position;
 									black_list_block_boundaries[block_id - 1].aln_flag = local_alignment_entry.AlignmentFlag;
-//block_boundaries[block_id - 1] = a_block_boundary_str;
 									terminate_search = true;
 									break;
 								}
@@ -1614,9 +1566,6 @@ void ParallelBamReader::output_blacklist_file() {
 							int x = min(local_alignment_entry.Position - cur_pos, max_read_len);
 							for (int i = 0; i < x; ++i) {
 								if (cov[i] >= options.coverage_cutoff) {
-//string a_boundary_str =
-//(boost::format("%s\t%d\t%d\n") % refnames[cur_chrom].RefName
-//% (cur_pos + i + 1) % cov[i]).str();
 									black_list_block_boundaries[block_id - 1].read_name = local_alignment_entry.Name;
 									black_list_block_boundaries[block_id - 1].ref_id = local_alignment_entry.RefID;
 									black_list_block_boundaries[block_id - 1].offset = prev_offset;
@@ -1653,32 +1602,22 @@ void ParallelBamReader::output_blacklist_file() {
 				free(cov);
 				if(verbose) {
 					string a_block_boundary_str = (boost::format("%s %d-%d<%d %d")
-							% local_alignment_entry.Name % local_alignment_entry.RefID % local_alignment_entry.Position
+							% local_alignment_entry.Name
+							% local_alignment_entry.RefID
+							% local_alignment_entry.Position
 							% the_current_max_pos
 							% local_alignment_entry.AlignmentFlag).str();
 					cout << (boost::format("[ParallelBamReader.output_blacklist_file] Block-%d (boundary last) %s\n")
-							% block_id % a_block_boundary_str).str();
+							% block_id
+							% a_block_boundary_str).str();
 				}
-//done_vector[block_id] = 'D';
-
-//else {
-//size_t n = count(done_vector.begin(), done_vector.end(), 'D');
-//double processed = n/(double)done_vector.size() * 100.0;
-//cout << (boost::format("%.2f %%\n") % processed).str();
-//}
 			});
 	}
-//	if(tasks.size() > 0) {
-//		swap(tasks[0], tasks.back());
-//	}
 	castle::ParallelRunner::run_unbalanced_load(n_cores, tasks);
-//block_boundaries[calculated_n_blocks - 2].read_name = "last";
+
 	if (verbose) {
 		cout << "[ParallelBamReader.output_blacklist_file] print boundaries\n";
 		for (uint64_t boundary_id = 0; boundary_id < black_list_block_boundaries.size(); ++boundary_id) {
-//if(block_boundaries[boundary_id].empty()) {
-//continue;
-//}
 			cout << (boost::format("[ParallelBamReader.output_blacklist_file] Block-%d (boundary str) %s\n") % boundary_id % black_list_block_boundaries[boundary_id].str()).str();
 		}
 	}
@@ -1695,8 +1634,6 @@ void ParallelBamReader::output_blacklist_file() {
 			int32_t the_current_ref_pos = actual_blocks[block_id].pos;
 
 			int32_t the_next_ref_id = black_list_block_boundaries[block_id].ref_id;
-//			int32_t the_next_ref_pos = black_list_block_boundaries[block_id].pos;
-//			uint32_t the_next_aln_flag = black_list_block_boundaries[block_id].aln_flag;
 			if(-1 == the_current_ref_id && -1 == the_next_ref_id) {
 				local_reader.Close();
 				return;
@@ -1716,14 +1653,6 @@ void ParallelBamReader::output_blacklist_file() {
 
 				ofstream blist(options.blistname + "." + str_block_id, ios::binary);
 
-//			bool jump_success = local_reader.Jump(actual_blocks[block_id].ref_id, actual_blocks[block_id].jump_pos);
-//			if(!jump_success) {
-//				cout << (boost::format("[ParallelBamReader.output_blacklist_file] block-%d (Jump fail): (%d/%d)-(%d/%d)\n")
-//						% block_id % the_current_ref_id % the_current_ref_pos
-//						% the_next_ref_id % the_next_ref_pos).str();
-//				local_reader.Close();
-//				return;
-//			}
 				long *cov = 0;
 				long covsize = sizeof(long) * max_read_len;
 				if (options.coverage_cutoff > 0) {
@@ -1734,23 +1663,25 @@ void ParallelBamReader::output_blacklist_file() {
 				long cur_pos = the_current_ref_pos, cur_chrom = the_current_ref_id;
 				auto& refnames = local_reader.GetReferenceData();
 				auto& local_read_group_map = read_group_maps[block_id];
-//int32_t state = 0;
 				int64_t num_total = 0;
-//int64_t the_current_max_pos = -1;
 				int64_t cur_offset = m_bgzf.Tell();
 				int64_t prev_offset = cur_offset;
 				if(cur_offset != the_current_ref_offset) {
 					cout << (boost::format("[ParallelBamReader.output_blacklist_file] block-%d (start) offset: jump: %d, calc: %d\n")
-							% block_id % cur_offset % the_current_ref_offset).str();
+							% block_id
+							% cur_offset
+							% the_current_ref_offset).str();
 				}
 
 				while (local_reader.LoadNextAlignmentWithName(local_alignment_entry)) {
 					if(verbose && 0 == num_total) {
 						string a_block_boundary_str = (boost::format("%s %d-%d %d")
-								% local_alignment_entry.Name % local_alignment_entry.RefID % local_alignment_entry.Position
+								% local_alignment_entry.Name % local_alignment_entry.RefID
+								% local_alignment_entry.Position
 								% local_alignment_entry.AlignmentFlag).str();
 						cout << (boost::format("[ParallelBamReader.output_blacklist_file] Block-%d (writing first) %s\n")
-								% block_id % a_block_boundary_str).str();
+								% block_id
+								% a_block_boundary_str).str();
 					}
 
 					++num_total;
@@ -1772,13 +1703,6 @@ void ParallelBamReader::output_blacklist_file() {
 						} else if (local_alignment_entry.Position != cur_pos && cur_pos != -1) {
 							/* compute the number of positions in our cov
 							 * buffer that need to be kicked out */
-//if("MT" == refnames[cur_chrom].RefName && 0 == cur_pos) {
-//string a_block_boundary_str = (boost::format("%s (%d-%d)->(%d-%d) %d")
-//% local_alignment_entry.Name % cur_chrom % cur_pos % local_alignment_entry.RefID % local_alignment_entry.Position
-//% local_alignment_entry.AlignmentFlag).str();
-//cout << (boost::format("[ParallelBamReader.output_cov_and_readgroup_alt] Block-%d (writing case-2) %s\n")
-//% block_id % a_block_boundary_str).str();
-//}
 							int x = min(local_alignment_entry.Position - cur_pos, max_read_len);
 							for (int i = 0; i < x; ++i) {
 								if (cov[i] >= options.coverage_cutoff) {
@@ -1798,19 +1722,12 @@ void ParallelBamReader::output_blacklist_file() {
 						}
 					}
 					cur_offset = m_bgzf.Tell();
-//					if(local_alignment_entry.RefID == the_next_ref_id
-//							&& local_alignment_entry.Position == the_next_ref_pos
-//							&& local_alignment_entry.AlignmentFlag == the_next_aln_flag
-//							&& local_alignment_entry.Name == the_next_block_read_name
-//					) {
-//						break;
-//					}
 
 					if(prev_offset >= the_next_ref_offset) {
 						break;
 					}
 					prev_offset = cur_offset;
-///* Determine this alignment's readgroup */
+
 					string rg_name;
 					if(!local_alignment_entry.GetReadGroup(rg_name)) {
 						rg_name = "none";
@@ -1829,21 +1746,15 @@ void ParallelBamReader::output_blacklist_file() {
 				}
 				if(verbose) {
 					string a_block_boundary_str = (boost::format("%s %d-%d %d")
-							% local_alignment_entry.Name % local_alignment_entry.RefID % local_alignment_entry.Position
+							% local_alignment_entry.Name
+							% local_alignment_entry.RefID % local_alignment_entry.Position
 							% local_alignment_entry.AlignmentFlag).str();
 					cout << (boost::format("[ParallelBamReader.output_blacklist_file] Block-%d (writing last) %s\n")
 							% block_id % a_block_boundary_str).str();
 				}
-//				else {
-//					size_t n = count(done_vector.begin(), done_vector.end(), 'D');
-//					double processed = n/(double)done_vector.size() * 100.0;
-//					cout << (boost::format("%.2f %%\n") % processed).str();
-//				}
 			});
 	}
-//	if(tasks.size() > 0) {
-//		swap(tasks[0], tasks.back());
-//	}
+
 	castle::ParallelRunner::run_unbalanced_load(n_cores, tasks);
 	cout << "[ParallelBamReader.output_blacklist_file] gathers scattered data\n";
 	vector<string> blist_file_names;
@@ -1852,58 +1763,11 @@ void ParallelBamReader::output_blacklist_file() {
 		string a_blist_file_name = options.blistname + "." + str_block_id;
 		blist_file_names.push_back(a_blist_file_name);
 	}
-	// since in the next steps of meerkat, entries in the black list file are stored in a map, hence redundant keys due to the boundary loop
-	// would not be a problem. The code below reduces such redundant key, but not so efficient.
-	//		tasks.push_back([&] {
-	//			ogzstream blist_final(options.blistname.c_str());
-	//			string line;
-	//			string prev_line;
-	//			for (int64_t block_id = 0; block_id < calculated_n_blocks - 1; ++block_id) {
-	//				string str_block_id = boost::lexical_cast<string>(block_id);
-	//				istringstream in(castle::IOUtils::read_fully(options.blistname + "." + str_block_id));
-	//	// at the boundary of each parallel block, some redundant entry would be generated
-	//	// hence a duplicated entry will be ignored.
-	//				while(getline(in, line, '\n')) {
-	//					if(line != prev_line) {
-	//						blist_final << line << "\n";
-	//						prev_line = line;
-	//					}
-	//				}
-	//			}
-	//			blist_final.close();
-	//		});
 
 	castle::IOUtils::plain_file_compress_and_merge(options.blistname, blist_file_names, n_cores, true);
-//	tasks.push_back([&] {
-//		ogzstream blist_final(options.blistname.c_str());
-//		string line;
-//		string prev_line;
-//		for (int64_t block_id = 0; block_id < calculated_n_blocks - 1; ++block_id) {
-//			string str_block_id = boost::lexical_cast<string>(block_id);
-//			istringstream in(castle::IOUtils::read_fully(options.blistname + "." + str_block_id));
-//// at the boundary of each parallel block, some redundant entry would be generated
-//// hence a duplicated entry will be ignored.
-//			while(getline(in, line, '\n')) {
-//				if(line != prev_line) {
-//					blist_final << line << "\n";
-//					prev_line = line;
-//				}
-//			}
-//		}
-//		blist_final.close();
-//	});
-//	castle::ParallelRunner::run_unbalanced_load(n_cores, tasks);
-//	{
-//		for (int64_t block_id = 0; block_id < calculated_n_blocks - 1; ++block_id) {
-//			tasks.push_back([&, block_id] {
-//				string str_block_id = boost::lexical_cast<string>(block_id);
-//				boost::filesystem::remove(options.blistname + "." + str_block_id);
-//			});
-//		}
-//		castle::ParallelRunner::run_unbalanced_load(n_cores, tasks);
-//	}
 	cout << checker;
 }
+
 
 void ParallelBamReader::find_quality_standard_and_max_read_length(vector<uint64_t>& quality_sample_space) {
 	castle::TimeChecker checker;
@@ -2196,7 +2060,7 @@ void ParallelBamReader::output_unmapped() {
 
 void ParallelBamReader::collect_second_statistics() {
 	output_unmapped();
-	output_blacklist_file();
+//	output_blacklist_file();
 // dependency on softclips
 	output_softclips();
 	output_read_groups_alt();
@@ -2780,8 +2644,7 @@ void ParallelBamReader::output_softclips() {
 										if(!found_zero) {
 											local_chist.add(ReadGroup::getMateNumber(local_alignment_entry) == rep_mate ? local_alignment_entry : mate);
 											if (!rg.recordSCAltNoRG(ReadGroup::getMateNumber(local_alignment_entry) == rep_mate ? local_alignment_entry : mate,
-													ReadGroup::getMateNumber(local_alignment_entry) == rep_mate ? mate : local_alignment_entry, rep_mate, clipfile, split1, split2, options.big_s_bps,
-															options.frag_size, options.n_cutoff)) {
+													ReadGroup::getMateNumber(local_alignment_entry) == rep_mate ? mate : local_alignment_entry, rep_mate, clipfile, split1, split2, options.big_s_bps, options.frag_size, options.n_cutoff)) {
 												if(debug) {
 													cout << "[ParallelBamReader.output_softclips] clipped rejected\n";
 												}
@@ -3661,7 +3524,8 @@ void ParallelBamReader::output_read_groups_alt() {
 				filename_1 = options.working_prefix + "/" + rg_name + "_1.fq";
 				filename_2 = options.working_prefix + "/" + rg_name + "_2.fq";
 			}
-			if (!boost::filesystem::exists(filename_1) || !boost::filesystem::exists(filename_2)) {
+			if (!boost::filesystem::exists(filename_1)
+					|| !boost::filesystem::exists(filename_2)) {
 				all_processed = false;
 				break;
 			}
@@ -3684,12 +3548,6 @@ void ParallelBamReader::output_read_groups_alt() {
 				return;
 			}
 			int64_t num_total = 0;
-//			int32_t the_current_ref_id = actual_blocks[block_id].ref_id;
-//			int32_t the_current_ref_pos = actual_blocks[block_id].pos;
-//
-//			int32_t the_next_ref_id = actual_blocks[block_id + 1].ref_id;
-//			int32_t the_next_ref_pos = actual_blocks[block_id + 1].pos;
-//			uint32_t the_next_aln_flag = actual_blocks[block_id + 1].aln_flag;
 			string the_next_block_read_name = unmapped_included_blocks[block_id + 1].read_name;
 			string str_block_id = boost::lexical_cast<string>(block_id);
 
@@ -3723,27 +3581,7 @@ void ParallelBamReader::output_read_groups_alt() {
 					return;
 				}
 			}
-//			bool jump_success = local_reader.Jump(actual_blocks[block_id].ref_id, actual_blocks[block_id].jump_pos);
-//			if(!jump_success) {
-//				cout << (boost::format("[ParallelBamReader.output_read_groups_alt] (Jump fail) Block-%d (%d/%d)-(%d/%d)\n")
-//						% block_id % the_current_ref_id % the_current_ref_pos
-//						% the_next_ref_id % the_next_ref_pos).str();
-//				local_reader.Close();
-//				return;
-//			}
-//if(verbose) {
-//cout << (boost::format("[ParallelBamReader.output_read_groups] (start) Block-%d (%d/%d)-(%d/%d)\n")
-//% block_id % the_current_ref_id % the_current_ref_pos
-//% the_next_ref_id % the_next_ref_pos).str();
-//}
-
-//				int32_t decoy_ref_id = -8;
-//				auto decoy_itr = ref_reverse_index.find("hs37d5");
-//				if(ref_reverse_index.end() != decoy_itr) {
-//					decoy_ref_id = decoy_itr->second;
-//				}
 				string rg_name;
-//				const RefVector& refnames = local_reader.GetReferenceData();
 				BamAlignment local_alignment_entry;
 				ReadGroup rg;
 				auto& rgs = rgs_lists[block_id];
@@ -3752,35 +3590,13 @@ void ParallelBamReader::output_read_groups_alt() {
 
 				int64_t cur_offset = m_bgzf.Tell();
 				int64_t prev_offset = cur_offset;
-//				if(cur_offset != the_current_ref_offset) {
-//					cout << (boost::format("[ParallelBamReader.output_read_groups_alt] block-%d (start) offset: jump: %d, calc: %d\n")
-//				% block_id % cur_offset % the_current_ref_offset).str();
-//				}
 
 				while (local_reader.LoadNextAlignmentCore(local_alignment_entry)) {
-//					if(verbose && 0 == num_total) {
-//						string a_block_boundary_str = (boost::format("%s %d-%d %d")
-//								% local_alignment_entry.Name % local_alignment_entry.RefID % local_alignment_entry.Position
-//								% local_alignment_entry.AlignmentFlag).str();
-//						cout << (boost::format("[ParallelBamReader.output_read_groups_alt] (first) Block-%d %s\n")
-//								% block_id % a_block_boundary_str).str();
-//					}
-//					if(local_alignment_entry.RefID == the_next_ref_id
-//							&& local_alignment_entry.Position == the_next_ref_pos
-//							&& local_alignment_entry.AlignmentFlag == the_next_aln_flag
-//							&& local_alignment_entry.Name == the_next_block_read_name
-//					) {
-//						break;
-//					}
 					cur_offset = m_bgzf.Tell();
 					if(prev_offset >= the_next_ref_offset) {
 						break;
 					}
 					prev_offset = cur_offset;
-					//					if(the_next_ref_id == decoy_ref_id && local_alignment_entry.RefID == decoy_ref_id) {
-//						break;
-//					}
-//					bool debug = string::npos != local_alignment_entry.Name.find("ST-E00104:502:HFJN5CCXX:1:1108:32826:10890");
 					++num_total;
 					if(!local_alignment_entry.GetReadGroup(rg_name)) {
 						rg_name = "none";
@@ -3793,33 +3609,21 @@ void ParallelBamReader::output_read_groups_alt() {
 					if(!local_alignment_entry.IsMapped()) {
 						ReadGroup::trim_read(local_alignment_entry, options.q, qenc);
 					}
-//					if(debug) {
-//						cout << "rg: here-0: " << block_id << "\n";
-//					}
 					int64_t local_rg_id = read_groups_reverse_index[rg_name];
 					ofstream& f1 = *read_groups_f1[local_rg_id].get();
 					ofstream& f2 = *read_groups_f2[local_rg_id].get();
 					/* 2. Handle UU pairs */
 					if (!local_alignment_entry.IsMapped() && !local_alignment_entry.IsMateMapped() && options.processUU) {
-//						if(debug) {
-//							cout << "rg: here-1\n";
-//						}
 						auto x = umbuf.find(local_alignment_entry.Name);
 						if (x == umbuf.end()) {
 							umbuf[local_alignment_entry.Name] = local_alignment_entry;
 							continue;
 						}
-//						if(debug) {
-//							cout << "rg: here-2\n";
-//						}
 						BamAlignment mate = umbuf[local_alignment_entry.Name];
 						if (!ReadGroup::isMatePair(local_alignment_entry, mate)) {
 							continue;
 						}
 
-//						if(debug) {
-//							cout << "rg: here-3\n";
-//						}
 
 						/* Both reads are trimmed by (1) before we get here */
 						rg.recordUUAlt(f1, f2, local_alignment_entry, mate, options.big_s_bps, options.n_cutoff);
@@ -3834,47 +3638,25 @@ void ParallelBamReader::output_read_groups_alt() {
 					 * ar3118743    pR2    chr21    14051775    12    75M    =    14051906    179    ACTTCACAAAGCTAAGAAATACATATGCATATACCAAGCAAAACACACCATAAGGGTAAAATGATGACTTTTTTG
 					 * ar3118743    pr1    chr21    14051906    27    48M27S    =    14051775    -179    TTAATAGGTCCAAATAACAGGTTTATGCTTTTGATTTTGCAGTGGAAGCCCAAGAGTGTGGAACTTTCCTTGGGC
 					 */
-//					if(debug) {
-//						cout << "rg: here-4\n";
-//					}
 					if (ReadGroup::isBigH(local_alignment_entry)) {
 						continue;
 					}
-//					if(debug) {
-//						cout << "rg: here-5\n";
-//					}
 					/* 3. Handle mapped+[softclipped|unmapped] read pairs */
 					int mate_num = 1;
 					auto it = softclips.find(local_alignment_entry.Name+"1");
 
 					if(softclips.end() == it) {
-//						if(debug) {
-//							cout << "rg: here-6\n";
-//						}
 						it = softclips.find(local_alignment_entry.Name+"2");
 						mate_num = 2;
 					}
 					if (it != softclips.end()) {
-//						if(debug) {
-//							cout << "rg: here-7\n";
-//						}
 						auto x = local_albuf.find(local_alignment_entry.Name);
 						if (x == local_albuf.end()) {
-//							if(debug) {
-//								cout << "rg: here-8\n";
-//							}
 							local_albuf[local_alignment_entry.Name] = local_alignment_entry;
 						} else if (ReadGroup::isMatePair(local_alignment_entry, x->second)) {
-//							if(debug) {
-//								cout << "rg: here-9\n";
-//							}
 							/* If we're here, then we've got both reads for
 							 * some pair that was stored in softclips */
 							BamAlignment mate = x->second;
-//							if(debug) {
-//								cout << "rg: here-9-cur: " << BamWriter::GetSAMAlignment(local_alignment_entry, refnames) << "\n";
-//								cout << "rg: here-9-mate: " << BamWriter::GetSAMAlignment(mate, refnames) << "\n";
-//							}
 							ReadGroup::trim_read(local_alignment_entry, options.q, qenc);
 							ReadGroup::trim_read(mate, options.q, qenc);
 
@@ -4493,16 +4275,10 @@ void ParallelBamReader::align_clipped_reads() {
 
 		string cl_fq1 = options.prefix + "/" + rgname + "_1.fq";
 		string cl_fq2 = options.prefix + "/" + rgname + "_2.fq";
-//		string cl_sai1 = options.prefix + rgname + "_1.sai";
-//		string cl_sai2 = options.prefix + rgname + "_2.sai";
 		string cl_sam = options.prefix + "/" + rgname + ".sam";
-//		string cl_tmp_sam = options.prefix + rgname + ".tmp.sam";
 		if (!options.working_dir.empty()) {
 			cl_fq1 = options.working_prefix + "/" + rgname + "_1.fq";
 			cl_fq2 = options.working_prefix + "/" + rgname + "_2.fq";
-//			cl_sai1 = options.working_prefix + "/" + rgname + "_1.sai";
-//			cl_sai2 = options.working_prefix + "/" + rgname + "_2.sai";
-//			cl_tmp_sam = options.working_prefix + "/" + rgname + ".tmp.sam";
 			cl_sam = options.working_prefix + "/" + rgname + ".sam";
 		}
 
@@ -4514,7 +4290,6 @@ void ParallelBamReader::align_clipped_reads() {
 		bc.set_n_cores(n_cores);
 		int64_t n_blocks = bc.split_FASTQ_alt(cl_fq1, cl_fq2, 262144);
 		bc.collect_align_tasks_alt(tasks, cl_sam, options.reference_path, aln_param, sampe_param, cl_fq1, cl_fq2, n_blocks);
-//		bc.collect_align_tasks(tasks, cl_sam, options.reference_path, aln_param, sampe_param, cl_fq1, cl_fq2);
 	}
 	castle::ParallelRunner::run_unbalanced_load(n_cores, tasks);
 	cout << sub_checker;
@@ -4648,13 +4423,7 @@ void ParallelBamReader::align_clipped_reads() {
 						out << castle::StringUtils::join(a, "\t") << "\n";
 					}
 				}
-//				boost::filesystem::remove(cl_sam);
-//				boost::filesystem::rename(cl_tmp_sam, cl_sam);
-//			string samtools_cmd = (boost::format("samtools view -bt %s -o %s %s") % reference_fai % cl_bam % cl_tmp_sam).str();
-//			string sambamba_sort_cmd = (boost::format("sambamba sort -l 1 -t 1 -o %s %s") % cl_sorted_bam % cl_bam).str();
-//			system(samtools_cmd.c_str());
-//			system(sambamba_sort_cmd .c_str());
-				});
+			});
 		}
 	}
 	castle::ParallelRunner::run_unbalanced_load(n_cores, tasks);

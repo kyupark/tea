@@ -885,8 +885,8 @@ void ParallelDiscordExtractor::write_discordants_alt() {
 	castle::TimeChecker checker;
 	checker.setTarget("ParallelDiscordExtrator.write_discordants_alt");
 	checker.start();
-	vector<function<void()> > tasks;
 
+	vector<function<void()> > tasks;
 	vector<BlockBoundary> independent_blocks = unmapped_included_blocks;
 	int64_t calculated_n_blocks = independent_blocks.size();
 	string done_vector(calculated_n_blocks - 1, 'U');
@@ -1067,10 +1067,10 @@ void ParallelDiscordExtractor::write_discordants_alt() {
 					continue;
 				}
 
-				if (is_blacklisted(local_alignment_entry, refs, options.blacklist)) {
-					++num_blacklisted;
-					continue;
-				}
+//				if (is_blacklisted(local_alignment_entry, refs, options.blacklist)) {
+//					++num_blacklisted;
+//					continue;
+//				}
 
 				/* Handle PCR dup filtering if specified, else write */
 				if (dup_file_write) {
@@ -1252,15 +1252,13 @@ void ParallelDiscordExtractor::write_discordants_serial() {
 		auto& p = rg_name_itr->second;
 		auto memit = memo_clipped_disc.find(local_alignment_entry.Name);
 		/* not discordant and not in the memo buffer */
-		if (!is_discordant(local_alignment_entry, p.first, p.second, options.nstdevs, not_paired,
-						not_both_mapped, same_pos, not_same_chr, not_diff_strands, weird_insert_size,
-						big_insert_size) && memo_clipped_disc.end() == memit) {
+		if (!is_discordant(local_alignment_entry, p.first, p.second, options.nstdevs, not_paired, not_both_mapped, same_pos, not_same_chr, not_diff_strands, weird_insert_size, big_insert_size) && memo_clipped_disc.end() == memit) {
 			continue;
 		}
-		if (is_blacklisted(local_alignment_entry, refs, options.blacklist)) {
-			++num_blacklisted;
-			continue;
-		}
+//		if (is_blacklisted(local_alignment_entry, refs, options.blacklist)) {
+//			++num_blacklisted;
+//			continue;
+//		}
 
 		/* Handle PCR dup filtering if specified, else write */
 		if (dup_file_write) {

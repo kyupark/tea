@@ -112,6 +112,7 @@ TEAOptionParser::TEAOptionParser(int argc, char **argv) : prefix("-"), aln_param
 	sub_name_map["cbam"] = 3;
 	sub_name_map["RID"] = 4;
 	sub_name_map["rid"] = 4;
+	sub_name_map["split_test"] = 5;
 	string line;
 	vector<string> cols;
 	if(argc > 1) {

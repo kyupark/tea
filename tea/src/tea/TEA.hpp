@@ -115,6 +115,8 @@ public:
 	void collect_boundaries_alt(vector<BlockOffset>& offset_blocks, const string& a_path, const string& a_bai_path, const string& a_bni_path);
 	void create_bni_even_index(const string& a_path, const string& a_bai_path, const string& a_bni_path);
 //	void collect_boundaries(vector<meerkat::BlockBoundary>& fixed_size_blocks, const string& input_BAM_name, int64_t size_block, bool verbose = false);
+
+
 private:
 	void _BAM_to_FASTQ(vector<meerkat::BlockBoundary>& actual_blocks, const string& input_BAM_name, const string& orphan_FASTQ_name, const string& disc_1_FASTQ_name, const string& disc_2_FASTQ_name);
 	void _BAM_to_FASTQ__MEM(vector<meerkat::BlockBoundary>& actual_blocks, const string& input_BAM_name, const string& orphan_FASTQ_name, const string& disc_1_FASTQ_name, const string& disc_2_FASTQ_name);
@@ -210,8 +212,8 @@ private:
 	void _output_mate_fa(boost::unordered_map<string, vector<string>>& positive_mate_reads,
 			boost::unordered_map<string, vector<string>>& negative_mate_reads,
 			vector<meerkat::BlockBoundary>& actual_blocks, const string& input_BAM_name,
-			const boost::unordered_map<string, AlnPairEntry>& a_positive_repeat_map,
-			const boost::unordered_map<string, AlnPairEntry>& a_negative_repeat_map);
+			const multimap<string, AlnPairEntry>& a_positive_repeat_map,
+			const multimap<string, AlnPairEntry>& a_negative_repeat_map);
 
 	void output_mate_fa_v(boost::unordered_map<string, boost::unordered_map<int8_t, vector<RAMRepeatEntry>>>& ram);
 	void _output_mate_fa_v(boost::unordered_map<string, vector<string>>& positive_mate_reads,
