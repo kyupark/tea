@@ -13,7 +13,7 @@
 using namespace std;
 
 int main(int argc, char **argv) {
-	cout << "tea main tea-e171025u-fixing_output_mate \n";
+	cout << "tea main tea-fb171101a-without_cl_in_meerkat_and_tea \n";
 	setvbuf(stdout, NULL, _IONBF, 0);
 	tea::TEAOptionParser option_parser(argc, argv);
 	castle::TimeChecker checker;

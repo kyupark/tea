@@ -12674,86 +12674,57 @@ void TEA::output_mate_fa(boost::unordered_map<string, boost::unordered_map<int8_
 
 	castle::ParallelRunner::run_unbalanced_load(n_cores, tasks);
 
-
-//	for (auto& a : a_positive_repeat_map) {
-//		if (a.second.file_name_prefix == "1465-cortex_1-neuron_MDA_18.chr3.74163930.74164603.L1") {
-//			cout << "[TEA.output_mate_fa]+ " << a.first << "\t" << a.second.chr << ":" << a.second.pos << "\n";
-//		}
-//		if (a.first == "HWI-ST1221:217:D1R5UACXX:2:2203:15884:168078") {
-//			cout << "[TEA.output_mate_fa]++ " << a.second.file_name_prefix << "\t" << a.second.chr << ":" << a.second.pos << "\n";
-//		}
-//	}
-//
-//	for (auto& a : a_negative_repeat_map) {
-//		if (a.second.file_name_prefix == "1465-cortex_1-neuron_MDA_18.chr3.74163930.74164603.L1") {
-//			cout << "[TEA.output_mate_fa]- " << a.first << "\t" << a.second.chr << ":" << a.second.pos << "\n";
-//		}
-//	}
-
 	cout << "[TEA.output_mate_fa] # positive mates: " << a_positive_repeat_map.size()
 			<< ", # negative mates: " << a_negative_repeat_map.size() << "\n";
-
-	string disc_file_name = options.prefix + ".disc.num.bam";
-	string cl_disc_file_name = options.prefix + ".cl.sorted.disc.num.bam";
-	if("tea_v" == options.program_name) {
-		disc_file_name = options.prefix + ".cl.sorted.bam";
-	}
-	if (!options.working_dir.empty()) {
-		disc_file_name = options.working_prefix + ".disc.num.bam";
-		if("tea_v" == options.program_name) {
-			disc_file_name = options.working_prefix + ".cl.sorted.bam";
-		}
-		cl_disc_file_name = options.working_prefix + ".cl.sorted.disc.num.bam";
-	}
-
-	string disc_bai_name = disc_file_name + ".bai";
-	string disc_bni_name = disc_file_name + ".bni";
-	string cl_disc_bai_name = cl_disc_file_name + ".bai";
-	string cl_disc_bni_name = cl_disc_file_name + ".bni";
 
 	boost::unordered_map<string, vector<string>> positive_mate_reads;
 	boost::unordered_map<string, vector<string>> negative_mate_reads;
 
 	int64_t size_block = 8192000;
-
 	cout << "[TEA.output_mate_fa] collect mate reads from disc file\n";
 
-	vector<meerkat::BlockBoundary> local_fixed_size_blocks;
-	vector<meerkat::BlockBoundary> local_unmapped_included_blocks;
-	vector<meerkat::BlockBoundary> local_independent_blocks;
-	collect_boundaries_pos(local_fixed_size_blocks, local_unmapped_included_blocks, local_independent_blocks, disc_file_name, disc_bai_name, disc_bni_name, size_block);
-	_output_mate_fa(positive_mate_reads, negative_mate_reads, local_unmapped_included_blocks, disc_file_name, a_positive_repeat_map, a_negative_repeat_map);
-
-	bool found_clipped_reads = false;
-	for(auto& an_entry : a_positive_repeat_map) {
-		auto& read_name = an_entry.first;
-		if(string::npos != read_name.rfind("mu1")
-				|| string::npos != read_name.rfind("mu2")
-				|| string::npos != read_name.rfind("sc")) {
-			found_clipped_reads = true;
-			break;
+	if("tea_v" == options.program_name) {
+		string disc_file_name = options.prefix + ".cl.sorted.bam";
+		if (!options.working_dir.empty()) {
+			disc_file_name = options.working_prefix + ".cl.sorted.bam";
 		}
-	}
-	if(!found_clipped_reads) {
-		for(auto& an_entry : a_negative_repeat_map) {
-			auto& read_name = an_entry.first;
-			if(string::npos != read_name.rfind("mu1")
-					|| string::npos != read_name.rfind("mu2")
-					|| string::npos != read_name.rfind("sc")) {
-				found_clipped_reads = true;
-				break;
-			}
-		}
-	}
-
-	if(found_clipped_reads) {
-		cout << "[TEA.output_mate_fa] collect mate reads from cl disc file\n";
+		string disc_bai_name = disc_file_name + ".bai";
+		string disc_bni_name = disc_file_name + ".bni";
 
 		vector<meerkat::BlockBoundary> local_fixed_size_blocks;
 		vector<meerkat::BlockBoundary> local_unmapped_included_blocks;
 		vector<meerkat::BlockBoundary> local_independent_blocks;
-		collect_boundaries_pos(local_fixed_size_blocks, local_unmapped_included_blocks, local_independent_blocks, cl_disc_file_name, cl_disc_bai_name, cl_disc_bni_name, size_block);
-		_output_mate_fa(positive_mate_reads, negative_mate_reads, local_unmapped_included_blocks, cl_disc_file_name, a_positive_repeat_map, a_negative_repeat_map);
+		collect_boundaries_pos(local_fixed_size_blocks, local_unmapped_included_blocks, local_independent_blocks, disc_file_name, disc_bai_name, disc_bni_name, size_block);
+		_output_mate_fa(positive_mate_reads, negative_mate_reads, local_unmapped_included_blocks, disc_file_name, a_positive_repeat_map, a_negative_repeat_map);
+
+	}
+	else {
+		string disc_1_ra_file_name = options.prefix + ".disc_1.ra.bam";
+		string disc_2_ra_file_name = options.prefix + ".disc_2.ra.bam";
+		if (!options.working_dir.empty()) {
+			disc_1_ra_file_name = options.working_prefix + ".disc_1.ra.bam";
+			disc_2_ra_file_name = options.working_prefix + ".disc_2.ra.bam";
+		}
+		string disc_1_ra_bai_name = disc_1_ra_file_name + ".bai";
+		string disc_1_ra_bni_name = disc_1_ra_file_name + ".bni";
+
+		string disc_2_ra_bai_name = disc_2_ra_file_name + ".bai";
+		string disc_2_ra_bni_name = disc_2_ra_file_name + ".bni";
+
+		{
+			vector<meerkat::BlockBoundary> local_fixed_size_blocks;
+			vector<meerkat::BlockBoundary> local_unmapped_included_blocks;
+			vector<meerkat::BlockBoundary> local_independent_blocks;
+			collect_boundaries_pos(local_fixed_size_blocks, local_unmapped_included_blocks, local_independent_blocks, disc_1_ra_file_name, disc_1_ra_bai_name, disc_1_ra_bni_name, size_block);
+			_output_mate_fa(positive_mate_reads, negative_mate_reads, local_unmapped_included_blocks, disc_1_ra_file_name, a_positive_repeat_map, a_negative_repeat_map);
+		}
+		{
+			vector<meerkat::BlockBoundary> local_fixed_size_blocks;
+			vector<meerkat::BlockBoundary> local_unmapped_included_blocks;
+			vector<meerkat::BlockBoundary> local_independent_blocks;
+			collect_boundaries_pos(local_fixed_size_blocks, local_unmapped_included_blocks, local_independent_blocks, disc_2_ra_file_name, disc_2_ra_bai_name, disc_2_ra_bni_name, size_block);
+			_output_mate_fa(positive_mate_reads, negative_mate_reads, local_unmapped_included_blocks, disc_2_ra_file_name, a_positive_repeat_map, a_negative_repeat_map);
+		}
 	}
 
 	for(auto& an_entry : positive_mate_reads) {
