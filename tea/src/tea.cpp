@@ -13,7 +13,7 @@
 using namespace std;
 
 int main(int argc, char **argv) {
-	cout << "tea main tea-fb171101a-without_cl_in_meerkat_and_tea \n";
+	cout << "tea main tea-fq171103d-disc_pick_diff_chr \n";
 	setvbuf(stdout, NULL, _IONBF, 0);
 	tea::TEAOptionParser option_parser(argc, argv);
 	castle::TimeChecker checker;

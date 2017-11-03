@@ -385,14 +385,14 @@ void TEA::run_rid() {
 		if(string::npos == tmp_chr_name.find("chr")) {
 			tmp_chr_name = "chr" + c;
 		}
-		string p_mate_rname_file = cl_prefix + "." + tmp_chr_name + ".p.mate.rname";
-		string n_mate_rname_file = cl_prefix + "." + tmp_chr_name + ".n.mate.rname";
-		string p_clipped_fname_file = cl_prefix + "." + tmp_chr_name + ".p.clipped.fname";
-		string n_clipped_fname_file = cl_prefix + "." + tmp_chr_name + ".n.clipped.fname";
-		removal_files.push_back(p_mate_rname_file);
-		removal_files.push_back(n_mate_rname_file);
-		removal_files.push_back(p_clipped_fname_file);
-		removal_files.push_back(n_clipped_fname_file);
+//		string p_mate_rname_file = cl_prefix + "." + tmp_chr_name + ".p.mate.rname";
+//		string n_mate_rname_file = cl_prefix + "." + tmp_chr_name + ".n.mate.rname";
+//		string p_clipped_fname_file = cl_prefix + "." + tmp_chr_name + ".p.clipped.fname";
+//		string n_clipped_fname_file = cl_prefix + "." + tmp_chr_name + ".n.clipped.fname";
+//		removal_files.push_back(p_mate_rname_file);
+//		removal_files.push_back(n_mate_rname_file);
+//		removal_files.push_back(p_clipped_fname_file);
+//		removal_files.push_back(n_clipped_fname_file);
 
 		string cluster_raw_file = cl_prefix + "." + tmp_chr_name + ".cluster.raw";
 		string clipped_file = cl_prefix + "." + tmp_chr_name + ".clipped";
@@ -4519,6 +4519,7 @@ void TEA::_BAM_to_FASTQ__MEM(vector<meerkat::BlockBoundary>& actual_blocks, cons
 				auto the_al_pair_itr = al_local_pair.find(al_name);
 
 				if(al_local_pair.end() == the_al_pair_itr) {
+					// when read name is not in pair, add
 					if(al.IsSecondMate()) {
 						al_local_pair[al_name].second.first = an_entry;
 						al_local_pair[al_name].second.second = al.RefID;
@@ -4529,31 +4530,34 @@ void TEA::_BAM_to_FASTQ__MEM(vector<meerkat::BlockBoundary>& actual_blocks, cons
 					}
 				}
 				else {
-					if(al.IsSecondMate()) {
+
+					if(al.IsSecondMate()) { //(pair).(first or second mate).(entry/RefID)
 						if (the_al_pair_itr->second.second.first.empty()
-								|| al.RefID == the_al_pair_itr->second.first.second) {
+								 || al.RefID != the_al_pair_itr->second.first.second) {
 							the_al_pair_itr->second.second.first = an_entry;
 							the_al_pair_itr->second.second.second = al.RefID;
 						}
 					}
 					else {
 						if (the_al_pair_itr->second.first.first.empty()
-								|| al.RefID == the_al_pair_itr->second.second.second) {
+								|| al.RefID != the_al_pair_itr->second.second.second) {
 							the_al_pair_itr->second.first.first = an_entry;
 							the_al_pair_itr->second.first.second = al.RefID;
 						}
 					}
-
-
-					if(!the_al_pair_itr->second.first.first.empty()
-							&& !the_al_pair_itr->second.second.first.empty()) {
-
-						out_disc_1 << the_al_pair_itr->second.first.first;
-						out_disc_2 << the_al_pair_itr->second.second.first;
-						al_local_pair.erase(the_al_pair_itr);
-					}
 				}
 			}
+
+			for (auto it=al_local_pair.begin(); it!=al_local_pair.end(); ++it) {
+				if(!it->second.first.first.empty()
+						&& !it->second.second.first.empty()) {
+
+					out_disc_1 << it->second.first.first;
+					out_disc_2 << it->second.second.first;
+					al_local_pair.erase(it);
+				}
+			}
+
 
 			local_reader.Close();
 		});
