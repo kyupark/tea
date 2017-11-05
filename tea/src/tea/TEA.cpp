@@ -4529,37 +4529,32 @@ void TEA::_BAM_to_FASTQ__MEM(vector<meerkat::BlockBoundary>& actual_blocks, cons
 						al_local_pair[al_name].first.second = al.RefID;
 					}
 				}
-				else {
+                 else {
+                     if(al.IsSecondMate()) {
+                         if (the_al_pair_itr->second.second.first.empty()
+                                 || al.RefID != the_al_pair_itr->second.first.second) {
+                             the_al_pair_itr->second.second.first = an_entry;
+                             the_al_pair_itr->second.second.second = al.RefID;
+                         }
+                     }
+                     else {
+                         if (the_al_pair_itr->second.first.first.empty()
+                                 || al.RefID != the_al_pair_itr->second.second.second) {
+                             the_al_pair_itr->second.first.first = an_entry;
+                             the_al_pair_itr->second.first.second = al.RefID;
+                         }
+                     }
 
-					if(al.IsSecondMate()) { //(pair).(first or second mate).(entry/RefID)
-						if (the_al_pair_itr->second.second.first.empty()
-								 || al.RefID != the_al_pair_itr->second.first.second) {
-							the_al_pair_itr->second.second.first = an_entry;
-							the_al_pair_itr->second.second.second = al.RefID;
-						}
-					}
-					else {
-						if (the_al_pair_itr->second.first.first.empty()
-								|| al.RefID != the_al_pair_itr->second.second.second) {
-							the_al_pair_itr->second.first.first = an_entry;
-							the_al_pair_itr->second.first.second = al.RefID;
-						}
-					}
-				}
-			}
+                     if(!the_al_pair_itr->second.first.first.empty()
+                             && !the_al_pair_itr->second.second.first.empty()) {
 
-			for (auto it=al_local_pair.begin(); it!=al_local_pair.end(); ++it) {
-				if(!it->second.first.first.empty()
-						&& !it->second.second.first.empty()) {
-
-					out_disc_1 << it->second.first.first;
-					out_disc_2 << it->second.second.first;
-					al_local_pair.erase(it);
-				}
-			}
-
-
-			local_reader.Close();
+                         out_disc_1 << the_al_pair_itr->second.first.first;
+                         out_disc_2 << the_al_pair_itr->second.second.first;
+                         al_local_pair.erase(the_al_pair_itr);
+                     }
+                 }
+             }
+             local_reader.Close();
 		});
 	}
 
