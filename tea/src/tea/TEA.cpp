@@ -13031,49 +13031,27 @@ void TEA::_output_mate_fa(boost::unordered_map<string, vector<string>>& positive
 
 				for (auto& it=the_pos_itr.first; it!=the_pos_itr.second; ++it) {
 					auto& aln_pair = it->second;
-					int64_t the_pos = aln_pair.pos;
-					int64_t aln_pos = local_alignment_entry.Position + 1;
 
-					bool debug = false;
-//					if (aln_pair.file_name_prefix == "1465-cortex_1-neuron_MDA_18.chr3.74163930.74164603.L1") {
-//						debug = true;
-//						cout << "[TEA._output_mate_fa]+ 1465-cortex_1-neuron_MDA_18.chr3.74163930.74164603.L1 \n";
-//						cout << "[TEA._output_mate_fa]+ the_pos:" << the_pos << "\taln_pos:" << aln_pos << " \n";
-//					}
-
-					if(aln_pos != the_pos ) {
+					if( 4 == local_alignment_entry.AlignmentFlag ) { // 4: unmapped
 						if(local_alignment_entry.IsReverseStrand()) {
 							local_alignment_entry.QueryBases = castle::StringUtils::get_reverse_complement(local_alignment_entry.QueryBases);
 						}
+
 						auto& the_seq_vec = local_positive_mate_reads[aln_pair.file_name_prefix];
 						the_seq_vec.push_back(local_alignment_entry.QueryBases);
-//						if (debug) {
-//							cout << "[TEA._output_mate_fa]+ " << local_alignment_entry.QueryBases << " \n";
-//						}
 					}
 				}
 
 				for (auto& it=the_neg_itr.first; it!=the_neg_itr.second; ++it) {
 					auto& aln_pair = it->second;
-					int64_t the_pos = aln_pair.pos;
-					int64_t aln_pos = local_alignment_entry.Position + 1;
 
-					bool debug = false;
-//					if (aln_pair.file_name_prefix == "1465-cortex_1-neuron_MDA_18.chr3.74163930.74164603.L1") {
-//						debug = true;
-//						cout << "[TEA._output_mate_fa]- 1465-cortex_1-neuron_MDA_18.chr3.74163930.74164603.L1 \n";
-//						cout << "[TEA._output_mate_fa]- the_pos:" << the_pos << "\taln_pos:" << aln_pos << " \n";
-//					}
-
-					if(aln_pos != the_pos) {
+					if( 4 == local_alignment_entry.AlignmentFlag ) { // 4: unmapped
 						if(local_alignment_entry.IsReverseStrand()) {
 							local_alignment_entry.QueryBases = castle::StringUtils::get_reverse_complement(local_alignment_entry.QueryBases);
 						}
+
 						auto& the_seq_vec = local_negative_mate_reads[aln_pair.file_name_prefix];
 						the_seq_vec.push_back(local_alignment_entry.QueryBases);
-//						if (debug) {
-//							cout << "[TEA._output_mate_fa]- " << local_alignment_entry.QueryBases << " \n";
-//						}
 
 					}
 				}
