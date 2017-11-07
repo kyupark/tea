@@ -13,7 +13,7 @@
 using namespace std;
 
 int main(int argc, char **argv) {
-	cout << "tea main tea-fq171106e-ra_bam_unmapped_to_repeat \n";
+	cout << "tea main tea-fq171107e3-ra_bam_unmapped_to_repeat \n";
 	setvbuf(stdout, NULL, _IONBF, 0);
 	tea::TEAOptionParser option_parser(argc, argv);
 	castle::TimeChecker checker;

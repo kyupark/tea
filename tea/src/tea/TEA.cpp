@@ -13032,7 +13032,7 @@ void TEA::_output_mate_fa(boost::unordered_map<string, vector<string>>& positive
 				for (auto& it=the_pos_itr.first; it!=the_pos_itr.second; ++it) {
 					auto& aln_pair = it->second;
 
-					if( 4 == local_alignment_entry.AlignmentFlag ) { // 4: unmapped
+					if( local_alignment_entry.IsMapped() ) {
 						if(local_alignment_entry.IsReverseStrand()) {
 							local_alignment_entry.QueryBases = castle::StringUtils::get_reverse_complement(local_alignment_entry.QueryBases);
 						}
@@ -13045,7 +13045,7 @@ void TEA::_output_mate_fa(boost::unordered_map<string, vector<string>>& positive
 				for (auto& it=the_neg_itr.first; it!=the_neg_itr.second; ++it) {
 					auto& aln_pair = it->second;
 
-					if( 4 == local_alignment_entry.AlignmentFlag ) { // 4: unmapped
+					if( local_alignment_entry.IsMapped() ) {
 						if(local_alignment_entry.IsReverseStrand()) {
 							local_alignment_entry.QueryBases = castle::StringUtils::get_reverse_complement(local_alignment_entry.QueryBases);
 						}
