@@ -2725,7 +2725,7 @@ void TEA::clean() {
 		const char* delim = "\t:";
 		vector<string> a_cols;
 		while (getline(in, line, '\n')) {
-			if (string::npos == line.find("@RG")) {
+			if (!boost::starts_with(line, "@RG")) {
 				continue;
 			}
 			castle::StringUtils::c_string_multi_split(line, delim, a_cols);
@@ -5920,7 +5920,9 @@ void TEA::create_disc_FASTQs() {
 		string cl_disc_1_out_file_name = the_prefix + ".cl.disc_1.fq.gz";
 		string cl_disc_2_out_file_name = the_prefix + ".cl.disc_2.fq.gz";
 
-		if (options.is_force || (!boost::filesystem::exists(disc_1_out_file_name) && !boost::filesystem::exists(disc_2_out_file_name))) {
+		if (options.is_force ||
+				(!boost::filesystem::exists(disc_1_out_file_name) &&
+				!boost::filesystem::exists(disc_2_out_file_name))) {
 			if (options.is_mem) {
 				BAM_to_FASTQ__MEM(disc_file_name, disc_bai_name, disc_bni_name, disc_out_file_name, disc_1_out_file_name, disc_2_out_file_name);
 			}
@@ -5928,14 +5930,23 @@ void TEA::create_disc_FASTQs() {
 				BAM_to_FASTQ(disc_file_name, disc_bai_name, disc_bni_name, disc_out_file_name, disc_1_out_file_name, disc_2_out_file_name);
 			}
 		}
-		if (options.is_force || (!boost::filesystem::exists(cl_disc_1_out_file_name) && !boost::filesystem::exists(cl_disc_2_out_file_name))) {
-			if (options.is_mem) {
-				BAM_to_FASTQ__MEM(cl_disc_file_name, cl_disc_bai_name, cl_disc_bni_name, cl_disc_out_file_name, cl_disc_1_out_file_name, cl_disc_2_out_file_name);
-			}
-			else {
-				BAM_to_FASTQ(cl_disc_file_name, cl_disc_bai_name, cl_disc_bni_name, cl_disc_out_file_name, cl_disc_1_out_file_name, cl_disc_2_out_file_name);
+
+		BamTools::BamReader reader;
+		if (reader.Open(cl_disc_file_name, cl_disc_bai_name)) {
+			std::cout << "[TEA.collect_boundaries_pos] ERROR: could not open BAM file '" << cl_disc_file_name << "'\n";
+			if (options.is_force ||
+					(!boost::filesystem::exists(cl_disc_1_out_file_name) &&
+					!boost::filesystem::exists(cl_disc_2_out_file_name))) {
+				if (options.is_mem) {
+					BAM_to_FASTQ__MEM(cl_disc_file_name, cl_disc_bai_name, cl_disc_bni_name, cl_disc_out_file_name, cl_disc_1_out_file_name, cl_disc_2_out_file_name);
+				}
+				else {
+					BAM_to_FASTQ(cl_disc_file_name, cl_disc_bai_name, cl_disc_bni_name, cl_disc_out_file_name, cl_disc_1_out_file_name, cl_disc_2_out_file_name);
+				}
 			}
 		}
+
+
 	}
 	else {
 		string disc_file_name = the_prefix + ".disc.sorted.bam";
@@ -6037,7 +6048,11 @@ void TEA::generate_va_bams() {
 			um_2_bwa_errs.push_back(um_2_bwa_err);
 		}
 		bc.merge_SAM(um_1_file_name, um_1_out_tmp_bam_name, um_1_out_sam_name, n_blocks_1);
+		castle::IOUtils::remove(um_1_out_tmp_bam_name);
+
 		bc.merge_SAM(um_2_file_name, um_2_out_tmp_bam_name, um_2_out_sam_name, n_blocks_1);
+		castle::IOUtils::remove(um_2_out_tmp_bam_name);
+
 		castle::IOUtils::plain_file_merge(um_1_file_name + ".bwa.err", um_1_bwa_errs, n_cores, true);
 		castle::IOUtils::plain_file_merge(um_2_file_name + ".bwa.err", um_2_bwa_errs, n_cores, true);
 	}
@@ -6788,6 +6803,7 @@ void TEA::generate_ra_bams() {
 
 	bc.merge_SAM(disc_1_file_name, disc_1_out_tmp_bam_name, disc_1_out_sam_name, n_blocks_disc_1);
 	bc.merge_SAM(disc_2_file_name, disc_2_out_tmp_bam_name, disc_2_out_sam_name, n_blocks_disc_2);
+
 	string disc_1_sort_cmd = (boost::format("sambamba sort -l 1 -t %d -o %s %s")
 			% n_cores
 			% disc_1_out_bam_name
@@ -6797,10 +6813,21 @@ void TEA::generate_ra_bams() {
 			% disc_2_out_bam_name
 			% disc_2_out_tmp_bam_name).str();
 
+	system(disc_1_sort_cmd.c_str());
+	castle::IOUtils::remove(disc_1_out_tmp_bam_name);
+	system(disc_2_sort_cmd.c_str());
+	castle::IOUtils::remove(disc_2_out_tmp_bam_name);
+
+	castle::IOUtils::plain_file_merge(disc_1_file_name + ".bwa.err", disc_1_bwa_errs, n_cores, true);
+	castle::IOUtils::plain_file_merge(disc_2_file_name + ".bwa.err", disc_2_bwa_errs, n_cores, true);
+
+
 	if(boost::filesystem::exists(cl_disc_1_file_name)
 			&& boost::filesystem::exists(cl_disc_2_file_name)) {
+
 		vector<string> cl_disc_1_bwa_errs;
 		vector<string> cl_disc_2_bwa_errs;
+
 		for (int64_t block_id = 0; block_id < n_blocks_cl_disc_1; ++block_id) {
 			string str_block_id = boost::lexical_cast<string>(block_id);
 			string cl_disc_1_bwa_err = cl_disc_1_file_name + ".bwa.err." + str_block_id;
@@ -6811,8 +6838,10 @@ void TEA::generate_ra_bams() {
 			string cl_disc_2_bwa_err = cl_disc_2_file_name + ".bwa.err." + str_block_id;
 			cl_disc_2_bwa_errs.push_back(cl_disc_2_bwa_err);
 		}
+
 		bc.merge_SAM(cl_disc_1_file_name, cl_disc_1_out_tmp_bam_name, cl_disc_1_out_sam_name, n_blocks_cl_disc_1);
 		bc.merge_SAM(cl_disc_2_file_name, cl_disc_2_out_tmp_bam_name, cl_disc_2_out_sam_name, n_blocks_cl_disc_2);
+
 		string cl_disc_1_sort_cmd = (boost::format("sambamba sort -l 1 -t %d -o %s %s")
 				% n_cores
 				% cl_disc_1_out_bam_name
@@ -6821,16 +6850,16 @@ void TEA::generate_ra_bams() {
 				% n_cores
 				% cl_disc_2_out_bam_name
 				% cl_disc_2_out_tmp_bam_name).str();
+
 		system(cl_disc_1_sort_cmd.c_str());
+		castle::IOUtils::remove(cl_disc_1_out_tmp_bam_name);
+
 		system(cl_disc_2_sort_cmd.c_str());
+		castle::IOUtils::remove(cl_disc_2_out_tmp_bam_name);
+
 		castle::IOUtils::plain_file_merge(cl_disc_1_file_name + ".bwa.err", cl_disc_1_bwa_errs, n_cores, true);
 		castle::IOUtils::plain_file_merge(cl_disc_2_file_name + ".bwa.err", cl_disc_2_bwa_errs, n_cores, true);
 	}
-
-	system(disc_1_sort_cmd.c_str());
-	system(disc_2_sort_cmd.c_str());
-	castle::IOUtils::plain_file_merge(disc_1_file_name + ".bwa.err", disc_1_bwa_errs, n_cores, true);
-	castle::IOUtils::plain_file_merge(disc_2_file_name + ".bwa.err", disc_2_bwa_errs, n_cores, true);
 }
 
 void TEA::generate_ram_files() {
@@ -6850,6 +6879,7 @@ void TEA::generate_ram_files() {
 	string ramf = the_prefix + ".disc.ram";
 	string disc_1_ra_bam = the_prefix + ".disc_1.ra.bam";
 	string disc_2_ra_bam = the_prefix + ".disc_2.ra.bam";
+
 	string cl_refbam = the_prefix + ".cl.sorted.disc.num.bam";
 	string cl_rbamf = the_prefix + ".cl.disc.ram.bam";
 	string cl_ramf = the_prefix + ".cl.disc.ram";

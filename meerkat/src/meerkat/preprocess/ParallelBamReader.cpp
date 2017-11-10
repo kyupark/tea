@@ -1347,8 +1347,8 @@ void ParallelBamReader::classify_store_reads_in_regions(){
 				//witness_qualities(local_alignment_entry, local_quality_sample_space);
 
 				/* UM+UM pairs and singleton UMs aren't interesting */
-				if(!local_alignment_entry.IsMapped() && (!local_alignment_entry.IsMateMapped()
-								|| !local_alignment_entry.IsPaired())) {					
+				if((!local_alignment_entry.IsMateMapped() || !local_alignment_entry.IsPaired())
+						&& !local_alignment_entry.IsMapped()) {
 					continue;
 				}
 
@@ -1370,12 +1370,14 @@ void ParallelBamReader::classify_store_reads_in_regions(){
 				//3. One fully mapped, the other unmapped. The pair will be recorded in (m, u) pair
 				if(bpair_within_region){
 					//Both reads of a pair are within the same region.
-					bool bfirst_clip=ReadGroup::isBigS(local_alignment_entry, local_alignment_entry.CigarData.front(), bps)
+					bool bfirst_clip = ReadGroup::isBigS(local_alignment_entry, local_alignment_entry.CigarData.front(), bps)
 							|| ReadGroup::isBigS(local_alignment_entry, local_alignment_entry.CigarData.back(), bps);
 
 					BamTools::BamAlignment local_mate_alignment=local_alignment_map[local_alignment_entry.Name];
-					bool bsecond_clip= ReadGroup::isBigS(local_mate_alignment, local_mate_alignment.CigarData.front(), bps)
+
+					bool bsecond_clip = ReadGroup::isBigS(local_mate_alignment, local_mate_alignment.CigarData.front(), bps)
 							|| ReadGroup::isBigS(local_mate_alignment, local_mate_alignment.CigarData.back(), bps);
+
 					if (bfirst_clip || bsecond_clip) {
 						//Either of the read is clipped, we need to record this
 						//But for both clipped, need to save infor for the re-align step???????????????????
@@ -2044,8 +2046,10 @@ void ParallelBamReader::output_unmapped() {
 		uhist += uhist_lists[block_id];
 	}
 	unmapped_rejected = local_unmapped_rejected;
-	cout << "Final read counts after rejection due to quality (-q " << options.q << " -m " << options.min_read_len << "):\n   unmapped reads: "
-	<< (num_unmapped - unmapped_rejected) << " (" << unmapped_rejected << " rejected)\n";
+	cout << "Final read counts after rejection due to quality (-q " << options.q
+			<< " -m " << options.min_read_len
+			<< "):\n   unmapped reads: " << (num_unmapped - unmapped_rejected)
+			<< " (" << unmapped_rejected << " rejected)\n";
 	ofstream umrdist(options.umrdistname, ios::binary);
 	uhist.print(umrdist);
 	vector<string> file_names;
@@ -2060,7 +2064,9 @@ void ParallelBamReader::output_unmapped() {
 
 void ParallelBamReader::collect_second_statistics() {
 	output_unmapped();
+
 //	output_blacklist_file();
+
 // dependency on softclips
 	output_softclips();
 	output_read_groups_alt();
@@ -2283,13 +2289,14 @@ void ParallelBamReader::output_softclips() {
 			const char* delim = "\t:";
 			vector<string> a_cols;
 			while (getline(in, line, '\n')) {
-				if (string::npos == line.find("@RG")) {
+				if (!boost::starts_with(line, "@RG")) {
 					continue;
 				}
 				castle::StringUtils::c_string_multi_split(line, delim, a_cols);
 				if (a_cols.size() < 2) {
 					continue;
 				}
+
 				read_groups_reverse_index[a_cols[2]] = read_groups.size();
 				read_groups.push_back(a_cols[2]);
 			}
@@ -2375,7 +2382,8 @@ void ParallelBamReader::output_softclips() {
 								<< mapped_um_name << "' for writing" << endl;
 								exit(1);
 							}
-						} else {
+						}
+						else {
 							if (!mapped_sc_file.SAMOpenNoHeader(mapped_sc_name, refnames)) {
 								cout << "ERROR: could not open output SAM file '"
 								<< mapped_sc_name << "' for writing" << endl;
@@ -2470,7 +2478,7 @@ void ParallelBamReader::output_softclips() {
 
 						/* 3. Handle mapped+[softclipped|unmapped] read pairs */
 						auto it = softclips.find(local_alignment_entry.Name+"1");
-						if(it == softclips.end()) {
+						if (it == softclips.end()) {
 							it = softclips.find(local_alignment_entry.Name+"2");
 						}
 
@@ -2781,7 +2789,6 @@ void ParallelBamReader::output_softclips() {
 		
 		string rg_name;
 		ReadGroup rg;
-
 
 		bool b_no_buffer=true;
 		bool b_end_of_alns=false;
@@ -3502,7 +3509,7 @@ void ParallelBamReader::output_read_groups_alt() {
 		const char* delim = "\t:";
 		vector<string> a_cols;
 		while (getline(in, line, '\n')) {
-			if (string::npos == line.find("@RG")) {
+			if (!boost::starts_with(line, "@RG")) {
 				continue;
 			}
 			castle::StringUtils::c_string_multi_split(line, delim, a_cols);
@@ -3536,6 +3543,7 @@ void ParallelBamReader::output_read_groups_alt() {
 		checker.start();
 		local_reader.Close();
 	}
+
 	n_read_groups = read_groups.size();
 	vector<boost::unordered_map<string, BamAlignment>> albuf_lists(calculated_n_blocks);
 	vector<boost::unordered_map<string, BamAlignment>> unmapped_lists(calculated_n_blocks);
@@ -3547,6 +3555,7 @@ void ParallelBamReader::output_read_groups_alt() {
 			if (!local_reader.Open(a_path, an_index_path)) {
 				return;
 			}
+
 			int64_t num_total = 0;
 			string the_next_block_read_name = unmapped_included_blocks[block_id + 1].read_name;
 			string str_block_id = boost::lexical_cast<string>(block_id);
@@ -3603,6 +3612,7 @@ void ParallelBamReader::output_read_groups_alt() {
 					}
 					rgs[rg_name].witness(local_alignment_entry, options.max_isize, options.isize_samples);
 					if(black_listed.end() != black_listed.find(rg_name)) {
+//						cout << "[ParallelBamReader.output_read_groups_alt] blacklist \n";
 						continue;
 					}
 
@@ -3617,17 +3627,19 @@ void ParallelBamReader::output_read_groups_alt() {
 						auto x = umbuf.find(local_alignment_entry.Name);
 						if (x == umbuf.end()) {
 							umbuf[local_alignment_entry.Name] = local_alignment_entry;
+//							cout << "[ParallelBamReader.output_read_groups_alt] unmapped \n";
 							continue;
 						}
 						BamAlignment mate = umbuf[local_alignment_entry.Name];
 						if (!ReadGroup::isMatePair(local_alignment_entry, mate)) {
+//							cout << "[ParallelBamReader.output_read_groups_alt] mate is not pair \n";
 							continue;
 						}
 
-
 						/* Both reads are trimmed by (1) before we get here */
 						rg.recordUUAlt(f1, f2, local_alignment_entry, mate, options.big_s_bps, options.n_cutoff);
-						umbuf.erase(x);
+//						cout << "[ParallelBamReader.output_read_groups_alt] " << rg_name << " " << local_rg_id << " rg.recordUUAlt: " << local_alignment_entry.Name << " \n";
+                        umbuf.erase(x);
 						continue;
 					}
 					/* 3a. Hardclipped reads aren't interesting.  In the new BWA-MEM,
@@ -3639,6 +3651,7 @@ void ParallelBamReader::output_read_groups_alt() {
 					 * ar3118743    pr1    chr21    14051906    27    48M27S    =    14051775    -179    TTAATAGGTCCAAATAACAGGTTTATGCTTTTGATTTTGCAGTGGAAGCCCAAGAGTGTGGAACTTTCCTTGGGC
 					 */
 					if (ReadGroup::isBigH(local_alignment_entry)) {
+//						cout << "[ParallelBamReader.output_read_groups_alt] bigH: big Hard clip\n";
 						continue;
 					}
 					/* 3. Handle mapped+[softclipped|unmapped] read pairs */
@@ -3723,8 +3736,11 @@ void ParallelBamReader::output_read_groups_alt() {
 								rg.recordSCAltRG(f1, f2, ReadGroup::getMateNumber(local_alignment_entry) == rep_mate ? local_alignment_entry : mate,
 										ReadGroup::getMateNumber(local_alignment_entry) == rep_mate ? mate : local_alignment_entry, mate_num, options.big_s_bps,
 										options.frag_size, options.n_cutoff);
-							} else {
+//                                cout << "[ParallelBamReader.output_read_groups_alt] " << rg_name << " " << local_rg_id << " rg.recordSCAltRG: " << local_alignment_entry.Name << " \n";
+							}
+							else {
 								rg.recordUMAltRG(f1, f2, local_alignment_entry, mate, options.big_s_bps, options.n_cutoff);
+//                                cout << "[ParallelBamReader.output_read_groups_alt] " << rg_name << " " << local_rg_id << " rg.recordUMAltRG: " << local_alignment_entry.Name << " \n";
 							}
 							local_albuf.erase(x);
 						}
@@ -4132,7 +4148,7 @@ void ParallelBamReader::create_reports() {
 		const char* delim = "\t:";
 		vector<string> a_cols;
 		while (getline(in, line, '\n')) {
-			if (string::npos == line.find("@RG")) {
+			if (!boost::starts_with(line, "@RG")) {
 				continue;
 			}
 			castle::StringUtils::c_string_multi_split(line, delim, a_cols);
@@ -4240,7 +4256,7 @@ void ParallelBamReader::align_clipped_reads() {
 		const char* delim = "\t:";
 		vector<string> a_cols;
 		while (getline(in, line, '\n')) {
-			if (string::npos == line.find("@RG")) {
+			if (!boost::starts_with(line, "@RG")) {
 				continue;
 			}
 			castle::StringUtils::c_string_multi_split(line, delim, a_cols);
@@ -4291,6 +4307,7 @@ void ParallelBamReader::align_clipped_reads() {
 		int64_t n_blocks = bc.split_FASTQ_alt(cl_fq1, cl_fq2, 262144);
 		bc.collect_align_tasks_alt(tasks, cl_sam, options.reference_path, aln_param, sampe_param, cl_fq1, cl_fq2, n_blocks);
 	}
+
 	castle::ParallelRunner::run_unbalanced_load(n_cores, tasks);
 	cout << sub_checker;
 	cout << "[ParallelBamReader.align_clipped_reads] add read groups\n";
@@ -4356,6 +4373,7 @@ void ParallelBamReader::align_clipped_reads() {
 //	cout << (boost::format("[ParallelBamReader.align_clipped_reads] First: %s\n") % the_first_rg).str();
 	for (auto& rgname : read_groups) {
 		if (rg_blacklist.end() != rg_blacklist.find(rgname)) {
+			cout << "[ParallelBamReader.align_clipped_reads] " << rgname << " is a blacklisted read group. \n";
 			continue;
 		}
 		for (int64_t block_id = 0;; ++block_id) {
@@ -4371,7 +4389,7 @@ void ParallelBamReader::align_clipped_reads() {
 
 				const char* delim_tab = "\t";
 				vector<string> a;
-				string cl_sam = options.prefix + "/" +rgname + ".sam." + str_block_id;
+				string cl_sam = options.prefix + "/" + rgname + ".sam." + str_block_id;
 				string cl_tmp_sam = options.prefix + "/" + rgname + ".tmp.sam." + str_block_id;
 				string cl_bam = options.prefix + "/" + rgname + ".bam." + str_block_id;
 				string cl_sorted_bam = options.prefix + "/" + rgname + ".sorted.bam." + str_block_id;
@@ -4381,6 +4399,7 @@ void ParallelBamReader::align_clipped_reads() {
 					cl_bam = options.working_prefix + "/" + rgname + ".bam." + str_block_id;
 					cl_sorted_bam = options.working_prefix + "/" + rgname + ".sorted.bam." + str_block_id;
 				}
+
 				bool is_first_rg = the_first_rg == cl_tmp_sam;
 				string line;
 				ofstream out(cl_tmp_sam, ios::binary);

@@ -16,6 +16,7 @@
 #include <parallel/algorithm>
 #include <set>
 #include <boost/format.hpp>
+#include <boost/algorithm/string.hpp>
 #include <api/BamReader.h>
 #include <api/BamWriter.h>
 #include <api/BamMultiReader.h>

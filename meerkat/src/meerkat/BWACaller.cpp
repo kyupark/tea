@@ -173,6 +173,7 @@ int64_t BWACaller::split_FASTQ_alt(const string& file_path_1, const string& file
 			}
 			the_pos_1.push_back(cur_pos + 10);
 		});
+
 	tasks.push_back([&, n_lines] {
 		string line;
 		ifstream in(file_path_2, ios::binary);
@@ -191,6 +192,7 @@ int64_t BWACaller::split_FASTQ_alt(const string& file_path_1, const string& file
 			}
 			the_pos_2.push_back(cur_pos + 10);
 		});
+
 	castle::ParallelRunner::run_unbalanced_load(n_cores, tasks);
 	n_blocks_1 = the_pos_1.size() - 1;
 
@@ -376,8 +378,10 @@ void BWACaller::collect_align_tasks_alt(vector<function<void()> >& tasks, const 
 			if(castle::IOUtils::get_file_size(fq_sam) > 0) {
 				return;
 			}
-			string bwa_cmd_1 = (boost::format("bwa aln %s -t 1 %s %s >%s 2>%s") % aln_param % reference_path % fq_1 % fq_sai_1 % bwa_err).str();
-			string bwa_cmd_2 = (boost::format("bwa aln %s -t 1 %s %s >%s 2>>%s") % aln_param % reference_path % fq_2 % fq_sai_2 % bwa_err).str();
+			string bwa_cmd_1 = (boost::format("bwa aln %s -t 1 %s %s >%s 2>%s")
+					% aln_param % reference_path % fq_1 % fq_sai_1 % bwa_err).str();
+			string bwa_cmd_2 = (boost::format("bwa aln %s -t 1 %s %s >%s 2>>%s")
+					% aln_param % reference_path % fq_2 % fq_sai_2 % bwa_err).str();
 			string bwa_cmd_sampe = (boost::format("bwa sampe %s -f %s %s %s %s %s %s 2>>%s")
 					% sampe_param % fq_sam % reference_path % fq_sai_1 % fq_sai_2 % fq_1 % fq_2 % bwa_err).str();
 			system(bwa_cmd_1.c_str());

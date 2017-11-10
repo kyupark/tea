@@ -1623,7 +1623,7 @@ void ParallelDiscordExtractor::collect_discordants_sambamba() {
 			const char* delim = "\t:";
 			vector<string> a_cols;
 			while (getline(in, line, '\n')) {
-				if (string::npos == line.find("@RG")) {
+				if (!boost::starts_with(line, "@RG")) {
 					continue;
 				}
 				castle::StringUtils::c_string_multi_split(line, delim, a_cols);

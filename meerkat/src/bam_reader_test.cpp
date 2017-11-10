@@ -12,7 +12,7 @@
 using namespace std;
 
 int main(int argc, char **argv) {
-	cout << "meerkat-171010-1-removed_blacklist_gen_and_check \n";
+	cout << "meerkat-171110-10-remove_tmp_bam-startswith_rg_in_header \n";
 
 	setvbuf(stdout, NULL, _IONBF, 0);
 	castle::OptionParser option_parser(argc, argv);

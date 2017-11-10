@@ -110,12 +110,17 @@ namespace meerkat {
 		if (copcomp(cop2, cop1)) {
 			offset = 0;
 			length = min(al.Length, (signed) cop1.Length);
-		} else {
+		}
+		else {
 			offset = al.Length - min(al.Length, (signed) cop2.Length);
 			length = min(al.Length, (signed) cop2.Length);
 		}
 
 		try {
+			if(length == 0) {
+				cout << "[ReadGroup::clipAlignment] zero length: " << al.Name << "\n";
+			}
+
 			al.Qualities = al.Qualities.substr(offset, length);
 			al.QueryBases = al.QueryBases.substr(offset, length);
 		} catch (exception &e) {
@@ -319,6 +324,7 @@ namespace meerkat {
 		BamAlignment unmapped = a.IsMapped() ? b : a;
 
 		if (unmapped.Length < big_s_bps || mapped.Length < 2 * big_s_bps) {
+//			cout << "[ReadGroup.recordUMAltNoRG] unmapped.Length < big_s_bps || mapped.Length < 2 * big_s_bps " << a.Name << "\n";
 			return false;
 		}
 
@@ -336,13 +342,16 @@ namespace meerkat {
 	}
 
 	bool ReadGroup::recordUMAltRG(ostream& f1, ostream& f2,
-			BamTools::BamAlignment &a, BamTools::BamAlignment &b, int big_s_bps,
-			int n_cutoff) {
+			BamTools::BamAlignment &a, BamTools::BamAlignment &b,
+			int big_s_bps, int n_cutoff) {
+
 		BamAlignment mapped = a.IsMapped() ? a : b;
 		BamAlignment unmapped = a.IsMapped() ? b : a;
 
-		if (unmapped.Length < big_s_bps || mapped.Length < 2 * big_s_bps)
+		if (unmapped.Length < big_s_bps || mapped.Length < 2 * big_s_bps) {
+//			cout << "[ReadGroup::recordUMAltRG] " << a.Name << " unmapped.Length < big_s_bps || mapped.Length < 2 * big_s_bps  \n";
 			return false;
+		}
 
 		mapped.Name += "mu";
 		unmapped.Name += "mu";
@@ -357,8 +366,7 @@ namespace meerkat {
 			return true;
 
 		/* unmapped >= 2*big_s_bps.  Make another fragment from the 3' end */
-		BamAlignment cp2 = snip(unmapped, unmapped.Length - big_s_bps,
-				big_s_bps);
+		BamAlignment cp2 = snip(unmapped, unmapped.Length - big_s_bps, big_s_bps);
 		cp2.Name += "2";
 		mapped.Name[mapped.Name.size() - 1] = '2';
 		writeFQpair(f1, mapped, f2, cp2, n_cutoff);
@@ -526,6 +534,7 @@ namespace meerkat {
 //			}
 //		}
 		if (clipped.CigarData.empty()) {
+//			cout << "[ReadGroup.recordSCAltRG] " << clipped.Name << " clipped.CigarData.empty \n";
 			return false;
 		}
 
