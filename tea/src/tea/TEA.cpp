@@ -6874,58 +6874,82 @@ void TEA::generate_ram_files() {
 		the_prefix = options.working_prefix;
 	}
 
-	string refbam = the_prefix + ".disc.num.bam";
-	string rbamf = the_prefix + ".disc.ram.bam";
-	string ramf = the_prefix + ".disc.ram";
+	// input files
+	string ref_disc_bam = the_prefix + ".disc.num.bam";
 	string disc_1_ra_bam = the_prefix + ".disc_1.ra.bam";
 	string disc_2_ra_bam = the_prefix + ".disc_2.ra.bam";
+	// files to be generated
+	string disc_ram_sam = the_prefix + ".disc.ram.sam";
+	string disc_ram = the_prefix + ".disc.ram";
 
-	string cl_refbam = the_prefix + ".cl.sorted.disc.num.bam";
-	string cl_rbamf = the_prefix + ".cl.disc.ram.bam";
-	string cl_ramf = the_prefix + ".cl.disc.ram";
+	// input files
+	string cl_ref_bam = the_prefix + ".cl.sorted.disc.num.bam";
 	string cl_disc_1_ra_bam = the_prefix + ".cl.disc_1.ra.bam";
 	string cl_disc_2_ra_bam = the_prefix + ".cl.disc_2.ra.bam";
+	// files to be generated
+	string cl_ram_sam = the_prefix + ".cl.disc.ram.sam";
+	string cl_ram = the_prefix + ".cl.disc.ram";
 
-	string the_merged_rbam = the_prefix + ".merged.ram.bam";
-	string the_raw_rbam = the_prefix + ".ram.raw.bam";
+
+	string the_merged_ram_sam = the_prefix + ".merged.ram.sam";
+	string the_raw_ram_bam = the_prefix + ".ram.raw.bam";
 	string the_ram = the_prefix + ".ram";
-	string the_rbam = the_prefix + ".ram.bam";
+	string the_ram_bam = the_prefix + ".ram.bam";
 
-	if (!options.is_force && castle::IOUtils::get_file_size(the_ram) > 0 && castle::IOUtils::get_file_size(the_rbam) > 0) {
+	vector<string> removal_paths;
+
+	if (!options.is_force && castle::IOUtils::get_file_size(the_ram) > 0 && castle::IOUtils::get_file_size(the_ram_bam) > 0) {
 		cout << checker;
 		return;
 	}
 
-	generate_ram_file(refbam, rbamf, ramf, disc_1_ra_bam, disc_2_ra_bam, options.exo, false);
-	if(boost::filesystem::exists(cl_refbam)
+	generate_ram_file(ref_disc_bam, disc_ram_sam, disc_ram, disc_1_ra_bam, disc_2_ra_bam, options.exo, false);
+
+	if(boost::filesystem::exists(cl_ref_bam)
 			&& boost::filesystem::exists(cl_disc_1_ra_bam)
 			&& boost::filesystem::exists(cl_disc_2_ra_bam)) {
-		generate_ram_file(cl_refbam, cl_rbamf, cl_ramf, cl_disc_1_ra_bam, cl_disc_2_ra_bam, options.exo, true);
+		generate_ram_file(cl_ref_bam, cl_ram_sam, cl_ram, cl_disc_1_ra_bam, cl_disc_2_ra_bam, options.exo, true);
 	}
 
-	vector<string> rbam_files;
-	rbam_files.push_back(rbamf);
-	if(boost::filesystem::exists(cl_rbamf)) {
-		rbam_files.push_back(cl_rbamf);
+	vector<string> ram_sam_files;
+
+	ram_sam_files.push_back(disc_ram_sam);
+	removal_paths.push_back(disc_ram_sam);
+
+	if(boost::filesystem::exists(cl_ram_sam)) {
+		ram_sam_files.push_back(cl_ram_sam);
+		removal_paths.push_back(cl_ram_sam);
 	}
 
 	vector<string> ram_files;
-	ram_files.push_back(ramf);
-	if(boost::filesystem::exists(cl_ramf)) {
-		ram_files.push_back(cl_ramf);
+	ram_files.push_back(disc_ram);
+	if(boost::filesystem::exists(cl_ram)) {
+		ram_files.push_back(cl_ram);
 	}
 
-	castle::IOUtils::plain_file_merge_serial(the_merged_rbam, rbam_files, n_cores, false);
+	castle::IOUtils::plain_file_merge_serial(the_merged_ram_sam, ram_sam_files, n_cores, false);
 	castle::IOUtils::plain_file_merge_serial(the_ram, ram_files, n_cores, false);
 
-	string sam_to_bam_cmd = (boost::format("samtools view -@ %d -o %s -Sb %s") % n_cores % the_raw_rbam % the_merged_rbam).str();
+	string sam_to_bam_cmd = (boost::format("samtools view -@ %d -o %s -Sb %s") % n_cores % the_raw_ram_bam % the_merged_ram_sam).str();
 	system(sam_to_bam_cmd.c_str());
-	string sambamba_sort_cmd = (boost::format("sambamba sort -l 1 -t %d -o %s %s") % n_cores % the_rbam % the_raw_rbam).str();
+
+	if (options.is_cleaning) {
+		removal_paths.push_back(the_merged_ram_sam);
+		castle::IOUtils::remove_files(removal_paths, n_cores);
+	}
+
+	string sambamba_sort_cmd = (boost::format("sambamba sort -l 1 -t %d -o %s %s") % n_cores % the_ram_bam % the_raw_ram_bam).str();
 	system(sambamba_sort_cmd.c_str());
+
+	if (options.is_cleaning) {
+		removal_paths.push_back(the_raw_ram_bam);
+		castle::IOUtils::remove_files(removal_paths, n_cores);
+	}
+
 	cout << checker;
 }
 
-void TEA::generate_ram_file(const string& refbam, const string& rbamf, const string& ramf, const string& disc_1_ra_bam, const string& disc_2_ra_bam, bool exo, bool headless) {
+void TEA::generate_ram_file(const string& ref_bam, const string& ram_sam, const string& ram_file, const string& disc_1_ra_bam, const string& disc_2_ra_bam, bool exo, bool headless) {
 	castle::TimeChecker checker;
 	checker.setTarget("TEA.generate_ram_file");
 	checker.start();
@@ -6933,7 +6957,7 @@ void TEA::generate_ram_file(const string& refbam, const string& rbamf, const str
 //	vector<meerkat::BlockBoundary> fixed_size_blocks;
 //	collect_boundaries(fixed_size_blocks, refbam, size_block);
 
-	string a_path(refbam);
+	string a_path(ref_bam);
 	string an_index_path(a_path);
 	an_index_path += ".bai";
 	if (!boost::filesystem::exists(a_path) || !boost::filesystem::exists(an_index_path)) {
@@ -6941,21 +6965,21 @@ void TEA::generate_ram_file(const string& refbam, const string& rbamf, const str
 		exit(1);
 	}
 
-	vector<string> rabam_files;
-	rabam_files.push_back(disc_1_ra_bam);
-	rabam_files.push_back(disc_2_ra_bam);
+	vector<string> ra_bam_files;
+	ra_bam_files.push_back(disc_1_ra_bam);
+	ra_bam_files.push_back(disc_2_ra_bam);
 
 //	# load repeat mappings into a hash
 //	my %h = (); //# record end(1/2):READNAME\tREPAT_NAME1:fr1,REPEAT_NAME2:fr2, ...
 	boost::unordered_map<string, string> h;
 //	# save [strand:readname] -> [repeatname:seq] into a hash h
-	load_repeat_mapping(h, exo, rabam_files);
+	load_repeat_mapping(h, exo, ra_bam_files);
 
 //	# matching read ids from the reference bam and generate a ram file and a bam only with rams
 	if(options.is_sampe || options.is_mem) {
-		write_ram_and_bam_serial(refbam, rbamf, ramf, h, exo, headless);
+		write_ram_and_bam_serial(ref_bam, ram_sam, ram_file, h, exo, headless);
 	} else {
-		write_ram_and_bam_mem_serial(refbam, rbamf, ramf, h, exo, headless);
+		write_ram_and_bam_mem_serial(ref_bam, ram_sam, ram_file, h, exo, headless);
 	}
 
 	cout << checker;
@@ -7396,12 +7420,12 @@ void TEA::write_ram_and_bam(const string& refbam, const string& rbamf, const str
 	cout << (boost::format("[TEA.write_ram_and_bam] done generating ram and ram.bam with %d rams.\n") % cnt).str();
 	cout << checker;
 }
-void TEA::write_ram_and_bam_serial(const string& refbam, const string& rbamf, const string& ramf, const boost::unordered_map<string, string>& h, const bool exo, bool headless) {
+void TEA::write_ram_and_bam_serial(const string& ref_bam, const string& ram_sam, const string& ram_file, const boost::unordered_map<string, string>& h, const bool exo, bool headless) {
 	castle::TimeChecker checker;
 	checker.setTarget("TEA.write_ram_and_bam_serial");
 	checker.start();
-	cout << (boost::format("[TEA.write_ram_and_bam_serial] start matching the id to generate a BAM from %s ...\n") % refbam).str();
-	string a_path(refbam);
+	cout << (boost::format("[TEA.write_ram_and_bam_serial] start matching the id to generate a BAM from %s ...\n") % ref_bam).str();
+	string a_path(ref_bam);
 	string an_index_path(a_path);
 	an_index_path += ".bai";
 
@@ -7436,15 +7460,15 @@ void TEA::write_ram_and_bam_serial(const string& refbam, const string& rbamf, co
 	const char* delim_tab = "\t";
 
 	const auto& header = local_reader.GetHeaderText();
-	string local_ram_filename = ramf;
-	string local_rbam_filename = rbamf;
+	string local_ram_filename = ram_file;
+	string local_ram_sam_filename = ram_sam;
 
 	ofstream out_ram(local_ram_filename, ios::binary);
-	BamTools::BamWriter out_rbam;
+	BamTools::BamWriter out_ram_sam;
 	if (headless) {
-		out_rbam.SAMOpenNoHeader(local_rbam_filename, local_reader.GetReferenceData());
+		out_ram_sam.SAMOpenNoHeader(local_ram_sam_filename, local_reader.GetReferenceData());
 	} else {
-		out_rbam.SAMOpen(local_rbam_filename, header, local_reader.GetReferenceData());
+		out_ram_sam.SAMOpen(local_ram_sam_filename, header, local_reader.GetReferenceData());
 	}
 
 	auto& ref_vec = local_reader.GetReferenceData();
@@ -7480,9 +7504,9 @@ void TEA::write_ram_and_bam_serial(const string& refbam, const string& rbamf, co
 				}
 				//    		(m/XT:A:/ && !m/XT:A:U/)
 			}
+
 			//	# check if its mate is mapped to TE
 			auto mate = h_itr->second;
-
 
 			//the mate variable: Alu:seq,...
 			castle::StringUtils::c_string_multi_split(mate, delim_colon, b);
@@ -7606,7 +7630,7 @@ void TEA::write_ram_and_bam_serial(const string& refbam, const string& rbamf, co
 								cout << "[TEA.write_ram_and_bam_serial] ram: " << record1 << "\n";
 							}
 							out_ram << record1 << "\n";
-							out_rbam.SaveSAMAlignment(record2);
+							out_ram_sam.SaveSAMAlignment(record2);
 							++cnt;
 						}
 					}
@@ -7623,7 +7647,7 @@ void TEA::write_ram_and_bam_serial(const string& refbam, const string& rbamf, co
 		previous_pos = current_pos;
 	}
 	local_reader.Close();
-	out_rbam.Close();
+	out_ram_sam.Close();
 
 	cout << (boost::format("[TEA.write_ram_and_bam_serial] done generating ram and ram.bam with %d rams.\n") % cnt).str();
 	cout << checker;
@@ -13007,7 +13031,7 @@ void TEA::output_mate_fa(boost::unordered_map<string, boost::unordered_map<int8_
 	cout << checker;
 }
 
-void TEA::_output_mate_fa(boost::unordered_map<string, vector<string>>& positive_mate_reads, boost::unordered_map<string, vector<string>>& negative_mate_reads, vector<meerkat::BlockBoundary>& actual_blocks, const string& a_path, const multimap<string, AlnPairEntry>& a_positive_repeat_map, const multimap<string, AlnPairEntry>& a_negative_repeat_map) {
+void TEA::_output_mate_fa(boost::unordered_map<string, vector<string>>& positive_mate_reads, boost::unordered_map<string, vector<string>>& negative_mate_reads, vector<meerkat::BlockBoundary>& actual_blocks, const string& a_path, const boost::unordered_map<string, AlnPairEntry>& a_positive_repeat_map, const boost::unordered_map<string, AlnPairEntry>& a_negative_repeat_map) {
 	string a_bai_path;
 	get_bai_index_path(a_path, a_bai_path);
 

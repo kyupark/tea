@@ -13,7 +13,7 @@
 using namespace std;
 
 int main(int argc, char **argv) {
-	cout << "tea main tea-fq171110e3-ra_bam_unmapped_to_repeat_remove_tmp_bam-startswith_rg_in_header \n";
+	cout << "tea main tea-fq171113g1-contains_temp_files-ram_bam_to_ram_sam \n";
 	setvbuf(stdout, NULL, _IONBF, 0);
 	tea::TEAOptionParser option_parser(argc, argv);
 	castle::TimeChecker checker;

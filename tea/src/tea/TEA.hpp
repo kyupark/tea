@@ -212,8 +212,8 @@ private:
 	void _output_mate_fa(boost::unordered_map<string, vector<string>>& positive_mate_reads,
 			boost::unordered_map<string, vector<string>>& negative_mate_reads,
 			vector<meerkat::BlockBoundary>& actual_blocks, const string& input_BAM_name,
-			const multimap<string, AlnPairEntry>& a_positive_repeat_map,
-			const multimap<string, AlnPairEntry>& a_negative_repeat_map);
+			const boost::unordered_map<string, AlnPairEntry>& a_positive_repeat_map,
+			const boost::unordered_map<string, AlnPairEntry>& a_negative_repeat_map);
 
 	void output_mate_fa_v(boost::unordered_map<string, boost::unordered_map<int8_t, vector<RAMRepeatEntry>>>& ram);
 	void _output_mate_fa_v(boost::unordered_map<string, vector<string>>& positive_mate_reads,

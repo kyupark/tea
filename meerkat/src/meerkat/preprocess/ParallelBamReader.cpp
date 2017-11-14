@@ -4219,6 +4219,7 @@ void ParallelBamReader::create_reports() {
 
 void ParallelBamReader::align_clipped_reads() {
 	if (!options.clip) {
+		cout << "[ParallelBamReader.align_clipped_reads] Option -l 0 is on. Skipping generating cl.sorted.bam file. \n"
 		return;
 	}
 	string cl_sortbam = options.prefix + ".cl.sorted.bam";

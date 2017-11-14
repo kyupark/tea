@@ -66,7 +66,7 @@ void OptionParser::show_help_dre() {
 			"             here by selecting the highest quality read from each set.\n"//
 			"  -m         Ignore reads marked as duplicates in the BAM.  Do NOT mix\n"//
 			"             this option with -P.\n"//
-			"  -s integer Insert size cutoff for discordant read pairs that map to\n"//
+			"  -s [INT]   Insert size cutoff for discordant read pairs that map to\n"//
 			"             the same chromosome and have the correct orientation.\n"//
 			"             The value is the number of standard deviations from the\n"//
 			"             median insert size.  [3]\n"//
@@ -86,8 +86,7 @@ void OptionParser::show_help_dre() {
 	exit(1);
 }
 OptionParser::OptionParser() :
-		prefix("output"), no_prompt(true), verbose(false), processUU(true), max_isize(1000), big_s_bps(20), frag_size(-1), cut_sr(-1), nstdevs(3), isize_samples(1000), q(0), min_read_len(0), coverage_cutoff(0), n_cutoff(5), plotrange(1000), sd_cutoff_disc(3), sd_cutoff_cl(-1), support_mps(-1), support_mpf(-1), min_mapq(
-				0), alt_map_max(-1), alt_map_max_clip(numeric_limits<int32_t>::max()), sv_size_cutoff(1000000000), support_reads(1), te_size_max(100000), del_ins_size_cutoff_d(0.8), del_ins_size_cutoff_u(1.2), ovl(0.8), filter_dups(false), filter_dups_by_flag(false), remove_dup(false), clip(true), ad_align(true), use_all_align(false), include_other(false), generate_mapped_sc_um_file(false), is_cleaning(false) {
+		prefix("output"), no_prompt(true), verbose(false), processUU(true), max_isize(1000), big_s_bps(20), frag_size(-1), cut_sr(-1), nstdevs(3), isize_samples(1000), q(0), min_read_len(0), coverage_cutoff(0), n_cutoff(5), plotrange(1000), sd_cutoff_disc(3), sd_cutoff_cl(-1), support_mps(-1), support_mpf(-1), min_mapq(0), alt_map_max(-1), alt_map_max_clip(numeric_limits<int32_t>::max()), sv_size_cutoff(1000000000), support_reads(1), te_size_max(100000), del_ins_size_cutoff_d(0.8), del_ins_size_cutoff_u(1.2), ovl(0.8), filter_dups(false), filter_dups_by_flag(false), remove_dup(false), clip(true), ad_align(true), use_all_align(false), include_other(false), generate_mapped_sc_um_file(false), is_cleaning(false) {
 	program_names.insert("preprocess");
 	program_names.insert("dre");
 	program_names.insert("r_alt");
@@ -110,8 +109,7 @@ OptionParser::OptionParser() :
 }
 
 OptionParser::OptionParser(int argc, char **argv) :
-		prefix("-"), no_prompt(true), verbose(false), processUU(true), max_isize(1000), big_s_bps(20), frag_size(-1), cut_sr(-1), nstdevs(3), isize_samples(1000), q(0), min_read_len(0), coverage_cutoff(0), n_cutoff(5), plotrange(1000), sd_cutoff_disc(3), sd_cutoff_cl(-1), support_mps(-1), support_mpf(-1), min_mapq(
-				0), alt_map_max(-1), alt_map_max_clip(numeric_limits<int32_t>::max()), sv_size_cutoff(1000000000), support_reads(1), te_size_max(100000), del_ins_size_cutoff_d(0.8), del_ins_size_cutoff_u(1.2), ovl(0.8), filter_dups(false), filter_dups_by_flag(false), remove_dup(false), clip(true), ad_align(true), use_all_align(false), include_other(false), generate_mapped_sc_um_file(false), is_cleaning(false) {
+		prefix("-"), no_prompt(true), verbose(false), processUU(true), max_isize(1000), big_s_bps(20), frag_size(-1), cut_sr(-1), nstdevs(3), isize_samples(1000), q(0), min_read_len(0), coverage_cutoff(0), n_cutoff(5), plotrange(1000), sd_cutoff_disc(3), sd_cutoff_cl(-1), support_mps(-1), support_mpf(-1), min_mapq(0), alt_map_max(-1), alt_map_max_clip(numeric_limits<int32_t>::max()), sv_size_cutoff(1000000000), support_reads(1), te_size_max(100000), del_ins_size_cutoff_d(0.8), del_ins_size_cutoff_u(1.2), ovl(0.8), filter_dups(false), filter_dups_by_flag(false), remove_dup(false), clip(true), ad_align(true), use_all_align(false), include_other(false), generate_mapped_sc_um_file(false), is_cleaning(false) {
 	TimeChecker checker;
 	n_cores = checker.get_number_of_cores();
 	tmp_directory = "/tmp";
@@ -213,8 +211,8 @@ OptionParser::OptionParser(int argc, char **argv) :
 				}
 			} else if ("-l" == argument) {
 				string value(argv[i + 1]);
-				if ("1" == value) {
-					clip = true;
+				if ("0" == value) {
+					clip = false;
 				}
 			} else if ("-L" == argument) {
 				string value(argv[i + 1]);
