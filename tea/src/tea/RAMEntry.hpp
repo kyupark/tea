@@ -53,6 +53,8 @@ using namespace std;
 		string repeat_family;
 		string read_name;
 		int64_t pos;
+		string mate_seq;
+
 		RAMRepeatEntry() : pos(0){
 		}
 		RAMRepeatEntry(const RAMRepeatEntry& other) {
@@ -61,6 +63,7 @@ using namespace std;
 			repeat_family = other.repeat_family;
 			read_name = other.read_name;
 			pos = other.pos;
+			mate_seq = other.mate_seq;
 		}
 		RAMRepeatEntry& operator=(const RAMRepeatEntry& other) {
 			// check for self-assignment
@@ -72,6 +75,7 @@ using namespace std;
 			repeat_family = other.repeat_family;
 			read_name = other.read_name;
 			pos = other.pos;
+
 			return *this;
 		}
 		bool operator==(const RAMRepeatEntry& other) const {
@@ -104,7 +108,7 @@ using namespace std;
 			return (read_name < other.read_name);
 		}
 		string str() const {
-			return (boost::format("%s, %s, %s, %s, %s") % pos % repeat_name % repeat_class % repeat_family % read_name).str();
+			return (boost::format("%s, %s, %s, %s, %s, %s") % pos % repeat_name % repeat_class % repeat_family % read_name % mate_seq).str();
 		}
 	};
 	struct RepeatClusterEntry {
@@ -120,6 +124,9 @@ using namespace std;
 		vector<string> repeat_name;
 		vector<int64_t> pos;
 		vector<string> rname;
+		vector<string> seq;
+		vector<string> mate_seq;
+
 		bool operator<(const RepeatClusterEntry& other) const {
 			if(s < other.s) {
 				return true;
@@ -141,7 +148,9 @@ using namespace std;
 					castle::StringUtils::join(family, ",") %
 					ram %
 					castle::StringUtils::join(pos, ",") %
-					castle::StringUtils::join(rname, ",")
+					castle::StringUtils::join(rname, ",") %
+					castle::StringUtils::join(seq, ",") %
+					castle::StringUtils::join(mate_seq, ",")
 					).str();
 		}
 	};

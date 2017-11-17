@@ -173,9 +173,13 @@ private:
 	void read_gene_rfile(boost::unordered_map<string, GeneIntervalVector>& gene_annot, const string& file_name, const set<string>& chrl);
 	void load_read_length(boost::unordered_map<string, int32_t>& rl);
 	void load_insert_size(boost::unordered_map<string, boost::unordered_map<string, double>>& is, boost::unordered_map<string, int32_t>& rl);
-	void load_ram(boost::unordered_map<string, boost::unordered_map<int8_t, vector<RAMRepeatEntry>>>& ram, boost::unordered_map<string, pair<string, string>>& rannot, const bool rm_dup = false);
+	void load_ram(
+			boost::unordered_map<string, boost::unordered_map<int8_t, vector<RAMRepeatEntry>>>& ram,
+			boost::unordered_map<string, pair<string, string>>& rannot,
+			const bool rm_dup = false );
 	void get_cluster_alt(const string& chr, RAMIntervalVector& cl, vector<RAMRepeatEntry>& sram, boost::unordered_map<string, pair<string, string>>& rannot, const int32_t strand, int64_t gap_cutoff);
 	void pair_cluster_alt(multimap<int64_t, int64_t>& pm_cl, RAMIntervalVector& p_cl, RAMIntervalVector& n_cl, const int64_t gap_cutoff, const int64_t read_length, bool stringent_pair = false);
+
 	void count_clipped(
 			boost::unordered_map<string, RefRepeatIntervalVector>& ril_annot_alt,
 			boost::unordered_map<string, GeneIntervalVector>& gene_annot,
@@ -192,14 +196,22 @@ private:
 			const int64_t rmasker_filter_margin,
 			const int64_t gene_margin,
 			const bool headless);
+
 	void count_clipped_v(
 				boost::unordered_map<string, RefRepeatIntervalVector>& ril_annot_alt,
 				map<int64_t, string>& vannot,
-				const string& chr, const string& cl_prefix, const string& contig_dir,
-				const multimap<int64_t, int64_t>& pm_cl, const RAMIntervalVector& p_cl, const RAMIntervalVector& n_cl,
-				boost::unordered_set<int64_t>& positive_only, boost::unordered_set<int64_t>& negative_only,
-				const int64_t read_length, const int64_t fragment_size,
-				const int64_t rmasker_filter_margin, const int64_t gene_margin);
+				const string& chr,
+				const string& cl_prefix,
+				const string& contig_dir,
+				const multimap<int64_t, int64_t>& pm_cl,
+				const RAMIntervalVector& p_cl,
+				const RAMIntervalVector& n_cl,
+				boost::unordered_set<int64_t>& positive_only,
+				boost::unordered_set<int64_t>& negative_only,
+				const int64_t read_length,
+				const int64_t fragment_size,
+				const int64_t rmasker_filter_margin,
+				const int64_t gene_margin);
 	void get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& max_pos_positive, int64_t& max_pos_negative, int64_t& n_positive_clipped_reads, int64_t& n_negative_clipped_reads,
 			int64_t& n_aligned_clipped_positive, int64_t& n_aligned_clipped_negative,
 			BamTools::BamReader& local_reader, const int64_t the_ram_boundary_start, const int64_t the_ram_boundary_end, const RAMIntervalEntry& positive_entry, const RAMIntervalEntry& negative_entry, const string& chr, const int64_t read_length, const int64_t mid_point);
@@ -208,12 +220,21 @@ private:
 	void output_clipped_stat_v(ofstream& out_p_clipped_filename, ofstream& out_n_clipped_filename, ofstream& out_p_mate_rname, ofstream& out_n_mate_rname, ofstream& out_cl, ofstream& out_germline, ofstream& out_clipped, const string& contig_dir, RefRepeatIntervalTree& ref_repeat_interval_tree, RefRepeatIntervalVector& stat_results, const map<int64_t, string>& vannot,
 				BamTools::BamReader& local_reader, const int64_t the_ram_boundary_start, const int64_t the_ram_boundary_end, const RAMIntervalEntry& positive_entry, const RAMIntervalEntry& negative_entry, const string& chr, const string& prefixed_chr, const int64_t read_length, const int64_t rmasker_filter_margin, const int64_t gene_margin);
 	void output_mate_fa(boost::unordered_map<string, boost::unordered_map<int8_t, vector<RAMRepeatEntry>>>& ram);
-
-	void _output_mate_fa(boost::unordered_map<string, vector<string>>& positive_mate_reads,
+//	void collect_boundaries_pos(vector<meerkat::BlockBoundary>& fixed_size_blocks, vector<meerkat::BlockBoundary>& unmapped_included_blocks, vector<meerkat::BlockBoundary>& independent_blocks, const string& a_path, const string& a_bai_path, const string& a_bni_path, int64_t size_block);
+	void _output_mate_fa(
+			boost::unordered_map<string, vector<string>>& positive_mate_reads,
 			boost::unordered_map<string, vector<string>>& negative_mate_reads,
-			vector<meerkat::BlockBoundary>& actual_blocks, const string& input_BAM_name,
+			vector<meerkat::BlockBoundary>& actual_blocks,
+			const string& input_BAM_name,
 			const boost::unordered_map<string, AlnPairEntry>& a_positive_repeat_map,
 			const boost::unordered_map<string, AlnPairEntry>& a_negative_repeat_map);
+
+	void _output_mate_fa_ram(
+			boost::unordered_map<string, vector<string>>& positive_mate_reads,
+			boost::unordered_map<string, vector<string>>& negative_mate_reads,
+			const boost::unordered_map<string, AlnPairEntry>& a_positive_repeat_map,
+			const boost::unordered_map<string, AlnPairEntry>& a_negative_repeat_map,
+			boost::unordered_map<string, boost::unordered_map<int8_t, vector<RAMRepeatEntry>>>& ram);
 
 	void output_mate_fa_v(boost::unordered_map<string, boost::unordered_map<int8_t, vector<RAMRepeatEntry>>>& ram);
 	void _output_mate_fa_v(boost::unordered_map<string, vector<string>>& positive_mate_reads,

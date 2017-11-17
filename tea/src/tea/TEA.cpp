@@ -180,6 +180,7 @@ void TEA::run_rid() {
 
 	boost::unordered_map<string, int32_t> rl;
 	load_read_length(rl);
+
 	boost::unordered_map<string, boost::unordered_map<string, double>> is;
 	load_insert_size(is, rl);
 
@@ -258,8 +259,10 @@ void TEA::run_rid() {
 	bool headless = false;
 	for (auto c: chr_names) {
 		tasks.push_back([&, c, headless] {
+
 			RAMIntervalVector p_cl;
 			RAMIntervalVector n_cl;
+
 			if (ram[c][1].size() > 0) {
 				get_cluster_alt(c, p_cl, ram[c][1], rannot, 1, is["all"]["intra_gap"]);
 			}
@@ -346,6 +349,7 @@ void TEA::run_rid() {
 					positive_only.insert(r_id);
 				}
 			}
+
 			for (int64_t r_id = 0; r_id < static_cast<int64_t>(n_cl.size()); ++r_id) {
 				if (negative_paired.end() != negative_paired.find(r_id)) {
 					continue;
@@ -362,9 +366,11 @@ void TEA::run_rid() {
 					negative_only.insert(r_id);
 				}
 			}
+
 			output_raw_file(c, cl_prefix, p_cl, n_cl, pm_cl, positive_only, negative_only, rl["all"], the_rep_is["fr"], headless);
 			int64_t gene_margin = 2;
 			count_clipped(ril_annot_alt, gene_annot, c, cl_prefix, contig_dir, pm_cl, p_cl, n_cl, positive_only, negative_only, rl["all"], the_rep_is["fr"], rmasker_filter_margin, gene_margin, headless);
+
 		});
 		headless = true;
 	}
@@ -4260,22 +4266,22 @@ void TEA::_BAM_to_FASTQ(vector<meerkat::BlockBoundary>& actual_blocks, const str
 	vector<boost::unordered_map<string, pair<string, string>>> pair_lists(calculated_n_blocks - 1);
 	vector<string> disc_1_filenames(calculated_n_blocks - 1);
 	vector<string> disc_2_filenames(calculated_n_blocks - 1);
+
 	for (int64_t block_id = 0; block_id < calculated_n_blocks - 1; ++block_id) {
 		tasks.push_back([&, block_id] {
 			BamTools::BamReader local_reader;
 			if (!local_reader.Open(a_path, an_index_path)) {
 				return;
 			}
-			int64_t num_total = 0;
 
+			int64_t num_total = 0;
 			BamAlignment local_alignment_entry;
 
 			string str_block_id = boost::lexical_cast<string>(block_id);
-
 			string the_next_block_read_name = actual_blocks[block_id + 1].read_name;
-
 			int64_t the_current_ref_offset = actual_blocks[block_id].offset;
 			int64_t the_next_ref_offset = actual_blocks[block_id + 1].offset;
+
 			auto& m_bgzf = local_reader.GetBGZF();
 			if(0 != block_id) {
 				if(!m_bgzf.Seek(the_current_ref_offset)) {
@@ -4283,6 +4289,7 @@ void TEA::_BAM_to_FASTQ(vector<meerkat::BlockBoundary>& actual_blocks, const str
 					return;
 				}
 			}
+
 			int64_t cur_offset = m_bgzf.Tell();
 			int64_t prev_offset = cur_offset;
 
@@ -4293,6 +4300,7 @@ void TEA::_BAM_to_FASTQ(vector<meerkat::BlockBoundary>& actual_blocks, const str
 			disc_2_filenames[block_id] = out_2_name;
 			ofstream out_disc_1(out_1_name, ios::binary);
 			ofstream out_disc_2(out_2_name, ios::binary);
+
 			while (local_reader.LoadNextAlignmentCore(local_alignment_entry)) {
 				if(verbose && 0 == num_total) {
 					string a_block_boundary_str = (boost::format("%s %d-%d %d")
@@ -4411,7 +4419,13 @@ void TEA::_BAM_to_FASTQ(vector<meerkat::BlockBoundary>& actual_blocks, const str
 	cout << checker;
 }
 
-void TEA::_BAM_to_FASTQ__MEM(vector<meerkat::BlockBoundary>& actual_blocks, const string& input_BAM_name, const string& orphan_FASTQ_name, const string& disc_1_FASTQ_name, const string& disc_2_FASTQ_name) {
+void TEA::_BAM_to_FASTQ__MEM(
+		vector<meerkat::BlockBoundary>& actual_blocks,
+		const string& input_BAM_name,
+		const string& orphan_FASTQ_name,
+		const string& disc_1_FASTQ_name,
+		const string& disc_2_FASTQ_name) {
+
 	castle::TimeChecker checker;
 	checker.setTarget("TEA.BAM_to_FASTQ__MEM");
 	checker.start();
@@ -4428,7 +4442,7 @@ void TEA::_BAM_to_FASTQ__MEM(vector<meerkat::BlockBoundary>& actual_blocks, cons
 	string done_vector(calculated_n_blocks - 1, 'U');
 	set<string> block_boundary_strs;
 
-	vector<boost::unordered_map<string, pair<pair<string, int32_t>, pair<string, int32_t>>>> al_pair_lists(calculated_n_blocks - 1);
+	vector< boost::unordered_map<string, pair< pair<BamAlignment, BamAlignment>, pair<BamAlignment, BamAlignment> > > > al_pair_lists(calculated_n_blocks - 1);
 
 	vector<string> disc_1_filenames(calculated_n_blocks - 1);
 	vector<string> disc_2_filenames(calculated_n_blocks - 1);
@@ -4473,39 +4487,6 @@ void TEA::_BAM_to_FASTQ__MEM(vector<meerkat::BlockBoundary>& actual_blocks, cons
 				auto& al_name = al.Name;
 				auto& al_bases = al.QueryBases;
 				auto& al_quals = al.Qualities;
-				auto& cigar_front_length = al.CigarData.front().Length;
-				auto& cigar_front_type = al.CigarData.front().Type;
-				auto& cigar_back_length = al.CigarData.back().Length;
-				auto& cigar_back_type = al.CigarData.back().Type;
-
-				if (!al.CigarData.empty()) {
-					if ('S' == cigar_front_type && 'S' == cigar_back_type) {
-						al_bases = al_bases.substr(cigar_front_length);
-						al_quals = al_quals.substr(cigar_front_length);
-						al_bases = al_bases.substr(0, al_bases.size() - cigar_back_length );
-						al_quals = al_quals.substr(0, al_quals.size() - cigar_back_length );
-					}
-					else if ('S' == cigar_front_type) {
-						if (al_bases.size() - (cigar_front_length + 5) >= 30) {
-							al_bases = al_bases.substr(cigar_front_length + 5);
-							al_quals = al_quals.substr(cigar_front_length + 5);
-						}
-						else {
-							al_bases = al_bases.substr(cigar_front_length);
-							al_quals = al_quals.substr(cigar_front_length);
-						}
-					}
-					else if ('S' == cigar_back_type) {
-						if (al_bases.size() - (cigar_back_length + 5) >= 30) {
-							al_bases = al_bases.substr(0, al_bases.size() - (cigar_back_length + 5));
-							al_quals = al_quals.substr(0, al_quals.size() - (cigar_back_length + 5));
-						}
-						else {
-							al_bases = al_bases.substr(0, al_bases.size() - cigar_back_length );
-							al_quals = al_quals.substr(0, al_quals.size() - cigar_back_length );
-						}
-					}
-				}
 
 				if(al.IsReverseStrand()) {
 					al_bases = castle::StringUtils::get_reverse_complement(al_bases);
@@ -4516,43 +4497,23 @@ void TEA::_BAM_to_FASTQ__MEM(vector<meerkat::BlockBoundary>& actual_blocks, cons
 						% al_bases
 						% al_quals).str();
 
-				auto the_al_pair_itr = al_local_pair.find(al_name);
-
-				if(al_local_pair.end() == the_al_pair_itr) {
-					// when read name is not in pair, add
-					if(al.IsSecondMate()) {
-						al_local_pair[al_name].second.first = an_entry;
-						al_local_pair[al_name].second.second = al.RefID;
+				if (al.IsFirstMate()) {
+					if (al.IsPrimaryAlignment()) {
+						al_local_pair[al_name].first.first = al;
 					}
 					else {
-						al_local_pair[al_name].first.first = an_entry;
-						al_local_pair[al_name].first.second = al.RefID;
+						al_local_pair[al_name].first.second = al;
+					}
+
+				}
+				else if (al.IsSecondMate()) {
+					if (al.IsPrimaryAlignment()) {
+						al_local_pair[al_name].second.first = al;
+					}
+					else {
+						al_local_pair[al_name].second.second = al;
 					}
 				}
-                 else {
-                     if(al.IsSecondMate()) {
-                         if (the_al_pair_itr->second.second.first.empty()
-                                 || al.RefID != the_al_pair_itr->second.first.second) {
-                             the_al_pair_itr->second.second.first = an_entry;
-                             the_al_pair_itr->second.second.second = al.RefID;
-                         }
-                     }
-                     else {
-                         if (the_al_pair_itr->second.first.first.empty()
-                                 || al.RefID != the_al_pair_itr->second.second.second) {
-                             the_al_pair_itr->second.first.first = an_entry;
-                             the_al_pair_itr->second.first.second = al.RefID;
-                         }
-                     }
-
-                     if(!the_al_pair_itr->second.first.first.empty()
-                             && !the_al_pair_itr->second.second.first.empty()) {
-
-                         out_disc_1 << the_al_pair_itr->second.first.first;
-                         out_disc_2 << the_al_pair_itr->second.second.first;
-                         al_local_pair.erase(the_al_pair_itr);
-                     }
-                 }
              }
              local_reader.Close();
 		});
@@ -6978,11 +6939,13 @@ void TEA::generate_ram_file(const string& ref_bam, const string& ram_sam, const 
 //	# matching read ids from the reference bam and generate a ram file and a bam only with rams
 	if(options.is_sampe || options.is_mem) {
 		write_ram_and_bam_serial(ref_bam, ram_sam, ram_file, h, exo, headless);
-	} else {
+	}
+	else {
 		write_ram_and_bam_mem_serial(ref_bam, ram_sam, ram_file, h, exo, headless);
 	}
 
 	cout << checker;
+
 }
 
 void TEA::load_repeat_mapping(boost::unordered_map<string, string>& h, bool& exo, vector<string>& rabam_files) {
@@ -7060,7 +7023,9 @@ void TEA::_load_repeat_mapping(boost::unordered_map<string, string>& h, bool& ex
 			while (local_reader.LoadNextAlignmentCore(local_alignment_entry)) {
 				if(verbose && 0 == num_total) {
 					string a_block_boundary_str = (boost::format("%s %d-%d %d")
-							% local_alignment_entry.Name % local_alignment_entry.RefID % local_alignment_entry.Position
+							% local_alignment_entry.Name
+							% local_alignment_entry.RefID
+							% local_alignment_entry.Position
 							% local_alignment_entry.AlignmentFlag).str();
 					if(block_boundary_strs.end() == block_boundary_strs.find(a_block_boundary_str)) {
 						cout << (boost::format("[TEA.load_repeat_mapping] Block-%d (first-wrong) %s\n")
@@ -7420,7 +7385,14 @@ void TEA::write_ram_and_bam(const string& refbam, const string& rbamf, const str
 	cout << (boost::format("[TEA.write_ram_and_bam] done generating ram and ram.bam with %d rams.\n") % cnt).str();
 	cout << checker;
 }
-void TEA::write_ram_and_bam_serial(const string& ref_bam, const string& ram_sam, const string& ram_file, const boost::unordered_map<string, string>& h, const bool exo, bool headless) {
+void TEA::write_ram_and_bam_serial(
+		const string& ref_bam,
+		const string& ram_sam,
+		const string& ram_file,
+		const boost::unordered_map<string, string>& h,
+		const bool exo,
+		bool headless) {
+
 	castle::TimeChecker checker;
 	checker.setTarget("TEA.write_ram_and_bam_serial");
 	checker.start();
@@ -7464,6 +7436,7 @@ void TEA::write_ram_and_bam_serial(const string& ref_bam, const string& ram_sam,
 	string local_ram_sam_filename = ram_sam;
 
 	ofstream out_ram(local_ram_filename, ios::binary);
+
 	BamTools::BamWriter out_ram_sam;
 	if (headless) {
 		out_ram_sam.SAMOpenNoHeader(local_ram_sam_filename, local_reader.GetReferenceData());
@@ -7521,10 +7494,12 @@ void TEA::write_ram_and_bam_serial(const string& ref_bam, const string& ram_sam,
 						% ref_vec[local_alignment_entry.RefID].RefName
 						% (local_alignment_entry.Position + 1)).str();
 			}
-			map = (boost::format("%s\t%s\t%s")
+
+			map = (boost::format("%s\t%s\t%s\t%s")
 					% local_alignment_entry.Name
 					% current_pos
-					% b[0]).str();					//# append the read and  TE name
+					% b[0]
+					% b[1]).str();	//# append the read and  TE name
 
 			if (debug) {
 				cout << "[TEA.write_ram_and_bam_serial] mate: " << mate << "\n";
@@ -10650,7 +10625,11 @@ void TEA::load_insert_size(boost::unordered_map<string, boost::unordered_map<str
 	the_represent["gap_size"] = gap_size;
 	the_represent["ins_margin"] = ins_margin;
 }
-void TEA::load_ram(boost::unordered_map<string, boost::unordered_map<int8_t, vector<RAMRepeatEntry>>>& ram, boost::unordered_map<string, pair<string, string>>& rannot, const bool rm_dup) {
+void TEA::load_ram(
+		boost::unordered_map<string, boost::unordered_map<int8_t, vector<RAMRepeatEntry>>>& ram,
+		boost::unordered_map<string, pair<string, string>>& rannot,
+		const bool rm_dup ) {
+
 	castle::TimeChecker checker;
 	checker.setTarget("TEA.load_ram");
 	checker.start();
@@ -10710,7 +10689,46 @@ void TEA::load_ram(boost::unordered_map<string, boost::unordered_map<int8_t, vec
 						auto& the_family = a_repeat_entry->second.second;
 						an_entry.repeat_class = the_class;
 						an_entry.repeat_family = the_family;
-					} else {
+					}
+					else {
+						an_entry.repeat_class = "-";
+						an_entry.repeat_family = "*";
+					}
+
+					if(an_entry.pos > 0) {
+						ram[chr][1].push_back(an_entry);
+					} else if(an_entry.pos < 0) {
+						an_entry.pos = -an_entry.pos;
+						ram[chr][-1].push_back(an_entry);
+					}
+				}
+			} else if( 5 == data.size()) {
+				RAMRepeatEntry an_entry;
+				an_entry.read_name = data[0];
+				auto& chr = data[1];
+				an_entry.pos = boost::lexical_cast<int64_t>(data[2]);
+				auto& repeat_name = data[3];
+				an_entry.mate_seq = data[4];
+
+				boost::replace_all(repeat_name, "/", "_");
+	//			if(string::npos != repeat_name.find(",")) {
+				castle::StringUtils::c_string_multi_split(repeat_name, delim_comma, repeat_class_data);
+				for(auto& a_repeat_name: repeat_class_data) {
+	//					repeat_name = repeat_class_data[0];
+					string capitalized_repeat_name(a_repeat_name);
+					for (auto &c: capitalized_repeat_name) {
+						c = toupper(c);
+					}
+					an_entry.repeat_name = a_repeat_name;
+
+					auto a_repeat_entry = rannot.find(capitalized_repeat_name);
+					if(rannot.end() != a_repeat_entry) {
+						auto& the_class = a_repeat_entry->second.first;
+						auto& the_family = a_repeat_entry->second.second;
+						an_entry.repeat_class = the_class;
+						an_entry.repeat_family = the_family;
+					}
+					else {
 						an_entry.repeat_class = "-";
 						an_entry.repeat_family = "*";
 					}
@@ -10766,7 +10784,9 @@ void TEA::load_ram(boost::unordered_map<string, boost::unordered_map<int8_t, vec
 
 							if(an_entry.pos > 0) {
 								ram[chr][1].push_back(an_entry);
-							} else if(an_entry.pos < 0) {
+
+							}
+							else if(an_entry.pos < 0) {
 								an_entry.pos = -an_entry.pos;
 								ram[chr][-1].push_back(an_entry);
 							}
@@ -10775,10 +10795,11 @@ void TEA::load_ram(boost::unordered_map<string, boost::unordered_map<int8_t, vec
 					prev_entries.clear();
 					prev_name = cur_name;
 				}
-			prev_entries.insert(make_pair(data[0] + data[4], line));
+				prev_entries.insert(make_pair(data[0] + data[4], line));
 			}
 		}
 	}
+
 	int64_t n_ram = 0;
 	for(auto& chr_entry: ram) {
 		for(auto& sign_entry : chr_entry.second) {
@@ -10810,14 +10831,18 @@ void TEA::get_cluster_alt(const string& chr, RAMIntervalVector& cl, vector<RAMRe
 			an_entry.repeat_name.push_back(r.repeat_name);
 			an_entry.pos.push_back(r.pos);
 			an_entry.rname.push_back(r.read_name);
+			an_entry.mate_seq.push_back(sram[0].mate_seq);
+
 			RAMIntervalEntry an_interval_entry(an_entry.s, an_entry.e, an_entry);
 			cl.push_back(an_interval_entry);
 		}
 		return;
 	}
+
 	// declares each break point if the gap between rams is larger than gap_cutoff or the repeat family name is not the same except for PolyA family
 	// since PolyA family can be attached to any family.
-boost::unordered_map<string, vector<vector<int64_t>>> breakpoint_ids;
+
+	boost::unordered_map<string, vector<vector<int64_t>>> breakpoint_ids;
 	for (int64_t pos_id = 0; pos_id < max_id; ++pos_id) {
 		auto& a_ram = sram[pos_id];
 		auto& the_family = a_ram.repeat_family;
@@ -10855,6 +10880,7 @@ boost::unordered_map<string, vector<vector<int64_t>>> breakpoint_ids;
 			vector<int64_t> the_next_cluster_vec;
 			breakpoint_ids[the_family].push_back(the_next_cluster_vec);
 		}
+
 		if (breakpoint_ids[the_family].back().empty()) {
 			if(debug) {
 				cout << "Insert(New) : " << a_ram.pos << "\n";
@@ -10908,6 +10934,12 @@ boost::unordered_map<string, vector<vector<int64_t>>> breakpoint_ids;
 				an_entry.repeat_name.push_back(r.repeat_name);
 				an_entry.pos.push_back(r.pos);
 				an_entry.rname.push_back(r.read_name);
+				for (auto& a_ram : sram) {
+					if (r.read_name == a_ram.read_name) {
+						an_entry.mate_seq.push_back(a_ram.mate_seq);
+					}
+				}
+
 				name_checker.insert(r.read_name);
 				string sc_read_name = r.read_name + "sc";
 				name_checker.insert(sc_read_name);
@@ -11030,6 +11062,7 @@ void TEA::count_clipped(
 		const int64_t rmasker_filter_margin,
 		const int64_t gene_margin,
 		const bool headless) {
+
 //	castle::TimeChecker checker;
 //	checker.setTarget("TEA.count_clipped");
 //	checker.start();
@@ -11038,6 +11071,7 @@ void TEA::count_clipped(
 		tmp_chr_name = "chr" + chr;
 	}
 	const string prefixed_chr = "chr" + chr;
+
 	string input_softclips_consd_bam_name = options.prefix + ".softclips.consd.bam";
 	string input_softclips_consd_cpos_name = options.prefix + ".softclips.consd.cpos";
 	if (!options.working_dir.empty()) {
@@ -11064,6 +11098,7 @@ void TEA::count_clipped(
 	}
 	auto& the_target_repeat_annot = ril_annot_alt.end() == ril_annot_alt.find(chr) ? ril_annot_alt[prefixed_chr] : ril_annot_alt[chr];
 	auto& the_target_gene_annot = gene_annot.end() == gene_annot.find(chr) ? gene_annot[prefixed_chr] : gene_annot[chr];
+
 	string a_bai_path;
 	get_bai_index_path(input_softclips_consd_bam_name, a_bai_path);
 
@@ -11091,7 +11126,6 @@ void TEA::count_clipped(
 	string n_mate_readname_file = cl_prefix + "." + tmp_chr_name + ".n.mate.rname";
 	string p_clipped_filename_file = cl_prefix + "." + tmp_chr_name + ".p.clipped.fname";
 	string n_clipped_filename_file = cl_prefix + "." + tmp_chr_name + ".n.clipped.fname";
-
 	string clipped_file = cl_prefix + "." + tmp_chr_name + ".clipped";
 
 	ofstream out_cl(cl_file, ios::binary);
@@ -11127,6 +11161,7 @@ void TEA::count_clipped(
 			int64_t n_idx = a_pair.second;
 			auto& positive_entry = p_cl[p_idx];
 			auto& negative_entry = n_cl[n_idx];
+
 			int64_t n_ram = positive_entry.value.pos.size() + negative_entry.value.pos.size();
 			if (n_ram < options.min_ram) {
 				continue;
@@ -11147,9 +11182,11 @@ void TEA::count_clipped(
 
 			int64_t mid_point = (positive_entry.stop + negative_entry.start + read_length) / (double)2;
 			local_reader.SetRegion(chr_ref_id, start_pos, chr_ref_id, end_pos);
+
 			output_clipped_stat(out_p_clipped_filename, out_n_clipped_filename, out_p_mate_rname, out_n_mate_rname, out_cl, out_germline, out_clipped, contig_dir, ref_repeat_interval_tree, stat_results, gene_interval_tree, gene_results, local_reader, the_ram_boundary_start, the_ram_boundary_end, positive_entry, negative_entry, chr, prefixed_chr, read_length, rmasker_filter_margin, gene_margin, mid_point);
 		}
 	}
+
 	RepeatClusterEntry an_empty_entry;
 	RAMIntervalEntry empty_interval_entry(0, 0, an_empty_entry);
 	{
@@ -11176,6 +11213,7 @@ void TEA::count_clipped(
 
 			local_reader.SetRegion(chr_ref_id, start_pos, chr_ref_id, end_pos);
 			int64_t mid_point = positive_entry.stop + read_length;
+
 			output_clipped_stat(out_p_clipped_filename, out_n_clipped_filename, out_p_mate_rname, out_n_mate_rname, out_cl, out_germline, out_clipped, contig_dir, ref_repeat_interval_tree, stat_results, gene_interval_tree, gene_results, local_reader, the_ram_boundary_start, the_ram_boundary_end, positive_entry, negative_entry, chr, prefixed_chr, read_length, rmasker_filter_margin, gene_margin, mid_point);
 		}
 	}
@@ -11204,6 +11242,7 @@ void TEA::count_clipped(
 
 			int64_t mid_point = negative_entry.start;
 			local_reader.SetRegion(chr_ref_id, start_pos, chr_ref_id, end_pos);
+
 			output_clipped_stat(out_p_clipped_filename, out_n_clipped_filename, out_p_mate_rname, out_n_mate_rname, out_cl, out_germline, out_clipped, contig_dir, ref_repeat_interval_tree, stat_results, gene_interval_tree, gene_results, local_reader, the_ram_boundary_start, the_ram_boundary_end, positive_entry, negative_entry, chr, prefixed_chr, read_length, rmasker_filter_margin, gene_margin, mid_point);
 		}
 	}
@@ -11279,12 +11318,10 @@ void TEA::count_clipped_v(
 		string n_mate_readname_file = cl_prefix + "." + tmp_chr_name + ".n.mate.rname";
 		string p_clipped_filename_file = cl_prefix + "." + tmp_chr_name + ".p.clipped.fname";
 		string n_clipped_filename_file = cl_prefix + "." + tmp_chr_name + ".n.clipped.fname";
-
 		string clipped_file = cl_prefix + "." + tmp_chr_name + ".clipped";
 
 		ofstream out_cl(cl_file, ios::binary);
 		ofstream out_germline(germline_file, ios::binary);
-
 		ofstream out_clipped(clipped_file, ios::binary);
 		ofstream out_p_mate_rname(p_mate_readname_file, ios::binary);
 		ofstream out_n_mate_rname(n_mate_readname_file, ios::binary);
@@ -11373,15 +11410,29 @@ void TEA::count_clipped_v(
 					end_pos = max(end_pos, negative_entry.value.pos[0]);
 				}
 				local_reader.SetRegion(chr_ref_id, start_pos, chr_ref_id, end_pos);
-				output_clipped_stat_v(out_p_clipped_filename, out_n_clipped_filename, out_p_mate_rname, out_n_mate_rname, out_cl, out_germline, out_clipped, contig_dir, ref_repeat_interval_tree, stat_results, vannot, local_reader, the_ram_boundary_start, the_ram_boundary_end,
-						positive_entry, negative_entry, chr, prefixed_chr, read_length, rmasker_filter_margin, gene_margin);
+				output_clipped_stat_v(out_p_clipped_filename, out_n_clipped_filename, out_p_mate_rname, out_n_mate_rname, out_cl, out_germline, out_clipped, contig_dir, ref_repeat_interval_tree, stat_results, vannot, local_reader, the_ram_boundary_start, the_ram_boundary_end, positive_entry, negative_entry, chr, prefixed_chr, read_length, rmasker_filter_margin, gene_margin);
 			}
 		}
 		local_reader.Close();
 //		cout << checker;
 }
 
-void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& max_pos_positive, int64_t& max_pos_negative, int64_t& n_positive_clipped_reads, int64_t& n_negative_clipped_reads, int64_t& n_aligned_clipped_positive, int64_t& n_aligned_clipped_negative, BamTools::BamReader& local_reader, const int64_t the_ram_boundary_start, const int64_t the_ram_boundary_end, const RAMIntervalEntry& positive_entry, const RAMIntervalEntry& negative_entry, const string& chr, const int64_t read_length, const int64_t mid_point) {
+void TEA::get_clipped_entries(
+		vector<ClippedEntry>& clipped_entries,
+		int64_t& max_pos_positive,
+		int64_t& max_pos_negative,
+		int64_t& n_positive_clipped_reads,
+		int64_t& n_negative_clipped_reads,
+		int64_t& n_aligned_clipped_positive,
+		int64_t& n_aligned_clipped_negative,
+		BamTools::BamReader& local_reader,
+		const int64_t the_ram_boundary_start,
+		const int64_t the_ram_boundary_end,
+		const RAMIntervalEntry& positive_entry,
+		const RAMIntervalEntry& negative_entry,
+		const string& chr,
+		const int64_t read_length,
+		const int64_t mid_point) {
 
 	string tmp_chr_name(chr);
 	if (string::npos == tmp_chr_name.find("chr")) {
@@ -11495,6 +11546,7 @@ void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& ma
 				alt_rep.insert(positive_entry.value.rep_repeat.begin(), positive_entry.value.rep_repeat.end());
 				alt_rep.insert(negative_entry.value.rep_repeat.begin(), negative_entry.value.rep_repeat.end());
 				an_entry.rep_repeat = castle::StringUtils::join(alt_rep, ",");
+
 				an_entry.negative_pos = local_alignment_entry.Position;
 				an_entry.clipped_pos = clipped_pos;
 				an_entry.clipped_pos_qual_trimmed = clipped_pos_qual_trimmed;
@@ -11954,7 +12006,30 @@ void TEA::get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& ma
 	}
 }
 
-void TEA::output_clipped_stat(ofstream& out_p_clipped_filename, ofstream& out_n_clipped_filename, ofstream& out_p_mate_rname, ofstream& out_n_mate_rname, ofstream& out_cl, ofstream& out_germline, ofstream& out_clipped, const string& contig_dir, RefRepeatIntervalTree& ref_repeat_interval_tree, RefRepeatIntervalVector& stat_results, GeneIntervalTree& gene_interval_tree, GeneIntervalVector& gene_results, BamTools::BamReader& local_reader, const int64_t the_ram_boundary_start, const int64_t the_ram_boundary_end, const RAMIntervalEntry& positive_entry, const RAMIntervalEntry& negative_entry, const string& chr, const string& prefixed_chr, const int64_t read_length, const int64_t rmasker_filter_margin, const int64_t gene_margin, const int64_t mid_point) {
+void TEA::output_clipped_stat(
+		ofstream& out_p_clipped_filename,
+		ofstream& out_n_clipped_filename,
+		ofstream& out_p_mate_rname,
+		ofstream& out_n_mate_rname,
+		ofstream& out_cl, ofstream& out_germline,
+		ofstream& out_clipped,
+		const string& contig_dir,
+		RefRepeatIntervalTree& ref_repeat_interval_tree,
+		RefRepeatIntervalVector& stat_results,
+		GeneIntervalTree& gene_interval_tree,
+		GeneIntervalVector& gene_results,
+		BamTools::BamReader& local_reader,
+		const int64_t the_ram_boundary_start,
+		const int64_t the_ram_boundary_end,
+		const RAMIntervalEntry& positive_entry,
+		const RAMIntervalEntry& negative_entry,
+		const string& chr,
+		const string& prefixed_chr,
+		const int64_t read_length,
+		const int64_t rmasker_filter_margin,
+		const int64_t gene_margin,
+		const int64_t mid_point) {
+
 	vector<ClippedEntry> clipped_entries;
 	int64_t max_pos_positive = 0;
 	int64_t max_pos_negative = 0;
@@ -11962,11 +12037,14 @@ void TEA::output_clipped_stat(ofstream& out_p_clipped_filename, ofstream& out_n_
 	int64_t n_negative_clipped_reads = 0;
 	int64_t n_aligned_clipped_positive = 0;
 	int64_t n_aligned_clipped_negative = 0;
+
 	get_clipped_entries(clipped_entries, max_pos_positive, max_pos_negative, n_positive_clipped_reads, n_negative_clipped_reads, n_aligned_clipped_positive, n_aligned_clipped_negative, local_reader, the_ram_boundary_start, the_ram_boundary_end, positive_entry, negative_entry, chr, read_length, mid_point);
+
 	string tmp_chr_name(chr);
 	if (string::npos == tmp_chr_name.find("chr")) {
 		tmp_chr_name = "chr" + chr;
 	}
+
 	ClippedStatEntry a_stat_entry;
 	a_stat_entry.ram = positive_entry.value.pos.size() + negative_entry.value.pos.size();
 	a_stat_entry.chr = tmp_chr_name;
@@ -12011,6 +12089,7 @@ void TEA::output_clipped_stat(ofstream& out_p_clipped_filename, ofstream& out_n_
 	a_stat_entry.acr = n_aligned_clipped_positive + n_aligned_clipped_negative;
 	a_stat_entry.pacr = n_aligned_clipped_positive;
 	a_stat_entry.nacr = n_aligned_clipped_negative;
+
 	if (0 != a_stat_entry.cr) {
 		a_stat_entry.acrr = a_stat_entry.acr / (double) a_stat_entry.cr;
 	}
@@ -12022,6 +12101,7 @@ void TEA::output_clipped_stat(ofstream& out_p_clipped_filename, ofstream& out_n_
 		a_stat_entry.nram_start = negative_entry.value.pos[0];
 		a_stat_entry.nram_end = negative_entry.value.pos.back();
 	}
+
 	{
 		int64_t max_ram = 20;
 		int64_t max_cr = 10;
@@ -12031,6 +12111,7 @@ void TEA::output_clipped_stat(ofstream& out_p_clipped_filename, ofstream& out_n_
 		double s_cl2 = min(a_stat_entry.nacr, max_cr) / (double) max_cr;
 		a_stat_entry.score = s_r1 + s_r2 + s_cl1 + s_cl2;
 	}
+
 	{
 		int64_t n_pram_down_nbp = 0;
 		int64_t n_pram_up_nbp = 0;
@@ -12154,6 +12235,7 @@ void TEA::output_clipped_stat(ofstream& out_p_clipped_filename, ofstream& out_n_
 		break;
 	}
 	gene_results.clear();
+
 	gene_interval_tree.find_overlap(gene_negative_s, gene_negative_e, gene_results);
 	for (auto& a_gene_negative_entry : gene_results) {
 		a_stat_entry.ngene = (boost::format("%s_%s") % a_gene_negative_entry.value.name % a_gene_negative_entry.value.type).str();
@@ -12162,6 +12244,7 @@ void TEA::output_clipped_stat(ofstream& out_p_clipped_filename, ofstream& out_n_
 		}
 		break;
 	}
+
 	const int64_t half_min_acr = options.min_acr / (double) 2;
 
 	if (!positive_entry.value.pos.empty() && !negative_entry.value.pos.empty()) {
@@ -12259,12 +12342,13 @@ void TEA::output_clipped_stat(ofstream& out_p_clipped_filename, ofstream& out_n_
 				out_fq << (boost::format(">cr%d\n%s\n") % n_cnt % an_entry.clipped_seq).str();
 				++n_cnt;
 			}
-			auto& positions = positive_entry.value.pos;
-			auto& read_names = positive_entry.value.rname;
-			int64_t max_pos = min(positions.size(), read_names.size());
-			for (int64_t p_id = 0; p_id < max_pos; ++p_id) {
-				out_p_mate_rname << a_stat_entry.s << "\t" << a_stat_entry.e << "\t" << a_stat_entry.rep_suffix << "\t" << positions[p_id] << "\t" << read_names[p_id] << "\n";
-			}
+		}
+		auto& positions = positive_entry.value.pos;
+		auto& read_names = positive_entry.value.rname;
+		int64_t max_pos = min(positions.size(), read_names.size());
+
+		for (int64_t p_id = 0; p_id < max_pos; ++p_id) {
+			out_p_mate_rname << a_stat_entry.s << "\t" << a_stat_entry.e << "\t" << a_stat_entry.rep_suffix << "\t" << positions[p_id] << "\t" << read_names[p_id] << "\n";
 		}
 	}
 
@@ -12289,12 +12373,14 @@ void TEA::output_clipped_stat(ofstream& out_p_clipped_filename, ofstream& out_n_
 				out_fq << (boost::format(">cr%d\n%s\n") % n_cnt % an_entry.clipped_seq).str();
 				++n_cnt;
 			}
-			auto& positions = negative_entry.value.pos;
-			auto& read_names = negative_entry.value.rname;
-			int64_t max_pos = min(positions.size(), read_names.size());
-			for (int64_t p_id = 0; p_id < max_pos; ++p_id) {
-				out_n_mate_rname << a_stat_entry.s << "\t" << a_stat_entry.e << "\t" << a_stat_entry.rep_suffix << "\t" << positions[p_id] << "\t" << read_names[p_id] << "\n";
-			}
+		}
+
+		auto& positions = negative_entry.value.pos;
+		auto& read_names = negative_entry.value.rname;
+		int64_t max_pos = min(positions.size(), read_names.size());
+
+		for (int64_t p_id = 0; p_id < max_pos; ++p_id) {
+			out_n_mate_rname << a_stat_entry.s << "\t" << a_stat_entry.e << "\t" << a_stat_entry.rep_suffix << "\t" << positions[p_id] << "\t" << read_names[p_id] << "\n";
 		}
 	}
 
@@ -12602,8 +12688,8 @@ void TEA::output_mate_fa(boost::unordered_map<string, boost::unordered_map<int8_
 	}
 	string cl_prefix = cl_dir + "/" + naive_prefix;
 
-	multimap<string, AlnPairEntry> a_positive_repeat_map;
-	multimap<string, AlnPairEntry> a_negative_repeat_map;
+	boost::unordered_map<string, AlnPairEntry> a_positive_repeat_map;
+	boost::unordered_map<string, AlnPairEntry> a_negative_repeat_map;
 	vector<string> a_positive_clipped_prefixes;
 	vector<string> a_negative_clipped_prefixes;
 
@@ -12644,6 +12730,7 @@ void TEA::output_mate_fa(boost::unordered_map<string, boost::unordered_map<int8_
 				tmp_chr_name = "chr" + c;
 			}
 			string p_mate_clipped_file = cl_prefix + "." + tmp_chr_name + ".p.clipped.fname";
+
 			ifstream in_clipped(p_mate_clipped_file, ios::binary);
 			while(getline(in_clipped, line, '\n')) {
 				a_positive_clipped_prefixes.push_back(line);
@@ -12660,6 +12747,7 @@ void TEA::output_mate_fa(boost::unordered_map<string, boost::unordered_map<int8_
 				tmp_chr_name = "chr" + c;
 			}
 			string n_mate_clipped_file = cl_prefix + "." + tmp_chr_name + ".n.clipped.fname";
+
 			ifstream in_clipped(n_mate_clipped_file, ios::binary);
 			while(getline(in_clipped, line, '\n')) {
 				a_negative_clipped_prefixes.push_back(line);
@@ -12678,6 +12766,7 @@ void TEA::output_mate_fa(boost::unordered_map<string, boost::unordered_map<int8_
 			vector<string> data;
 			string line;
 			string clipped_file = cl_prefix + "." + tmp_chr_name + ".p.mate.rname";
+
 			ifstream in_clipped(clipped_file, ios::binary);
 
 			while(getline(in_clipped, line, '\n')) {
@@ -12686,12 +12775,9 @@ void TEA::output_mate_fa(boost::unordered_map<string, boost::unordered_map<int8_
 				int64_t a_pos = boost::lexical_cast<int64_t>(data[3]);
 				string file_name_prefix = naive_prefix + "." + tmp_chr_name + "." + data[0] + "." + data[1] + "." + data[2];
 
-				AlnPairEntry aln;
-				aln.file_name_prefix = file_name_prefix;
-				aln.pos = a_pos;
-				aln.chr = c;
-
-				a_positive_repeat_map.insert(pair<string, AlnPairEntry>(a_key, aln));
+				a_positive_repeat_map[a_key].file_name_prefix = file_name_prefix;
+				a_positive_repeat_map[a_key].pos = a_pos;
+				a_positive_repeat_map[a_key].chr = c;
 			}
 		}
 	});
@@ -12715,12 +12801,9 @@ void TEA::output_mate_fa(boost::unordered_map<string, boost::unordered_map<int8_
 				int64_t a_pos = boost::lexical_cast<int64_t>(data[3]);
 				string file_name_prefix = naive_prefix + "." + tmp_chr_name + "." + data[0] + "." + data[1] + "." + data[2];
 
-				AlnPairEntry aln;
-				aln.file_name_prefix = file_name_prefix;
-				aln.pos = a_pos;
-				aln.chr = c;
-
-				a_negative_repeat_map.insert(pair<string, AlnPairEntry>(a_key, aln));
+				a_negative_repeat_map[a_key].file_name_prefix = file_name_prefix;
+				a_negative_repeat_map[a_key].pos = a_pos;
+				a_negative_repeat_map[a_key].chr = c;
 			}
 		}
 	});
@@ -12733,54 +12816,10 @@ void TEA::output_mate_fa(boost::unordered_map<string, boost::unordered_map<int8_
 	boost::unordered_map<string, vector<string>> positive_mate_reads;
 	boost::unordered_map<string, vector<string>> negative_mate_reads;
 
-	int64_t size_block = 8192000;
-	cout << "[TEA.output_mate_fa] collect mate reads from disc file\n";
-
-	if("tea_v" == options.program_name) {
-		string disc_file_name = options.prefix + ".cl.sorted.bam";
-		if (!options.working_dir.empty()) {
-			disc_file_name = options.working_prefix + ".cl.sorted.bam";
-		}
-		string disc_bai_name = disc_file_name + ".bai";
-		string disc_bni_name = disc_file_name + ".bni";
-
-		vector<meerkat::BlockBoundary> local_fixed_size_blocks;
-		vector<meerkat::BlockBoundary> local_unmapped_included_blocks;
-		vector<meerkat::BlockBoundary> local_independent_blocks;
-		collect_boundaries_pos(local_fixed_size_blocks, local_unmapped_included_blocks, local_independent_blocks, disc_file_name, disc_bai_name, disc_bni_name, size_block);
-		_output_mate_fa(positive_mate_reads, negative_mate_reads, local_unmapped_included_blocks, disc_file_name, a_positive_repeat_map, a_negative_repeat_map);
-
-	}
-	else {
-		string disc_1_ra_file_name = options.prefix + ".disc_1.ra.bam";
-		string disc_2_ra_file_name = options.prefix + ".disc_2.ra.bam";
-		if (!options.working_dir.empty()) {
-			disc_1_ra_file_name = options.working_prefix + ".disc_1.ra.bam";
-			disc_2_ra_file_name = options.working_prefix + ".disc_2.ra.bam";
-		}
-		string disc_1_ra_bai_name = disc_1_ra_file_name + ".bai";
-		string disc_1_ra_bni_name = disc_1_ra_file_name + ".bni";
-
-		string disc_2_ra_bai_name = disc_2_ra_file_name + ".bai";
-		string disc_2_ra_bni_name = disc_2_ra_file_name + ".bni";
-
-		{
-			vector<meerkat::BlockBoundary> local_fixed_size_blocks;
-			vector<meerkat::BlockBoundary> local_unmapped_included_blocks;
-			vector<meerkat::BlockBoundary> local_independent_blocks;
-			collect_boundaries_pos(local_fixed_size_blocks, local_unmapped_included_blocks, local_independent_blocks, disc_1_ra_file_name, disc_1_ra_bai_name, disc_1_ra_bni_name, size_block);
-			_output_mate_fa(positive_mate_reads, negative_mate_reads, local_unmapped_included_blocks, disc_1_ra_file_name, a_positive_repeat_map, a_negative_repeat_map);
-		}
-		{
-			vector<meerkat::BlockBoundary> local_fixed_size_blocks;
-			vector<meerkat::BlockBoundary> local_unmapped_included_blocks;
-			vector<meerkat::BlockBoundary> local_independent_blocks;
-			collect_boundaries_pos(local_fixed_size_blocks, local_unmapped_included_blocks, local_independent_blocks, disc_2_ra_file_name, disc_2_ra_bai_name, disc_2_ra_bni_name, size_block);
-			_output_mate_fa(positive_mate_reads, negative_mate_reads, local_unmapped_included_blocks, disc_2_ra_file_name, a_positive_repeat_map, a_negative_repeat_map);
-		}
-	}
+	_output_mate_fa_ram(positive_mate_reads, negative_mate_reads, a_positive_repeat_map, a_negative_repeat_map, ram);
 
 	for(auto& an_entry : positive_mate_reads) {
+
 		tasks.push_back([&] {
 			auto& file_name_prefix = an_entry.first;
 			auto& the_seq_vec = an_entry.second;
@@ -12793,11 +12832,13 @@ void TEA::output_mate_fa(boost::unordered_map<string, boost::unordered_map<int8_
 					continue;
 				}
 				out_fa << (boost::format(">cr%d\n%s\n") % n_id % a_seq).str();
+
 			}
 		});
 	}
 
 	for(auto& an_entry : negative_mate_reads) {
+
 		tasks.push_back([&] {
 			auto& file_name_prefix = an_entry.first;
 			auto& the_seq_vec = an_entry.second;
@@ -12806,6 +12847,7 @@ void TEA::output_mate_fa(boost::unordered_map<string, boost::unordered_map<int8_
 			ofstream out_fa(fa_name, ios::binary);
 			for(int64_t n_id = 0; n_id < static_cast<int64_t>(the_seq_vec.size()); ++n_id) {
 				auto& a_seq = the_seq_vec[n_id];
+
 				if (0 == a_seq.length()) {
 					continue;
 				}
@@ -12814,6 +12856,7 @@ void TEA::output_mate_fa(boost::unordered_map<string, boost::unordered_map<int8_
 		});
 	}
 	castle::ParallelRunner::run_unbalanced_load(n_cores, tasks);
+
 
 	cout << "[TEA.output_mate_fa] start assembling\n";
 	string all_assembly_files = options.prefix + ".assemblies.target";
@@ -12951,6 +12994,7 @@ void TEA::output_mate_fa(boost::unordered_map<string, boost::unordered_map<int8_
 				getline(in_germline, line, '\n');
 				out_germline << line << "\torientation\tpolyA\tpolyT\tpclipped\tnclipped\tprammate\tnrammate\n";
 			}
+
 			while(getline(in_germline, line, '\n')) {
 				castle::StringUtils::c_string_multi_split(line, delim_tab, data);
 				castle::StringUtils::c_string_multi_split(data[9], delim_comma, cols);
@@ -13031,7 +13075,14 @@ void TEA::output_mate_fa(boost::unordered_map<string, boost::unordered_map<int8_
 	cout << checker;
 }
 
-void TEA::_output_mate_fa(boost::unordered_map<string, vector<string>>& positive_mate_reads, boost::unordered_map<string, vector<string>>& negative_mate_reads, vector<meerkat::BlockBoundary>& actual_blocks, const string& a_path, const boost::unordered_map<string, AlnPairEntry>& a_positive_repeat_map, const boost::unordered_map<string, AlnPairEntry>& a_negative_repeat_map) {
+void TEA::_output_mate_fa(
+		boost::unordered_map<string, vector<string>>& positive_mate_reads,
+		boost::unordered_map<string, vector<string>>& negative_mate_reads,
+		vector<meerkat::BlockBoundary>& actual_blocks,
+		const string& a_path,
+		const boost::unordered_map<string, AlnPairEntry>& a_positive_repeat_map,
+		const boost::unordered_map<string, AlnPairEntry>& a_negative_repeat_map) {
+
 	string a_bai_path;
 	get_bai_index_path(a_path, a_bai_path);
 
@@ -13080,13 +13131,14 @@ void TEA::_output_mate_fa(boost::unordered_map<string, vector<string>>& positive
 				prev_offset = cur_offset;
 				++num_total;
 
-				auto the_pos_itr = a_positive_repeat_map.equal_range(local_alignment_entry.Name);
-				auto the_neg_itr = a_negative_repeat_map.equal_range(local_alignment_entry.Name);
+				auto the_pos_itr = a_positive_repeat_map.find(local_alignment_entry.Name);
+				auto the_neg_itr = a_negative_repeat_map.find(local_alignment_entry.Name);
 
-				for (auto& it=the_pos_itr.first; it!=the_pos_itr.second; ++it) {
-					auto& aln_pair = it->second;
+				if (a_positive_repeat_map.end() != the_pos_itr) {
+					auto& aln_pair = the_pos_itr->second;
 
 					if( local_alignment_entry.IsMapped() ) {
+
 						if(local_alignment_entry.IsReverseStrand()) {
 							local_alignment_entry.QueryBases = castle::StringUtils::get_reverse_complement(local_alignment_entry.QueryBases);
 						}
@@ -13096,17 +13148,17 @@ void TEA::_output_mate_fa(boost::unordered_map<string, vector<string>>& positive
 					}
 				}
 
-				for (auto& it=the_neg_itr.first; it!=the_neg_itr.second; ++it) {
-					auto& aln_pair = it->second;
+				if (a_negative_repeat_map.end() != the_neg_itr) {
+					auto& aln_pair = the_neg_itr->second;
 
 					if( local_alignment_entry.IsMapped() ) {
+
 						if(local_alignment_entry.IsReverseStrand()) {
 							local_alignment_entry.QueryBases = castle::StringUtils::get_reverse_complement(local_alignment_entry.QueryBases);
 						}
 
 						auto& the_seq_vec = local_negative_mate_reads[aln_pair.file_name_prefix];
 						the_seq_vec.push_back(local_alignment_entry.QueryBases);
-
 					}
 				}
 			}
@@ -13140,6 +13192,38 @@ void TEA::_output_mate_fa(boost::unordered_map<string, vector<string>>& positive
 	});
 
 	castle::ParallelRunner::run_unbalanced_load(n_cores, tasks);
+}
+
+void TEA::_output_mate_fa_ram(
+		boost::unordered_map<string, vector<string>>& positive_mate_reads,
+		boost::unordered_map<string, vector<string>>& negative_mate_reads,
+		const boost::unordered_map<string, AlnPairEntry>& a_positive_repeat_map,
+		const boost::unordered_map<string, AlnPairEntry>& a_negative_repeat_map,
+		boost::unordered_map<string, boost::unordered_map<int8_t, vector<RAMRepeatEntry>>>& ram) {
+
+	for (auto& it : ram) {
+		auto& chr = it.first;
+
+		for (auto& a_ram : ram[chr][1]) {
+			auto the_itr = a_positive_repeat_map.find(a_ram.read_name);
+			auto& aln_pair = the_itr->second;
+
+			if (the_itr != a_positive_repeat_map.end()) {
+				auto& the_seq_vec = positive_mate_reads[aln_pair.file_name_prefix];
+				the_seq_vec.push_back(a_ram.mate_seq);
+			}
+		}
+
+		for (auto& a_ram : ram[chr][-1]) {
+			auto the_itr = a_negative_repeat_map.find(a_ram.read_name);
+			auto& aln_pair = the_itr->second;
+
+			if (the_itr != a_negative_repeat_map.end()) {
+				auto& the_seq_vec = negative_mate_reads[aln_pair.file_name_prefix];
+				the_seq_vec.push_back(a_ram.mate_seq);
+			}
+		}
+	}
 }
 
 void TEA::output_mate_fa_v(boost::unordered_map<string, boost::unordered_map<int8_t, vector<RAMRepeatEntry>>>& ram) {

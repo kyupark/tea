@@ -13,10 +13,12 @@
 using namespace std;
 
 int main(int argc, char **argv) {
-	cout << "tea main tea-fq171113g1-contains_temp_files-ram_bam_to_ram_sam \n";
+	cout << "tea main tea-fq171116l3-keeps_temp_files-ram_file_with_seq-use_ram_file \n";
+
 	setvbuf(stdout, NULL, _IONBF, 0);
 	tea::TEAOptionParser option_parser(argc, argv);
 	castle::TimeChecker checker;
+
 	checker.setTarget("TEA.main");
 	checker.start();
 
@@ -25,35 +27,41 @@ int main(int argc, char **argv) {
 		tea.set_option_parser(option_parser);
 		tea.preprocess();
 		tea.clean();
-	} else if("tea_v" == option_parser.program_name) {
+	}
+	else if("tea_v" == option_parser.program_name) {
 		tea::TEA tea;
 		tea.set_option_parser(option_parser);
 		tea.preprocess_v();
 		tea.run_vid();
 		tea.clean();
-	} else if("tea_u" == option_parser.program_name) {
+	}
+	else if("tea_u" == option_parser.program_name) {
 		tea::TEA tea;
 		tea.set_option_parser(option_parser);
 		tea.preprocess_u();
 		tea.run_uid();
 		tea.clean();
-	} else if("transduction" == option_parser.program_name) {
+	}
+	else if("transduction" == option_parser.program_name) {
 		tea::TEA tea;
 		tea.set_option_parser(option_parser);
 		tea.run_transduction();
 		tea.run_transduction_contig();
 		tea.clean();
-	} else if("orphan" == option_parser.program_name) {
+	}
+	else if("orphan" == option_parser.program_name) {
 		tea::TEA tea;
 		tea.set_option_parser(option_parser);
 		tea.run_orphan();
 		tea.run_orphan_contig();
 		tea.clean();
-	} else if("post" == option_parser.program_name) {
+	}
+	else if("post" == option_parser.program_name) {
 		tea::TEA tea;
 		tea.set_option_parser(option_parser);
 		tea.post_process();
-	} else if("comp" == option_parser.program_name) {
+	}
+	else if("comp" == option_parser.program_name) {
 		tea::ResultCompartor rc;
 		rc.set_option_parser(option_parser);
 		string comp_suffix = ".1";
