@@ -75,11 +75,11 @@ using namespace std;
 			repeat_family = other.repeat_family;
 			read_name = other.read_name;
 			pos = other.pos;
-
+			mate_seq = other.mate_seq;
 			return *this;
 		}
 		bool operator==(const RAMRepeatEntry& other) const {
-			return pos == other.pos && read_name == other.read_name && repeat_name == other.repeat_name && repeat_class == other.repeat_class && repeat_family == other.repeat_family;
+			return pos == other.pos && read_name == other.read_name && repeat_name == other.repeat_name && repeat_class == other.repeat_class && repeat_family == other.repeat_family && mate_seq == other.mate_seq;
 		}
 		bool operator!=(const RAMRepeatEntry& other) const {
 			return !(*this == other);
@@ -108,7 +108,7 @@ using namespace std;
 			return (read_name < other.read_name);
 		}
 		string str() const {
-			return (boost::format("%s, %s, %s, %s, %s, %s") % pos % repeat_name % repeat_class % repeat_family % read_name % mate_seq).str();
+			return (boost::format("%s, %s, %s, %s, %s") % pos % repeat_name % repeat_class % repeat_family % read_name ).str();
 		}
 	};
 	struct RepeatClusterEntry {
@@ -124,7 +124,6 @@ using namespace std;
 		vector<string> repeat_name;
 		vector<int64_t> pos;
 		vector<string> rname;
-		vector<string> seq;
 		vector<string> mate_seq;
 
 		bool operator<(const RepeatClusterEntry& other) const {
@@ -140,6 +139,7 @@ using namespace std;
 			}
 			return false;
 		}
+
 		string str() const {
 			int64_t the_size = e - s + 1;
 			return (boost::format("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s") % s % e % the_size %
@@ -148,9 +148,7 @@ using namespace std;
 					castle::StringUtils::join(family, ",") %
 					ram %
 					castle::StringUtils::join(pos, ",") %
-					castle::StringUtils::join(rname, ",") %
-					castle::StringUtils::join(seq, ",") %
-					castle::StringUtils::join(mate_seq, ",")
+					castle::StringUtils::join(rname, ",")
 					).str();
 		}
 	};
@@ -184,13 +182,31 @@ using namespace std;
 
 		string str() const {
 			if(-1 == strand) {
-				return (boost::format("%s\t%d\t%d\t%s\t-%d\t%s\t%s\t%s\t%s\t%s\t%s") % chr % ram_start %
-						ram_end % rep_repeat % clipped_pos_rep % static_cast<int32_t>(aligned) % cigar_original %
-						read_name % ref_seq % clipped_seq_rep % clipped_qual_rep).str();
+				return (boost::format("%s\t%d\t%d\t%s\t-%d\t%s\t%s\t%s\t%s\t%s\t%s")
+						% chr
+						% ram_start
+						% ram_end
+						% rep_repeat
+						% clipped_pos_rep
+						% static_cast<int32_t>(aligned)
+						% cigar_original
+						% read_name
+						% ref_seq
+						% clipped_seq_rep
+						% clipped_qual_rep).str();
 			}
-			return (boost::format("%s\t%d\t%d\t%s\t%d\t%s\t%s\t%s\t%s\t%s\t%s") % chr % ram_start %
-									ram_end % rep_repeat % clipped_pos_rep % static_cast<int32_t>(aligned) % cigar_original %
-									read_name % ref_seq % clipped_seq_rep % clipped_qual_rep).str();
+			return (boost::format("%s\t%d\t%d\t%s\t%d\t%s\t%s\t%s\t%s\t%s\t%s")
+					% chr
+					% ram_start
+					% ram_end
+					% rep_repeat
+					% clipped_pos_rep
+					% static_cast<int32_t>(aligned)
+					% cigar_original
+					% read_name
+					% ref_seq
+					% clipped_seq_rep
+					% clipped_qual_rep).str();
 		}
 	};
 	struct ClippedStatEntry {
@@ -231,9 +247,8 @@ using namespace std;
 		string desc;
 		int32_t conf;
 		string str() const {
-			return (boost::format("%s\t%d\t%d\t%d\t%d\t%d\t%d\t%s\t%s\t%s\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%.2f\t%d\t%d\t%d\t%d\t%s\t%s\t%.2f\t%.2f\t%d\t%s\t%d") % chr % s %
-					e % size % tsd % pbp % nbp % rep_repeat % repeat_family % repeat_class % ram % pram % nram % cr % pcr % ncr % acr % pacr % nacr
-					% acrr % pram_start % pram_end % nram_start % nram_end % pgene % ngene % score % s2n % static_cast<int32_t>(oi) % desc % conf).str();
+			return (boost::format("%s\t%d\t%d\t%d\t%d\t%d\t%d\t%s\t%s\t%s\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%.2f\t%d\t%d\t%d\t%d\t%s\t%s\t%.2f\t%.2f\t%d\t%s\t%d")
+					% chr % s % e % size % tsd % pbp % nbp % rep_repeat % repeat_family % repeat_class % ram % pram % nram % cr % pcr % ncr % acr % pacr % nacr % acrr % pram_start % pram_end % nram_start % nram_end % pgene % ngene % score % s2n % static_cast<int32_t>(oi) % desc % conf).str();
 		}
 	};
 	struct AlnPairEntry {

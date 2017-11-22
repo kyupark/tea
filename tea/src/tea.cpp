@@ -13,7 +13,7 @@
 using namespace std;
 
 int main(int argc, char **argv) {
-	cout << "tea main tea-fq171116l3-keeps_temp_files-ram_file_with_seq-use_ram_file \n";
+	cout << "tea main tea-g171122a3-keeps_temp_files-two_longest_contig \n";
 
 	setvbuf(stdout, NULL, _IONBF, 0);
 	tea::TEAOptionParser option_parser(argc, argv);

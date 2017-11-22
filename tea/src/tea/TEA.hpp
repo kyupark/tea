@@ -21,8 +21,10 @@
 #include <boost/lexical_cast.hpp>
 //#include <boost/range/adaptor/reversed.hpp>
 
+#include <api/BamAux.h>
 #include <api/BamReader.h>
 #include <api/BamWriter.h>
+
 #include "../castle/ParallelRunner.hpp"
 #include "../castle/StringUtils.hpp"
 #include "../castle/IOUtils.hpp"
@@ -35,8 +37,10 @@
 #include "TEAOptionParser.hpp"
 #include "RAMEntry.hpp"
 
+
 namespace tea {
 using namespace BamTools;
+
 class TEA {
 public:
 	TEA();
@@ -103,8 +107,7 @@ public:
 	void collect_transduction_set(set<string>& o, const string& in_path);
 	void create_post_contig_list(const string& out_path, const set<string>& o, const string& in_path);
 
-	void output_raw_file(const string& chr, const string& cl_prefix,
-			const RAMIntervalVector& p_cl, const RAMIntervalVector& n_cl, const multimap<int64_t, int64_t>& pm_cl, const boost::unordered_set<int64_t>& positive_only, const boost::unordered_set<int64_t>& negative_only, const int64_t read_length, const int64_t fragment_size, const bool headless);
+	void output_raw_file(const string& chr, const string& cl_prefix, const RAMIntervalVector& p_cl, const RAMIntervalVector& n_cl, const multimap<int64_t, int64_t>& pm_cl, const boost::unordered_set<int64_t>& positive_only, const boost::unordered_set<int64_t>& negative_only, const int64_t read_length, const int64_t fragment_size, const bool headless);
 	void BAM_to_FASTQ_serial(const string& input_BAM_name, const string& orphan_FASTQ_name, const string& disc_1_FASTQ_name, const string& disc_2_FASTQ_name);
 	void BAM_to_FASTQ(const string& a_path, const string& a_bai_path, const string& a_bni_path, const string& orphan_FASTQ_name, const string& disc_1_FASTQ_name, const string& disc_2_FASTQ_name);
 	void BAM_to_FASTQ__MEM(const string& a_path, const string& a_bai_path, const string& a_bni_path, const string& orphan_FASTQ_name, const string& disc_1_FASTQ_name, const string& disc_2_FASTQ_name);
@@ -120,6 +123,8 @@ public:
 private:
 	void _BAM_to_FASTQ(vector<meerkat::BlockBoundary>& actual_blocks, const string& input_BAM_name, const string& orphan_FASTQ_name, const string& disc_1_FASTQ_name, const string& disc_2_FASTQ_name);
 	void _BAM_to_FASTQ__MEM(vector<meerkat::BlockBoundary>& actual_blocks, const string& input_BAM_name, const string& orphan_FASTQ_name, const string& disc_1_FASTQ_name, const string& disc_2_FASTQ_name);
+	void _BAM_to_FASTQ__MEM_alt(vector<meerkat::BlockBoundary>& actual_blocks, const string& input_BAM_name, const string& orphan_FASTQ_name, const string& disc_1_FASTQ_name, const string& disc_2_FASTQ_name);
+	void _BAM_to_FASTQ__MEM_new_logic(vector<meerkat::BlockBoundary>& actual_blocks, const string& input_BAM_name, const string& orphan_FASTQ_name, const string& disc_1_FASTQ_name, const string& disc_2_FASTQ_name);
 	void _MEMBAM_to_FASTQ(vector<int64_t>& block_boundary, const string& input_BAM_name, const string& disc_1_FASTQ_name, const string& disc_2_FASTQ_name);
 	void _MEMBAM_to_FASTQ_serial(const string& input_BAM_name, const string& disc_1_FASTQ_name, const string& disc_2_FASTQ_name);
 	void remove_entry_enclosed_with_large_H(vector<BamAlignment>& alns);
@@ -226,23 +231,27 @@ private:
 			boost::unordered_map<string, vector<string>>& negative_mate_reads,
 			vector<meerkat::BlockBoundary>& actual_blocks,
 			const string& input_BAM_name,
-			const boost::unordered_map<string, AlnPairEntry>& a_positive_repeat_map,
-			const boost::unordered_map<string, AlnPairEntry>& a_negative_repeat_map);
+			const multimap<string, AlnPairEntry>& a_positive_repeat_map,
+			const multimap<string, AlnPairEntry>& a_negative_repeat_map);
 
 	void _output_mate_fa_ram(
 			boost::unordered_map<string, vector<string>>& positive_mate_reads,
 			boost::unordered_map<string, vector<string>>& negative_mate_reads,
-			const boost::unordered_map<string, AlnPairEntry>& a_positive_repeat_map,
-			const boost::unordered_map<string, AlnPairEntry>& a_negative_repeat_map,
+			const multimap<string, AlnPairEntry>& a_positive_repeat_map,
+			const multimap<string, AlnPairEntry>& a_negative_repeat_map,
 			boost::unordered_map<string, boost::unordered_map<int8_t, vector<RAMRepeatEntry>>>& ram);
 
 	void output_mate_fa_v(boost::unordered_map<string, boost::unordered_map<int8_t, vector<RAMRepeatEntry>>>& ram);
-	void _output_mate_fa_v(boost::unordered_map<string, vector<string>>& positive_mate_reads,
-				boost::unordered_map<string, vector<string>>& negative_mate_reads,
-				vector<meerkat::BlockBoundary>& actual_blocks, const string& input_BAM_name,
-				const boost::unordered_map<string, AlnPairEntry>& a_positive_repeat_map,
-				const boost::unordered_map<string, AlnPairEntry>& a_negative_repeat_map);
-	void _output_mate_fa_serial(boost::unordered_map<string, vector<string>>& positive_mate_reads,
+
+	void _output_mate_fa_v(
+			boost::unordered_map<string, vector<string>>& positive_mate_reads,
+			boost::unordered_map<string, vector<string>>& negative_mate_reads,
+			vector<meerkat::BlockBoundary>& actual_blocks, const string& input_BAM_name,
+			const boost::unordered_map<string, AlnPairEntry>& a_positive_repeat_map,
+			const boost::unordered_map<string, AlnPairEntry>& a_negative_repeat_map);
+
+	void _output_mate_fa_serial(
+			boost::unordered_map<string, vector<string>>& positive_mate_reads,
 			boost::unordered_map<string, vector<string>>& negative_mate_reads,
 			const string& input_BAM_name,
 			const boost::unordered_map<string, AlnPairEntry>& a_positive_repeat_map,
@@ -254,6 +263,7 @@ private:
 	int64_t get_number_of_low_qualities_at_end(const string& a_qual, const int64_t qcutoff);
 	int64_t get_cpos(int32_t pos, std::vector<BamTools::CigarOp>& cigar, const string& qual, int8_t strand);
 	void get_longest_fa(string& a_contig, const string& fa_path);
+	void get_two_longest_fa(pair<string, string>& contigs, const string& fa_path, char type);
 	void get_bai_index_path(const string& parent_path, string& bai_path);
 	void get_bni_index_path(const string& parent_path, string& bni_path);
 private:
@@ -361,6 +371,42 @@ inline void TEA::get_longest_fa(string& a_contig, const string& fa_path) {
 		a_contig = the_line;
 	}
 }
+
+inline void TEA::get_two_longest_fa(pair<string, string>& contigs, const string& fa_path, char type) {
+	stringstream tmp_lines;
+	string line;
+	ifstream in(fa_path, ios::binary);
+	while(getline(in, line, '\n')) {
+		if('>' == line[0]) {
+			string the_line = tmp_lines.str() + ":" + type;
+			if (the_line.size()> 2){
+				if(the_line.size() > contigs.second.size()) {
+					contigs.second = the_line;
+				}
+				if(contigs.second.size() > contigs.first.size()) {
+					the_line = contigs.first;
+					contigs.first = contigs.second;
+					contigs.second = the_line;
+				}
+			}
+			tmp_lines.str(string());
+			continue;
+		}
+		tmp_lines << line;
+	}
+	string the_line = tmp_lines.str() + ":" + type;
+	if (the_line.size()> 2){
+		if(the_line.size() > contigs.second.size()) {
+			contigs.second = the_line;
+		}
+		if(contigs.second.size() > contigs.first.size()) {
+			the_line = contigs.first;
+			contigs.first = contigs.second;
+			contigs.second = the_line;
+		}
+	}
+}
+
 
 inline void TEA::get_bai_index_path(const string& parent_path, string& bai_path) {
 	bai_path = parent_path;

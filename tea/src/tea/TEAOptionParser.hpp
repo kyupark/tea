@@ -97,6 +97,7 @@ public:
 	bool is_sampe;
 	bool is_mem;
 	bool including_head_clip;
+	bool debug;
 
 };
 
