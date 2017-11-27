@@ -364,17 +364,19 @@ OptionParser::OptionParser(int argc, char **argv) :
 		if("tea" != program_name && "tea_v" != program_name) {
 			cout << (boost::format("[OptionParser.OptionParser] working directory: %s\n") % prefix).str();
 		}
-	string sep = prefix.empty() ? "" : ".";
-	umfname = prefix + sep + "unmapped.fq.gz";
-	clipname = prefix + sep + "softclips.fq.gz";
-	isinfoname = prefix + sep + "isinfo";
-	umrdistname = prefix + sep + "unmapped.rdist";
-	scrdistname = prefix + sep + "softclips.rdist";
-	blistname = prefix + sep + "blacklist.gz";
-	split1name = prefix + sep + "sr.1.fq.gz";
-	split2name = prefix + sep + "sr.2.fq.gz";
 
-	} else {
+		string sep = prefix.empty() ? "" : ".";
+		umfname = prefix + sep + "unmapped.fq.gz";
+		clipname = prefix + sep + "softclips.fq.gz";
+		isinfoname = prefix + sep + "isinfo";
+		umrdistname = prefix + sep + "unmapped.rdist";
+		scrdistname = prefix + sep + "softclips.rdist";
+		blistname = prefix + sep + "blacklist.gz";
+		split1name = prefix + sep + "sr.1.fq.gz";
+		split2name = prefix + sep + "sr.2.fq.gz";
+
+	}
+	else {
 		auto delim_pos = prefix.rfind("/");
 
 		if((prefix.size() - 1) == delim_pos) {

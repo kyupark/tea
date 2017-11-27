@@ -275,7 +275,8 @@ inline void MatePairDiscordantCaller::determine_a_cluster(ofstream& out, vector<
 				% orientation[lastpid][lastsid].mate_ref_id
 				% mstarts_map[lastpid][lastsid].second
 				% orientation[lastpid][lastsid].mate_strand).str();
-			} else {
+			}
+			else {
 				out << (boost::format(
 				"%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n")
 				% lastpid % lastsid % support[lastpid]

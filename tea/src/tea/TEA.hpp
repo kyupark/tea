@@ -52,19 +52,21 @@ public:
 	void run_rid();
 	void run_vid();
 	void run_uid();
+
 	// transduction
 	void run_transduction();
-	void create_germline_transduction(const string& out_path, const string& in_path);
+	void create_tea_transduction(const string& out_path, const string& in_path);
 	void create_discord_bed(const string& out_path, const string& in_path);
 	void read_ram_read_ids(boost::unordered_set<string>& ram_read_ids);
 	void read_ram_ids(boost::unordered_set<string>& ram_ids, const string& in_path, boost::unordered_map<string, int32_t>& cluster_entries);
 	void create_umm_tmp_from_cluster_raw(const string& out_path, const string& in_path, boost::unordered_set<string>& o, const boost::unordered_set<string>& ram_id);
 	void create_umm_tmp_from_cluster(const string& out_path, const string& in_path, boost::unordered_set<string>& o, const boost::unordered_map<string, int32_t> cluster_entries, const boost::unordered_set<string>& ram_read_ids);
 	void write_non_dup_umm(const string& out_path, const string& in_path, const boost::unordered_map<string, int32_t>& dup_cnt_map);
+
 	// transduction contig
 	void run_transduction_contig();
 	void create_contig_two_ram(const string& out_path, const string& in_path);
-	void create_fa_from_germline_contig(const string& out_path_1, const string& out_path_2, const string& in_path);
+	void create_fa_from_tea_contig(const string& out_path_1, const string& out_path_2, const string& in_path);
 	int64_t rfind_the_last_of(int64_t& n_len, const string& str, const char chr);
 	int64_t find_the_last_of(int64_t& n_len, const string& str, const char chr);
 
@@ -72,7 +74,7 @@ public:
 	void collect_two_ram_seq_id_ref_set(boost::unordered_map<string, string>& aligned_map, set<string>& two_ram_seq_id_set, const string& in_path, const boost::unordered_map<int64_t, string>& two_ram_map);
 	void collect_aln_sam_repeat(set<string>& repeat_selected_seq_id, boost::unordered_set<string>& repeat_two_ram_id, const string& in_path);
 	void collect_aln_ram_sam_repeat(boost::unordered_map<string, string>& repeat_ram_aligned_map, const string& in_path);
-	void create_germline_transduction(const string& out_path, set<string>& gold, const boost::unordered_map<string, string>& repeat_ram_aligned_map, const boost::unordered_map<string, string>& ref_aligned_map, const string& in_path);
+	void create_tea_transduction(const string& out_path, set<string>& gold, const boost::unordered_map<string, string>& repeat_ram_aligned_map, const boost::unordered_map<string, string>& ref_aligned_map, const string& in_path);
 
 	// orphan
 	void run_orphan();
@@ -86,8 +88,8 @@ public:
 
 	// orphan contig
 	void run_orphan_contig();
-	void create_orphan_fa_from_germline_contig(const string& out_path, const string& in_path);
-	void create_germline_orphan(const string& out_path, set<string>& gold, const boost::unordered_map<string, string>& ref_aligned_map, const string& in_path);
+	void create_orphan_fa_from_tea_contig(const string& out_path, const string& in_path);
+	void create_tea_orphan(const string& out_path, set<string>& gold, const boost::unordered_map<string, string>& ref_aligned_map, const string& in_path);
 
 	void clean();
 
@@ -97,10 +99,10 @@ public:
 	void create_transduction_filtered(const string& out_path, set<string>& trans, const string& in_path, const set<string>& orphan);
 	void create_contig_filtered_fa(const string& out_path, const string& in_path);
 	void collect_aln_repeat_selected_seq_id(set<string>& repeat_selected_seq_id, const string& in_path);
-	void create_germline_contig_tmp(const string& out_path, const string& in_path, const set<string>& o);
-	void create_germline_contig_tmp_tmp(const string& out_path, const string& in_path, const set<string>& allset);
-	void refine_germline_contig_tmp_tmp(const string& out_path, const string& in_path);
-	void create_germline_contig_tmp_tmp_filtered_fa(const string& out_path, const string& in_path);
+	void create_tea_contig_tmp(const string& out_path, const string& in_path, const set<string>& o);
+	void create_tea_contig_tmp_tmp(const string& out_path, const string& in_path, const set<string>& allset);
+	void refine_tea_contig_tmp_tmp(const string& out_path, const string& in_path);
+	void create_tea_contig_tmp_tmp_filtered_fa(const string& out_path, const string& in_path);
 	void collect_refined_aln_sam_ref(set<string>& rname, boost::unordered_map<string, string>& aligned_map, set<string>& two_ram_seq_id_set, const string& in_path, const boost::unordered_map<int64_t, string>& two_ram_map);
 	void collect_refined_aln_sam_repeat(set<string>& rrname, set<string>& oo, set<string>& ooo, const string& in_path, const set<string>& o);
 	void create_short_transduction_list(const string& out_path, const set<string>& candidate, const set<string>& o, const set<string>& overlap, const boost::unordered_map<string, string>& ref_aligned_map, const string& in_path);
@@ -148,6 +150,7 @@ private:
 	void generate_ram_file(const string& refbam, const string& rbamf, const string& ramf, const string& disc_1_ra_bam, const string& disc_2_ra_bam, bool exo = false, bool headless = false);
 	void load_repeat_mapping(boost::unordered_map<string, string>& h, bool& exo, vector<string>& rabam_files);
 	void _load_repeat_mapping(boost::unordered_map<string, string>& h, bool& exo, const int32_t end, const string& rabam);
+
 	// The function, write_ram_and_bam, is not fully implemented, incorrect and inefficient
 	void write_ram_and_bam(const string& refbam, const string& rbamf, const string& ramf, const boost::unordered_map<string, string>& h, const bool exo);
 	void write_ram_and_bam_serial(const string& refbam, const string& rbamf, const string& ramf, const boost::unordered_map<string, string>& h, const bool exo, bool headless = false);
@@ -220,9 +223,9 @@ private:
 	void get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& max_pos_positive, int64_t& max_pos_negative, int64_t& n_positive_clipped_reads, int64_t& n_negative_clipped_reads,
 			int64_t& n_aligned_clipped_positive, int64_t& n_aligned_clipped_negative,
 			BamTools::BamReader& local_reader, const int64_t the_ram_boundary_start, const int64_t the_ram_boundary_end, const RAMIntervalEntry& positive_entry, const RAMIntervalEntry& negative_entry, const string& chr, const int64_t read_length, const int64_t mid_point);
-	void output_clipped_stat(ofstream& out_p_clipped_filename, ofstream& out_n_clipped_filename, ofstream& out_p_mate_rname, ofstream& out_n_mate_rname, ofstream& out_cl, ofstream& out_germline, ofstream& out_clipped, const string& contig_dir, RefRepeatIntervalTree& ref_repeat_interval_tree, RefRepeatIntervalVector& stat_results, GeneIntervalTree& gene_interval_tree, GeneIntervalVector& gene_results,
+	void output_clipped_stat(ofstream& out_p_clipped_filename, ofstream& out_n_clipped_filename, ofstream& out_p_mate_rname, ofstream& out_n_mate_rname, ofstream& out_cl, ofstream& out_tea, ofstream& out_clipped, const string& contig_dir, RefRepeatIntervalTree& ref_repeat_interval_tree, RefRepeatIntervalVector& stat_results, GeneIntervalTree& gene_interval_tree, GeneIntervalVector& gene_results,
 			BamTools::BamReader& local_reader, const int64_t the_ram_boundary_start, const int64_t the_ram_boundary_end, const RAMIntervalEntry& positive_entry, const RAMIntervalEntry& negative_entry, const string& chr, const string& prefixed_chr, const int64_t read_length, const int64_t rmasker_filter_margin, const int64_t gene_margin, const int64_t mid_point);
-	void output_clipped_stat_v(ofstream& out_p_clipped_filename, ofstream& out_n_clipped_filename, ofstream& out_p_mate_rname, ofstream& out_n_mate_rname, ofstream& out_cl, ofstream& out_germline, ofstream& out_clipped, const string& contig_dir, RefRepeatIntervalTree& ref_repeat_interval_tree, RefRepeatIntervalVector& stat_results, const map<int64_t, string>& vannot,
+	void output_clipped_stat_v(ofstream& out_p_clipped_filename, ofstream& out_n_clipped_filename, ofstream& out_p_mate_rname, ofstream& out_n_mate_rname, ofstream& out_cl, ofstream& out_tea, ofstream& out_clipped, const string& contig_dir, RefRepeatIntervalTree& ref_repeat_interval_tree, RefRepeatIntervalVector& stat_results, const map<int64_t, string>& vannot,
 				BamTools::BamReader& local_reader, const int64_t the_ram_boundary_start, const int64_t the_ram_boundary_end, const RAMIntervalEntry& positive_entry, const RAMIntervalEntry& negative_entry, const string& chr, const string& prefixed_chr, const int64_t read_length, const int64_t rmasker_filter_margin, const int64_t gene_margin);
 	void output_mate_fa(boost::unordered_map<string, boost::unordered_map<int8_t, vector<RAMRepeatEntry>>>& ram);
 //	void collect_boundaries_pos(vector<meerkat::BlockBoundary>& fixed_size_blocks, vector<meerkat::BlockBoundary>& unmapped_included_blocks, vector<meerkat::BlockBoundary>& independent_blocks, const string& a_path, const string& a_bai_path, const string& a_bni_path, int64_t size_block);
@@ -379,7 +382,7 @@ inline void TEA::get_two_longest_fa(pair<string, string>& contigs, const string&
 	while(getline(in, line, '\n')) {
 		if('>' == line[0]) {
 			string the_line = tmp_lines.str() + ":" + type;
-			if (the_line.size()> 2){
+			if (the_line.size() > 2){
 				if(the_line.size() > contigs.second.size()) {
 					contigs.second = the_line;
 				}
@@ -395,7 +398,7 @@ inline void TEA::get_two_longest_fa(pair<string, string>& contigs, const string&
 		tmp_lines << line;
 	}
 	string the_line = tmp_lines.str() + ":" + type;
-	if (the_line.size()> 2){
+	if (the_line.size() > 2){
 		if(the_line.size() > contigs.second.size()) {
 			contigs.second = the_line;
 		}

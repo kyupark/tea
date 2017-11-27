@@ -194,17 +194,17 @@ void TEA::run_rid() {
 	boost::unordered_map<string, boost::unordered_map<int8_t, vector<RAMRepeatEntry>>> ram;
 	load_ram(ram, rannot, rm_dup);
 
-	cout << (boost::format("[TEA.run_rid] Creating positive and negative ram storage for the parallelization\n")).str();
-	for (auto& c_entry : ram) {
-		auto& c = c_entry.first;
-		// create positive and negative ram storage for the parallelization
-		if (ram[c][1].size() > 0) {
-			;
-		}
-		if (ram[c][-1].size() > 0) {
-			;
-		}
-	}
+//	cout << (boost::format("[TEA.run_rid] Creating positive and negative ram storage for the parallelization\n")).str();
+//	for (auto& c_entry : ram) {
+//		auto& c = c_entry.first;
+//		// create positive and negative ram storage for the parallelization
+//		if (ram[c][1].size() > 0) {
+//			;
+//		}
+//		if (ram[c][-1].size() > 0) {
+//			;
+//		}
+//	}
 
 	string the_first_stat_file = options.prefix + ".firststat";
 	if (!options.working_dir.empty()) {
@@ -380,11 +380,12 @@ void TEA::run_rid() {
 
 	vector<string> cluster_raw_files;
 	vector<string> clipped_files;
-	vector<string> germline_files;
+	vector<string> tea_files;
 	vector<string> cluster_files;
-	vector<string> germline_contig_files;
+	vector<string> tea_contig_files;
 
 	vector<string> removal_files;
+
 	for (auto c : chr_names) {
 //		auto c = c_entry.first;
 		string tmp_chr_name(c);
@@ -405,27 +406,27 @@ void TEA::run_rid() {
 
 		string cluster_raw_file = cl_prefix + "." + tmp_chr_name + ".cluster.raw";
 		string clipped_file = cl_prefix + "." + tmp_chr_name + ".clipped";
-		string germline_file = cl_prefix + "." + tmp_chr_name + ".germline";
+		string tea_file = cl_prefix + "." + tmp_chr_name + ".tea";
 		string cluster_file = cl_prefix + "." + tmp_chr_name + ".cluster";
-		string germline_contig_file = cl_prefix + "." + tmp_chr_name + ".germline.contig";
+		string tea_contig_file = cl_prefix + "." + tmp_chr_name + ".tea.contig";
 		cluster_raw_files.push_back(cluster_raw_file);
 		clipped_files.push_back(clipped_file);
-		germline_files.push_back(germline_file);
+		tea_files.push_back(tea_file);
 		cluster_files.push_back(cluster_file);
-		germline_contig_files.push_back(germline_contig_file);
+		tea_contig_files.push_back(tea_contig_file);
 	}
 
 	string out_cluster_raw_file = cl_prefix + ".cluster.raw";
 	string out_clipped_file = cl_prefix + ".clipped";
-	string out_germline_file = cl_prefix + ".germline";
+	string out_tea_file = cl_prefix + ".tea";
 	string out_cluster_file = cl_prefix + ".cluster";
-	string out_germline_contig_file = cl_prefix + ".germline.contig";
+	string out_tea_contig_file = cl_prefix + ".tea.contig";
 
 	castle::IOUtils::plain_file_merge(out_cluster_raw_file, cluster_raw_files, n_cores, true);
 	castle::IOUtils::plain_file_merge(out_clipped_file, clipped_files, n_cores, true);
-	castle::IOUtils::plain_file_merge(out_germline_file, germline_files, n_cores, true);
+	castle::IOUtils::plain_file_merge(out_tea_file, tea_files, n_cores, true);
 	castle::IOUtils::plain_file_merge(out_cluster_file, cluster_files, n_cores, true);
-	castle::IOUtils::plain_file_merge(out_germline_contig_file, germline_contig_files, n_cores, true);
+	castle::IOUtils::plain_file_merge(out_tea_contig_file, tea_contig_files, n_cores, true);
 
 	castle::IOUtils::remove_files(removal_files, n_cores);
 
@@ -825,19 +826,19 @@ void TEA::run_transduction() {
 	const bool debug = false;
 	for(auto& chr: chrs) {
 		tasks.push_back([&, debug]{
-			string in_germline = cl_prefix + "." + chr + ".germline";
+			string in_tea = cl_prefix + "." + chr + ".tea";
 			string in_clusterraw = cl_prefix + "." + chr + ".cluster.raw";
 
-			string out_getrmline = transduction_prefix + "." + chr + ".germline";
+			string out_getrmline = transduction_prefix + "." + chr + ".tea";
 			string out_clusterraw = transduction_prefix + "." + chr + ".cluster.raw";
-			boost::filesystem::copy_file(in_germline, out_getrmline, boost::filesystem::copy_option::overwrite_if_exists);
+			boost::filesystem::copy_file(in_tea, out_getrmline, boost::filesystem::copy_option::overwrite_if_exists);
 			boost::filesystem::copy_file(in_clusterraw, out_clusterraw, boost::filesystem::copy_option::overwrite_if_exists);
 
-			string out_getrmline_transduction = transduction_prefix + "." + chr + ".germline.transduction";
+			string out_getrmline_transduction = transduction_prefix + "." + chr + ".tea.transduction";
 			if(debug) {
-				cout << (boost::format("[TEA.run_transduction] create germline transduction: %s\n") % chr).str();
+				cout << (boost::format("[TEA.run_transduction] create tea transduction: %s\n") % chr).str();
 			}
-			create_germline_transduction(out_getrmline_transduction, out_getrmline);
+			create_tea_transduction(out_getrmline_transduction, out_getrmline);
 			string out_intersect_bed = transduction_prefix + "." + chr + ".intersected.bed";
 			string bedtools_cmd = (boost::format("bedtools pairtobed -type xor -S -a %s -b %s > %s") % out_discord % out_getrmline_transduction % out_intersect_bed).str();
 			if(debug) {
@@ -945,7 +946,8 @@ void TEA::run_transduction() {
 	castle::ParallelRunner::run_unbalanced_load(n_cores, tasks);
 }
 
-void TEA::create_germline_transduction(const string& out_path, const string& in_path) {
+
+void TEA::create_tea_transduction(const string& out_path, const string& in_path) {
 	string line;
 	boost::unordered_set<string> o;
 	vector<string> fso;
@@ -1329,19 +1331,19 @@ void TEA::run_transduction_contig() {
 	// create two ram files
 	for(auto& chr: chrs) {
 		tasks.push_back([&]{
-			string in_germline_contig = cl_prefix + "." + chr + ".germline.contig";
-			string out_getrmline_contig_two_ram = transduction_prefix + "." + chr + ".germline.contig.two_ram";
-			create_contig_two_ram(out_getrmline_contig_two_ram, in_germline_contig);
+			string in_tea_contig = cl_prefix + "." + chr + ".tea.contig";
+			string out_getrmline_contig_two_ram = transduction_prefix + "." + chr + ".tea.contig.two_ram";
+			create_contig_two_ram(out_getrmline_contig_two_ram, in_tea_contig);
 		});
 	}
 	castle::ParallelRunner::run_unbalanced_load(n_cores, tasks);
 	// create insertion sequences
 	for(auto& chr: chrs) {
 		tasks.push_back([&]{
-			string in_two_ram = transduction_prefix + "." + chr + ".germline.contig.two_ram";
-			string out_two_ram_fa = transduction_prefix + "." + chr + ".germline.contig.two_ram.fa";
-			string out_two_only_ram_fa = transduction_prefix + "." + chr + ".germline.contig.two_only_ram.fa";
-			create_fa_from_germline_contig(out_two_ram_fa, out_two_only_ram_fa, in_two_ram);
+			string in_two_ram = transduction_prefix + "." + chr + ".tea.contig.two_ram";
+			string out_two_ram_fa = transduction_prefix + "." + chr + ".tea.contig.two_ram.fa";
+			string out_two_only_ram_fa = transduction_prefix + "." + chr + ".tea.contig.two_only_ram.fa";
+			create_fa_from_tea_contig(out_two_ram_fa, out_two_only_ram_fa, in_two_ram);
 		});
 	}
 	castle::ParallelRunner::run_unbalanced_load(n_cores, tasks);
@@ -1352,8 +1354,8 @@ void TEA::run_transduction_contig() {
 	for(auto& chr: chrs) {
 		// two_ram against repeat ref
 		tasks.push_back([&]{
-			string in_two_ram_fa = transduction_prefix + "." + chr + ".germline.contig.two_ram.fa";
-			string out_repeat_aln_sam = transduction_prefix + "." + chr + ".germline.contig.repeat.aln.sam";
+			string in_two_ram_fa = transduction_prefix + "." + chr + ".tea.contig.two_ram.fa";
+			string out_repeat_aln_sam = transduction_prefix + "." + chr + ".tea.contig.repeat.aln.sam";
 //			if(castle::IOUtils::get_file_size(out_repeat_aln_sam) > 0) {
 //				return;
 //			}
@@ -1366,8 +1368,8 @@ void TEA::run_transduction_contig() {
 		});
 		// two_only_ram against repeat ref
 		tasks.push_back([&]{
-			string in_two_only_ram_fa = transduction_prefix + "." + chr + ".germline.contig.two_only_ram.fa";
-			string out_repeat_aln_ram_sam = transduction_prefix + "." + chr + ".germline.contig.repeat.aln.ram.sam";
+			string in_two_only_ram_fa = transduction_prefix + "." + chr + ".tea.contig.two_only_ram.fa";
+			string out_repeat_aln_ram_sam = transduction_prefix + "." + chr + ".tea.contig.repeat.aln.ram.sam";
 //			if(castle::IOUtils::get_file_size(out_repeat_aln_ram_sam) > 0) {
 //				return;
 //			}
@@ -1380,8 +1382,8 @@ void TEA::run_transduction_contig() {
 		});
 		// two_ram against ref
 		tasks.push_back([&]{
-			string in_two_ram_fa = transduction_prefix + "." + chr + ".germline.contig.two_ram.fa";
-			string out_ref_aln_sam = transduction_prefix + "." + chr + ".germline.contig.ref.aln.sam";
+			string in_two_ram_fa = transduction_prefix + "." + chr + ".tea.contig.two_ram.fa";
+			string out_ref_aln_sam = transduction_prefix + "." + chr + ".tea.contig.ref.aln.sam";
 //			if(castle::IOUtils::get_file_size(out_ref_aln_sam) > 0) {
 //				return;
 //			}
@@ -1398,17 +1400,17 @@ void TEA::run_transduction_contig() {
 	for(auto& chr: chrs) {
 		tasks.push_back([&]{
 			boost::unordered_map<int64_t, string> two_ram_map;
-			string in_two_ram = transduction_prefix + "." + chr + ".germline.contig.two_ram";
+			string in_two_ram = transduction_prefix + "." + chr + ".tea.contig.two_ram";
 			collect_two_ram_map(two_ram_map, in_two_ram);
-			string in_ref_aln_sam = transduction_prefix + "." + chr + ".germline.contig.ref.aln.sam";
+			string in_ref_aln_sam = transduction_prefix + "." + chr + ".tea.contig.ref.aln.sam";
 			boost::unordered_map<string, string> ref_aligned_map;
 			set<string> ref_selected_seq_id;
 			collect_two_ram_seq_id_ref_set(ref_aligned_map, ref_selected_seq_id, in_ref_aln_sam, two_ram_map);
-			string in_repeat_aln_sam = transduction_prefix + "." + chr + ".germline.contig.repeat.aln.sam";
+			string in_repeat_aln_sam = transduction_prefix + "." + chr + ".tea.contig.repeat.aln.sam";
 			set<string> repeat_selected_seq_id;
 			boost::unordered_set<string> repeat_two_ram_id;
 			collect_aln_sam_repeat(repeat_selected_seq_id, repeat_two_ram_id, in_repeat_aln_sam);
-			string in_repeat_aln_ram_sam = transduction_prefix + "." + chr + ".germline.contig.repeat.aln.ram.sam";
+			string in_repeat_aln_ram_sam = transduction_prefix + "." + chr + ".tea.contig.repeat.aln.ram.sam";
 			boost::unordered_map<string, string> repeat_ram_aligned_map;
 			collect_aln_ram_sam_repeat(repeat_ram_aligned_map, in_repeat_aln_ram_sam);
 
@@ -1430,8 +1432,8 @@ void TEA::run_transduction_contig() {
 				}
 			}
 
-			string out_transduction = transduction_prefix + "." + chr + ".germline.contig.transduction";
-			create_germline_transduction(out_transduction, gold, repeat_ram_aligned_map, ref_aligned_map, in_two_ram);
+			string out_transduction = transduction_prefix + "." + chr + ".tea.contig.transduction";
+			create_tea_transduction(out_transduction, gold, repeat_ram_aligned_map, ref_aligned_map, in_two_ram);
 		});
 	}
 	castle::ParallelRunner::run_unbalanced_load(n_cores, tasks);
@@ -1442,7 +1444,7 @@ void TEA::create_contig_two_ram(const string& out_path, const string& in_path) {
 	string line;
 	vector<string> fso;
 	const char* delim_tab = "\t";
-	// germline file
+	// tea file
 	ifstream f(in_path, ios::binary);
 	ofstream g(out_path, ios::binary);
 	while(getline(f, line, '\n')) {
@@ -1465,11 +1467,11 @@ void TEA::create_contig_two_ram(const string& out_path, const string& in_path) {
 	}
 }
 
-void TEA::create_fa_from_germline_contig(const string& out_path_1, const string& out_path_2, const string& in_path) {
+void TEA::create_fa_from_tea_contig(const string& out_path_1, const string& out_path_2, const string& in_path) {
 //	string poly_a_str(5, 'A');
 //	string poly_t_str(5, 'T');
 
-//	const bool debug = "/dev/shm/pfg050_cancer/cluster_ram/pfg050_cancer.chr1.germline.contig.two_ram";
+//	const bool debug = "/dev/shm/pfg050_cancer/cluster_ram/pfg050_cancer.chr1.tea.contig.two_ram";
 	const bool debug = false;
 
 	string line;
@@ -1662,7 +1664,7 @@ void TEA::collect_two_ram_seq_id_ref_set(boost::unordered_map<string, string>& a
 	const char* delim_underscore = "_";
 	const char* delim_ampersand = "&";
 
-	// read from .germline.contig.ref.aln.sam
+	// read from .tea.contig.ref.aln.sam
 	ifstream f(in_path, ios::binary);
 	while(getline(f, line, '\n')) {
 		if('@' == line[0]) {
@@ -1719,7 +1721,7 @@ void TEA::collect_aln_sam_repeat(set<string>& repeat_selected_seq_id, boost::uno
 	const char* delim_tab = "\t";
 	const char* delim_underscore = "_";
 
-	// read from .germline.contig.repeat.aln.sam
+	// read from .tea.contig.repeat.aln.sam
 	ifstream f(in_path, ios::binary);
 	while(getline(f, line, '\n')) {
 		if('@' == line[0]) {
@@ -1743,7 +1745,7 @@ void TEA::collect_aln_ram_sam_repeat(boost::unordered_map<string, string>& repea
 	vector<string> temp;
 	const char* delim_tab = "\t";
 
-	// read from .germline.contig.repeat.aln.ram.sam
+	// read from .tea.contig.repeat.aln.ram.sam
 	ifstream f(in_path, ios::binary);
 	while(getline(f, line, '\n')) {
 		if('@' == line[0]) {
@@ -1761,13 +1763,13 @@ void TEA::collect_aln_ram_sam_repeat(boost::unordered_map<string, string>& repea
 	}
 }
 
-void TEA::create_germline_transduction(const string& out_path, set<string>& gold, const boost::unordered_map<string, string>& repeat_ram_aligned_map, const boost::unordered_map<string, string>& ref_aligned_map, const string& in_path) {
+void TEA::create_tea_transduction(const string& out_path, set<string>& gold, const boost::unordered_map<string, string>& repeat_ram_aligned_map, const boost::unordered_map<string, string>& ref_aligned_map, const string& in_path) {
 	string line;
 	vector<string> fso;
 	const char* delim_tab = "\t";
-	// read from .germline.contig.two_ram
+	// read from .tea.contig.two_ram
 	ifstream f(in_path, ios::binary);
-	// write to .germline.contig.transduction
+	// write to .tea.contig.transduction
 	ofstream g(out_path, ios::binary);
 	int64_t i = 1;
 
@@ -1780,7 +1782,7 @@ void TEA::create_germline_transduction(const string& out_path, set<string>& gold
 		}
 //		const bool debug = is_chr && i == 100;
 //		if(debug) {
-//			cout << "[TEA.create_germline_transduction] " << line << "\n";
+//			cout << "[TEA.create_tea_transduction] " << line << "\n";
 //		}
 		castle::StringUtils::c_string_multi_split(line, delim_tab, fso);
 		int64_t on = 0;
@@ -2342,18 +2344,18 @@ void TEA::run_orphan_contig() {
 	// create two ram files
 	for(auto& chr: chrs) {
 		tasks.push_back([&]{
-			string in_germline_contig = cl_prefix + "." + chr + ".germline.contig";
-			string out_getrmline_contig_two_ram = orphan_prefix + "." + chr + ".germline.contig.two_ram";
-			create_contig_two_ram(out_getrmline_contig_two_ram, in_germline_contig);
+			string in_tea_contig = cl_prefix + "." + chr + ".tea.contig";
+			string out_getrmline_contig_two_ram = orphan_prefix + "." + chr + ".tea.contig.two_ram";
+			create_contig_two_ram(out_getrmline_contig_two_ram, in_tea_contig);
 		});
 	}
 	castle::ParallelRunner::run_unbalanced_load(n_cores, tasks);
 	// create insertion sequences
 	for(auto& chr: chrs) {
 		tasks.push_back([&]{
-			string in_two_ram = orphan_prefix + "." + chr + ".germline.contig.two_ram";
-			string out_two_ram_fa = orphan_prefix + "." + chr + ".germline.contig.two_ram.fa";
-			create_orphan_fa_from_germline_contig(out_two_ram_fa, in_two_ram);
+			string in_two_ram = orphan_prefix + "." + chr + ".tea.contig.two_ram";
+			string out_two_ram_fa = orphan_prefix + "." + chr + ".tea.contig.two_ram.fa";
+			create_orphan_fa_from_tea_contig(out_two_ram_fa, in_two_ram);
 		});
 	}
 	castle::ParallelRunner::run_unbalanced_load(n_cores, tasks);
@@ -2363,8 +2365,8 @@ void TEA::run_orphan_contig() {
 	for(auto& chr: chrs) {
 		// two_ram against repeat ref
 		tasks.push_back([&]{
-			string in_two_ram_fa = orphan_prefix + "." + chr + ".germline.contig.two_ram.fa";
-			string out_repeat_aln_sam = orphan_prefix + "." + chr + ".germline.contig.repeat.aln.sam";
+			string in_two_ram_fa = orphan_prefix + "." + chr + ".tea.contig.two_ram.fa";
+			string out_repeat_aln_sam = orphan_prefix + "." + chr + ".tea.contig.repeat.aln.sam";
 //			if(castle::IOUtils::get_file_size(out_repeat_aln_sam) > 0) {
 //				return;
 //			}
@@ -2377,8 +2379,8 @@ void TEA::run_orphan_contig() {
 		});
 		// two_ram against ref
 		tasks.push_back([&]{
-			string in_two_ram_fa = orphan_prefix + "." + chr + ".germline.contig.two_ram.fa";
-			string out_ref_aln_sam = orphan_prefix + "." + chr + ".germline.contig.ref.aln.sam";
+			string in_two_ram_fa = orphan_prefix + "." + chr + ".tea.contig.two_ram.fa";
+			string out_ref_aln_sam = orphan_prefix + "." + chr + ".tea.contig.ref.aln.sam";
 //			if(castle::IOUtils::get_file_size(out_ref_aln_sam) > 0) {
 //				return;
 //			}
@@ -2394,13 +2396,13 @@ void TEA::run_orphan_contig() {
 	for(auto& chr: chrs) {
 		tasks.push_back([&]{
 			boost::unordered_map<int64_t, string> two_ram_map;
-			string in_two_ram = orphan_prefix + "." + chr + ".germline.contig.two_ram";
+			string in_two_ram = orphan_prefix + "." + chr + ".tea.contig.two_ram";
 			collect_two_ram_map(two_ram_map, in_two_ram);
-			string in_ref_aln_sam = orphan_prefix + "." + chr + ".germline.contig.ref.aln.sam";
+			string in_ref_aln_sam = orphan_prefix + "." + chr + ".tea.contig.ref.aln.sam";
 			boost::unordered_map<string, string> ref_aligned_map;
 			set<string> ref_selected_seq_id;
 			collect_two_ram_seq_id_ref_set(ref_aligned_map, ref_selected_seq_id, in_ref_aln_sam, two_ram_map);
-			string in_repeat_aln_sam = orphan_prefix + "." + chr + ".germline.contig.repeat.aln.sam";
+			string in_repeat_aln_sam = orphan_prefix + "." + chr + ".tea.contig.repeat.aln.sam";
 			set<string> repeat_selected_seq_id;
 			boost::unordered_set<string> repeat_two_ram_id;
 			collect_aln_sam_repeat(repeat_selected_seq_id, repeat_two_ram_id, in_repeat_aln_sam);
@@ -2422,14 +2424,14 @@ void TEA::run_orphan_contig() {
 					}
 				}
 			}
-			string out_transduction = orphan_prefix + "." + chr + ".germline.contig.orphan";
-			create_germline_orphan(out_transduction, gold, ref_aligned_map, in_two_ram);
+			string out_transduction = orphan_prefix + "." + chr + ".tea.contig.orphan";
+			create_tea_orphan(out_transduction, gold, ref_aligned_map, in_two_ram);
 		});
 	}
 	castle::ParallelRunner::run_unbalanced_load(n_cores, tasks);
 	cout << checker;
 }
-void TEA::create_orphan_fa_from_germline_contig(const string& out_path, const string& in_path) {
+void TEA::create_orphan_fa_from_tea_contig(const string& out_path, const string& in_path) {
 	string line;
 	vector<string> fso;
 	const char* delim_tab = "\t";
@@ -2571,13 +2573,13 @@ void TEA::create_orphan_fa_from_germline_contig(const string& out_path, const st
 }
 
 
-void TEA::create_germline_orphan(const string& out_path, set<string>& gold, const boost::unordered_map<string, string>& ref_aligned_map, const string& in_path) {
+void TEA::create_tea_orphan(const string& out_path, set<string>& gold, const boost::unordered_map<string, string>& ref_aligned_map, const string& in_path) {
 	string line;
 	vector<string> fso;
 	const char* delim_tab = "\t";
-	// read from .germline.contig.two_ram
+	// read from .tea.contig.two_ram
 	ifstream f(in_path, ios::binary);
-	// write to .germline.contig.transduction
+	// write to .tea.contig.transduction
 	ofstream g(out_path, ios::binary);
 	int64_t i = 1;
 
@@ -2590,7 +2592,7 @@ void TEA::create_germline_orphan(const string& out_path, set<string>& gold, cons
 		}
 //		const bool debug = is_chr && i == 100;
 //		if(debug) {
-//			cout << "[TEA.create_germline_transduction] " << line << "\n";
+//			cout << "[TEA.create_tea_transduction] " << line << "\n";
 //		}
 		castle::StringUtils::c_string_multi_split(line, delim_tab, fso);
 		if(fso.size() == 40) {
@@ -2677,7 +2679,7 @@ void TEA::clean() {
 //	excluding_set.push_back(".cl.sorted.disc.bam.bai");
 //	excluding_set.push_back(".mapped_um.bam");
 //	excluding_set.push_back(".mapped_um.bam.bai");
-//	excluding_set.push_back("*.germline");
+//	excluding_set.push_back("*.tea");
 //	excluding_set.push_back("*.contig");
 //	excluding_set.push_back("*.cluster");
 //	excluding_set.push_back(".clusters");
@@ -3189,16 +3191,16 @@ void TEA::post_process() {
 	string naive_prefix = options.naive_prefix;
 	string transduction_dir = options.prefix + "/transduction_" + options.rasym + "m";
 	string orphan_dir = options.prefix + "/orphan_" + options.rasym + "m";
-	string germline_tmp_dir = options.prefix + "/germline_tmp_" + options.rasym + "m";
-	string germline_result_dir = options.prefix + "/germline_result_" + options.rasym + "m";
+	string tea_tmp_dir = options.prefix + "/tea_tmp_" + options.rasym + "m";
+	string tea_result_dir = options.prefix + "/tea_result_" + options.rasym + "m";
 
 	if (!options.working_dir.empty()) {
 //		cl_dir = options.working_prefix + "/cluster_" + options.rasym + "m";
 		cl_dir = options.output_dir + "-" + options.rasym + "m";
 		transduction_dir = options.working_prefix + "/transduction_" + options.rasym + "m";
 		orphan_dir = options.working_prefix + "/orphan_" + options.rasym + "m";
-		germline_tmp_dir = options.working_prefix + "/germline_tmp_" + options.rasym + "m";
-		germline_result_dir = options.working_prefix + "/germline_result_" + options.rasym + "m";
+		tea_tmp_dir = options.working_prefix + "/tea_tmp_" + options.rasym + "m";
+		tea_result_dir = options.working_prefix + "/tea_result_" + options.rasym + "m";
 	}
 
 	if(!boost::filesystem::exists(transduction_dir)) {
@@ -3209,17 +3211,17 @@ void TEA::post_process() {
 		cout << "[TEA.post_process] Your orphan directory is missing\n";
 		return;
 	}
-	if(!boost::filesystem::exists(germline_tmp_dir)) {
-		boost::filesystem::create_directories(germline_tmp_dir);
+	if(!boost::filesystem::exists(tea_tmp_dir)) {
+		boost::filesystem::create_directories(tea_tmp_dir);
 	}
-	if(!boost::filesystem::exists(germline_result_dir)) {
-		boost::filesystem::create_directories(germline_result_dir);
+	if(!boost::filesystem::exists(tea_result_dir)) {
+		boost::filesystem::create_directories(tea_result_dir);
 	}
 	string cl_prefix = cl_dir + "/" + naive_prefix;
 	string orphan_prefix = orphan_dir + "/" + naive_prefix;
 	string transduction_prefix = transduction_dir + "/" + naive_prefix;
-	string germline_tmp_prefix = germline_tmp_dir + "/" + naive_prefix;
-	string germline_result_prefix = germline_result_dir + "/" + naive_prefix;
+	string tea_tmp_prefix = tea_tmp_dir + "/" + naive_prefix;
+	string tea_result_prefix = tea_result_dir + "/" + naive_prefix;
 
 	vector<function<void()> > tasks;
 	boost::unordered_map<string, int64_t> chr_ids;
@@ -3232,27 +3234,27 @@ void TEA::post_process() {
 	// create orphan list
 	for(auto& chr: chrs) {
 		tasks.push_back([&]{
-			string in_contig_orphan = orphan_prefix + "." + chr + ".germline.contig.orphan";
-			string out_contig_orphan_list = germline_result_prefix + "." + chr + ".germline.contig.orphan.list";
+			string in_contig_orphan = orphan_prefix + "." + chr + ".tea.contig.orphan";
+			string out_contig_orphan_list = tea_result_prefix + "." + chr + ".tea.contig.orphan.list";
 			set<string> orphan;
 			// create orphan.list
 			create_orphan_list(out_contig_orphan_list, orphan, in_contig_orphan);
 			// create transduction.filtered
 			set<string> trans;
-			string in_contig_transduction = transduction_prefix + "." + chr + ".germline.contig.transduction";
-			string out_contig_transduction_filtered = germline_tmp_prefix + "." + chr + ".germline.contig.transduction.filtered";
+			string in_contig_transduction = transduction_prefix + "." + chr + ".tea.contig.transduction";
+			string out_contig_transduction_filtered = tea_tmp_prefix + "." + chr + ".tea.contig.transduction.filtered";
 			create_transduction_filtered(out_contig_transduction_filtered, trans, in_contig_transduction, orphan);
 			set<string> allset;
 			allset.insert(orphan.begin(), orphan.end());
 			allset.insert(trans.begin(), trans.end());
 
 			// create contig.filtered.fa
-			string in_germline_contig = cl_prefix + "." + chr + ".germline.contig";
-			string out_getrmline_contig_filtered_fa = germline_tmp_prefix + "." + chr + ".germline.contig.filtered.fa";
-			create_contig_filtered_fa(out_getrmline_contig_filtered_fa, in_germline_contig);
+			string in_tea_contig = cl_prefix + "." + chr + ".tea.contig";
+			string out_getrmline_contig_filtered_fa = tea_tmp_prefix + "." + chr + ".tea.contig.filtered.fa";
+			create_contig_filtered_fa(out_getrmline_contig_filtered_fa, in_tea_contig);
 
 			// align filtered fa against repeat sequences
-			string out_repeat_aln_sam = germline_tmp_prefix + "." + chr + ".germline.contig.filtered.fa.aln.sam";
+			string out_repeat_aln_sam = tea_tmp_prefix + "." + chr + ".tea.contig.filtered.fa.aln.sam";
 			if(castle::IOUtils::get_file_size(out_repeat_aln_sam) <= 0) {
 				string aln_cmd = (boost::format("bwa aln -t 1 %s %s | bwa samse -f %s %s - %s") % options.repeat_reference % out_getrmline_contig_filtered_fa % out_repeat_aln_sam % options.repeat_reference % out_getrmline_contig_filtered_fa).str();
 				system(aln_cmd.c_str());
@@ -3260,30 +3262,30 @@ void TEA::post_process() {
 			// collect o (repeat selected seq id(e.g. 5_nram_ALR_ALPHA -> '5') from sam file
 			set<string> o;
 			collect_aln_repeat_selected_seq_id(o, out_repeat_aln_sam);
-			// create germline contig tmp
-			string out_germline_contig_tmp = germline_tmp_prefix + "." + chr + ".germline.contig.tmp";
-			create_germline_contig_tmp(out_germline_contig_tmp, in_germline_contig, o);
+			// create tea contig tmp
+			string out_tea_contig_tmp = tea_tmp_prefix + "." + chr + ".tea.contig.tmp";
+			create_tea_contig_tmp(out_tea_contig_tmp, in_tea_contig, o);
 
-			// create germline contig tmp tmp
-			string out_germline_contig_tmp_tmp = germline_tmp_prefix + "." + chr + ".germline.contig.tmp.tmp";
-			create_germline_contig_tmp_tmp(out_germline_contig_tmp_tmp, out_germline_contig_tmp, allset);
+			// create tea contig tmp tmp
+			string out_tea_contig_tmp_tmp = tea_tmp_prefix + "." + chr + ".tea.contig.tmp.tmp";
+			create_tea_contig_tmp_tmp(out_tea_contig_tmp_tmp, out_tea_contig_tmp, allset);
 
 			// refine contig tmp.tmp
-			string out_germline_contig_tmp_tmp_refined = germline_tmp_prefix + "." + chr + ".germline.contig.tmp.tmp.refined";
-			refine_germline_contig_tmp_tmp(out_germline_contig_tmp_tmp_refined, out_germline_contig_tmp_tmp);
+			string out_tea_contig_tmp_tmp_refined = tea_tmp_prefix + "." + chr + ".tea.contig.tmp.tmp.refined";
+			refine_tea_contig_tmp_tmp(out_tea_contig_tmp_tmp_refined, out_tea_contig_tmp_tmp);
 
-			string out_germlime_contig_tmp_tmp_filtered_fa = germline_tmp_prefix + "." + chr + ".germline.contig.tmp.tmp.filtered.fa";
-			create_germline_contig_tmp_tmp_filtered_fa(out_germlime_contig_tmp_tmp_filtered_fa, out_germline_contig_tmp_tmp_refined);
+			string out_germlime_contig_tmp_tmp_filtered_fa = tea_tmp_prefix + "." + chr + ".tea.contig.tmp.tmp.filtered.fa";
+			create_tea_contig_tmp_tmp_filtered_fa(out_germlime_contig_tmp_tmp_filtered_fa, out_tea_contig_tmp_tmp_refined);
 
 			// align tmp.tmp.filtered fa against repeat sequence
-			string out_repeat_tmp_tmp_repeat_aln_sam = germline_tmp_prefix + "." + chr + ".germline.contig.tmp.tmp.filtered.fa.repeat.aln.sam";
+			string out_repeat_tmp_tmp_repeat_aln_sam = tea_tmp_prefix + "." + chr + ".tea.contig.tmp.tmp.filtered.fa.repeat.aln.sam";
 			if(castle::IOUtils::get_file_size(out_repeat_tmp_tmp_repeat_aln_sam) <= 0) {
 				string aln_cmd = (boost::format("bwa aln -t 1 %s %s | bwa samse -f %s %s - %s") % options.repeat_reference % out_germlime_contig_tmp_tmp_filtered_fa
 						% out_repeat_tmp_tmp_repeat_aln_sam % options.repeat_reference % out_germlime_contig_tmp_tmp_filtered_fa).str();
 				system(aln_cmd.c_str());
 			}
 			// align tmp.tmp.filtered fa against ref sequence
-			string out_repeat_tmp_tmp_ref_aln_sam = germline_tmp_prefix + "." + chr + ".germline.contig.tmp.tmp.filtered.fa.ref.aln.sam";
+			string out_repeat_tmp_tmp_ref_aln_sam = tea_tmp_prefix + "." + chr + ".tea.contig.tmp.tmp.filtered.fa.ref.aln.sam";
 			if(castle::IOUtils::get_file_size(out_repeat_tmp_tmp_ref_aln_sam) <= 0) {
 				string aln_cmd = (boost::format("bwa aln -t 1 %s %s | bwa samse -f %s %s - %s") % options.human_reference % out_germlime_contig_tmp_tmp_filtered_fa
 						% out_repeat_tmp_tmp_ref_aln_sam % options.human_reference % out_germlime_contig_tmp_tmp_filtered_fa).str();
@@ -3291,7 +3293,7 @@ void TEA::post_process() {
 			}
 			// read from .tmp.tmp.refined to list aa and bb (refined_map)
 			boost::unordered_map<int64_t, string> refined_map;
-			collect_two_ram_map(refined_map, out_germline_contig_tmp_tmp_refined);
+			collect_two_ram_map(refined_map, out_tea_contig_tmp_tmp_refined);
 
 			// read from .ref.aln.sam to list a and b, and set o
 			set<string> rname;
@@ -3325,18 +3327,18 @@ void TEA::post_process() {
 			// ref_aligned_map <= dt
 
 //			cout << (boost::format("[TEA.post_process] %s, o: %s, oo: %s, ooo: %s, cand: %s, gold: %s\n") % chr % ref_selected_seq_id.size() % oo.size() % ooo.size() % candidate.size() % gold.size()).str();
-			string out_short_transduction_list = germline_tmp_prefix + "." + chr + ".germline.contig.short.transduction.list";
-			create_short_transduction_list(out_short_transduction_list, candidate, o, overlap, ref_aligned_map, out_germline_contig_tmp_tmp_refined);
+			string out_short_transduction_list = tea_tmp_prefix + "." + chr + ".tea.contig.short.transduction.list";
+			create_short_transduction_list(out_short_transduction_list, candidate, o, overlap, ref_aligned_map, out_tea_contig_tmp_tmp_refined);
 			vector<string> transduction_list_files;
 			transduction_list_files.push_back(out_contig_transduction_filtered);
 			transduction_list_files.push_back(out_short_transduction_list);
-			string out_transduction_list = germline_result_prefix + "." + chr + ".germline.contig.transduction.list";
+			string out_transduction_list = tea_result_prefix + "." + chr + ".tea.contig.transduction.list";
 			castle::IOUtils::plain_file_merge_serial(out_transduction_list, transduction_list_files, 1, false);
 			// create post contig list
 			o.clear();
 			collect_transduction_set(o, out_short_transduction_list);
-			string out_germline_contig_list = germline_result_prefix + "." + chr + ".germline.contig.list";
-			create_post_contig_list(out_germline_contig_list, o, out_germline_contig_tmp_tmp_refined);
+			string out_tea_contig_list = tea_result_prefix + "." + chr + ".tea.contig.list";
+			create_post_contig_list(out_tea_contig_list, o, out_tea_contig_tmp_tmp_refined);
 		});
 	}
 	castle::ParallelRunner::run_unbalanced_load(n_cores, tasks);
@@ -3346,9 +3348,9 @@ void TEA::create_orphan_list(const string& out_path, set<string>& orphan, const 
 	string line;
 	vector<string> fso;
 	const char* delim_tab = "\t";
-	// read from .germline.contig.orphan
+	// read from .tea.contig.orphan
 	ifstream f(in_path, ios::binary);
-	// write to .germline.contig.orphan.list
+	// write to .tea.contig.orphan.list
 	ofstream g(out_path, ios::binary);
 	while(getline(f, line, '\n')) {
 		castle::StringUtils::c_string_multi_split(line, delim_tab, fso);
@@ -3383,9 +3385,9 @@ void TEA::create_transduction_filtered(const string& out_path, set<string>& tran
 	string line;
 	vector<string> fso;
 	const char* delim_tab = "\t";
-	// read from .germline.contig.transduction
+	// read from .tea.contig.transduction
 	ifstream f(in_path, ios::binary);
-	// write to .germline.contig.transduction.filtered
+	// write to .tea.contig.transduction.filtered
 	ofstream g(out_path, ios::binary);
 	while(getline(f, line, '\n')) {
 		castle::StringUtils::c_string_multi_split(line, delim_tab, fso);
@@ -3474,7 +3476,7 @@ void TEA::collect_aln_repeat_selected_seq_id(set<string>& repeat_selected_seq_id
 	const char* delim_tab = "\t";
 	const char* delim_underscore = "_";
 
-	// read from .germline.contig.repeat.aln.sam
+	// read from .tea.contig.repeat.aln.sam
 	ifstream f(in_path, ios::binary);
 	while(getline(f, line, '\n')) {
 		if('@' == line[0]) {
@@ -3493,12 +3495,12 @@ void TEA::collect_aln_repeat_selected_seq_id(set<string>& repeat_selected_seq_id
 	}
 }
 
-void TEA::create_germline_contig_tmp(const string& out_path, const string& in_path, const set<string>& o) {
+void TEA::create_tea_contig_tmp(const string& out_path, const string& in_path, const set<string>& o) {
 	string line;
 	vector<string> fso;
-	// read from .germline.contig
+	// read from .tea.contig
 	ifstream f(in_path, ios::binary);
-	// write to .germline.contig.tmp
+	// write to .tea.contig.tmp
 	ofstream g(out_path, ios::binary);
 	int64_t i = 1;
 
@@ -3514,13 +3516,13 @@ void TEA::create_germline_contig_tmp(const string& out_path, const string& in_pa
 	}
 }
 
-void TEA::create_germline_contig_tmp_tmp(const string& out_path, const string& in_path, const set<string>& allset) {
+void TEA::create_tea_contig_tmp_tmp(const string& out_path, const string& in_path, const set<string>& allset) {
 	string line;
 	vector<string> fso;
 	const char* delim_tab = "\t";
-	// read from .germline.contig.tmp
+	// read from .tea.contig.tmp
 	ifstream f(in_path, ios::binary);
-	// write to .germline.contig.tmp.tmp
+	// write to .tea.contig.tmp.tmp
 	ofstream g(out_path, ios::binary);
 	while(getline(f, line, '\n')) {
 		castle::StringUtils::c_string_multi_split(line, delim_tab, fso);
@@ -3535,7 +3537,7 @@ void TEA::create_germline_contig_tmp_tmp(const string& out_path, const string& i
 	}
 }
 
-void TEA::refine_germline_contig_tmp_tmp(const string& out_path, const string& in_path) {
+void TEA::refine_tea_contig_tmp_tmp(const string& out_path, const string& in_path) {
 	string line;
 	vector<string> fso;
 	const char* delim_tab = "\t";
@@ -3656,7 +3658,7 @@ void TEA::refine_germline_contig_tmp_tmp(const string& out_path, const string& i
 	}
 }
 
-void TEA::create_germline_contig_tmp_tmp_filtered_fa(const string& out_path, const string& in_path) {
+void TEA::create_tea_contig_tmp_tmp_filtered_fa(const string& out_path, const string& in_path) {
 	string line;
 	vector<string> fso;
 	const char* delim_tab = "\t";
@@ -3756,7 +3758,7 @@ void TEA::collect_refined_aln_sam_ref(set<string>& rname, boost::unordered_map<s
 	const char* delim_underscore = "_";
 	const char* delim_ampersand = "&";
 
-	// read from .germline.contig.ref.aln.sam
+	// read from .tea.contig.ref.aln.sam
 	ifstream f(in_path, ios::binary);
 	while(getline(f, line, '\n')) {
 		if('@' == line[0]) {
@@ -3813,7 +3815,7 @@ void TEA::collect_refined_aln_sam_repeat(set<string>& rrname, set<string>& oo, s
 	const char* delim_tab = "\t";
 	const char* delim_underscore = "_";
 
-	// read from .germline.contig.tmp.tmp.filtered.fa.repeat.aln.sam
+	// read from .tea.contig.tmp.tmp.filtered.fa.repeat.aln.sam
 	ifstream f(in_path, ios::binary);
 	while(getline(f, line, '\n')) {
 		if('@' == line[0]) {
@@ -11560,7 +11562,7 @@ void TEA::count_clipped(
 
 //	cout << "[TEA.count_clipped] process paired\n";
 	string cl_file = cl_prefix + "." + tmp_chr_name + ".cluster";
-	string germline_file = cl_prefix + "." + tmp_chr_name + ".germline";
+	string tea_file = cl_prefix + "." + tmp_chr_name + ".tea";
 	string p_mate_readname_file = cl_prefix + "." + tmp_chr_name + ".p.mate.rname";
 	string n_mate_readname_file = cl_prefix + "." + tmp_chr_name + ".n.mate.rname";
 	string p_clipped_filename_file = cl_prefix + "." + tmp_chr_name + ".p.clipped.fname";
@@ -11568,7 +11570,7 @@ void TEA::count_clipped(
 	string clipped_file = cl_prefix + "." + tmp_chr_name + ".clipped";
 
 	ofstream out_cl(cl_file, ios::binary);
-	ofstream out_germline(germline_file, ios::binary);
+	ofstream out_tea(tea_file, ios::binary);
 	ofstream out_clipped(clipped_file, ios::binary);
 	ofstream out_p_mate_rname(p_mate_readname_file, ios::binary);
 	ofstream out_n_mate_rname(n_mate_readname_file, ios::binary);
@@ -11577,13 +11579,13 @@ void TEA::count_clipped(
 
 	string header_cl = "chr\ts\te\tsize\ttsd\tpbp\tnbp\trep.repeat\tfamily\tclass\tram\tpram\tnram\tcr\tpcr\tncr\t"
 			"acr\tpacr\tnacr\tacrr\tpram_start\tpram_end\tnram_start\tnram_end\tpgene\tngene\tscore\ts2n\toi\tdesc\tconf\n";
-	string header_germline = "sample\t" + header_cl;
+	string header_tea = "sample\t" + header_cl;
 
 	string header_clipped = "chr\ts\te\trep.repeat\tcpos\taligned\tcigar\ttname\tref.seq\tclipped.seq\tclipped.qual\n";
 
 	if(!headless) {
 		out_cl << header_cl;
-		out_germline << header_germline;
+		out_tea << header_tea;
 		out_clipped << header_clipped;
 	}
 
@@ -11622,7 +11624,7 @@ void TEA::count_clipped(
 			int64_t mid_point = (positive_entry.stop + negative_entry.start + read_length) / (double)2;
 			local_reader.SetRegion(chr_ref_id, start_pos, chr_ref_id, end_pos);
 
-			output_clipped_stat(out_p_clipped_filename, out_n_clipped_filename, out_p_mate_rname, out_n_mate_rname, out_cl, out_germline, out_clipped, contig_dir, ref_repeat_interval_tree, stat_results, gene_interval_tree, gene_results, local_reader, the_ram_boundary_start, the_ram_boundary_end, positive_entry, negative_entry, chr, prefixed_chr, read_length, rmasker_filter_margin, gene_margin, mid_point);
+			output_clipped_stat(out_p_clipped_filename, out_n_clipped_filename, out_p_mate_rname, out_n_mate_rname, out_cl, out_tea, out_clipped, contig_dir, ref_repeat_interval_tree, stat_results, gene_interval_tree, gene_results, local_reader, the_ram_boundary_start, the_ram_boundary_end, positive_entry, negative_entry, chr, prefixed_chr, read_length, rmasker_filter_margin, gene_margin, mid_point);
 		}
 	}
 
@@ -11653,7 +11655,7 @@ void TEA::count_clipped(
 			local_reader.SetRegion(chr_ref_id, start_pos, chr_ref_id, end_pos);
 			int64_t mid_point = positive_entry.stop + read_length;
 
-			output_clipped_stat(out_p_clipped_filename, out_n_clipped_filename, out_p_mate_rname, out_n_mate_rname, out_cl, out_germline, out_clipped, contig_dir, ref_repeat_interval_tree, stat_results, gene_interval_tree, gene_results, local_reader, the_ram_boundary_start, the_ram_boundary_end, positive_entry, negative_entry, chr, prefixed_chr, read_length, rmasker_filter_margin, gene_margin, mid_point);
+			output_clipped_stat(out_p_clipped_filename, out_n_clipped_filename, out_p_mate_rname, out_n_mate_rname, out_cl, out_tea, out_clipped, contig_dir, ref_repeat_interval_tree, stat_results, gene_interval_tree, gene_results, local_reader, the_ram_boundary_start, the_ram_boundary_end, positive_entry, negative_entry, chr, prefixed_chr, read_length, rmasker_filter_margin, gene_margin, mid_point);
 		}
 	}
 
@@ -11682,7 +11684,7 @@ void TEA::count_clipped(
 			int64_t mid_point = negative_entry.start;
 			local_reader.SetRegion(chr_ref_id, start_pos, chr_ref_id, end_pos);
 
-			output_clipped_stat(out_p_clipped_filename, out_n_clipped_filename, out_p_mate_rname, out_n_mate_rname, out_cl, out_germline, out_clipped, contig_dir, ref_repeat_interval_tree, stat_results, gene_interval_tree, gene_results, local_reader, the_ram_boundary_start, the_ram_boundary_end, positive_entry, negative_entry, chr, prefixed_chr, read_length, rmasker_filter_margin, gene_margin, mid_point);
+			output_clipped_stat(out_p_clipped_filename, out_n_clipped_filename, out_p_mate_rname, out_n_mate_rname, out_cl, out_tea, out_clipped, contig_dir, ref_repeat_interval_tree, stat_results, gene_interval_tree, gene_results, local_reader, the_ram_boundary_start, the_ram_boundary_end, positive_entry, negative_entry, chr, prefixed_chr, read_length, rmasker_filter_margin, gene_margin, mid_point);
 		}
 	}
 	local_reader.Close();
@@ -11743,7 +11745,7 @@ void TEA::count_clipped_v(
 
 		string header_cl = "chr\ts\te\tsize\ttsd\tpbp\tnbp\trep.repeat\tfamily\tclass\tram\tpram\tnram\tcr\tpcr\tncr\t"
 				"acr\tpacr\tnacr\tacrr\tpram_start\tpram_end\tnram_start\tnram_end\tpgene\tngene\tscore\ts2n\toi\tdesc\tconf\n";
-		string header_germline = "sample\t" + header_cl;
+		string header_tea = "sample\t" + header_cl;
 
 		string header_clipped = "chr\ts\te\trep.repeat\tcpos\taligned\tcigar\ttname\tref.seq\tclipped.seq\tclipped.qual\n";
 
@@ -11752,7 +11754,7 @@ void TEA::count_clipped_v(
 		const int64_t chr_ref_id = rev_itr->second;
 	//	cout << "[TEA.count_clipped] process paired\n";
 		string cl_file = cl_prefix + "." + tmp_chr_name + ".cluster";
-		string germline_file = cl_prefix + "." + tmp_chr_name + ".germline";
+		string tea_file = cl_prefix + "." + tmp_chr_name + ".tea";
 		string p_mate_readname_file = cl_prefix + "." + tmp_chr_name + ".p.mate.rname";
 		string n_mate_readname_file = cl_prefix + "." + tmp_chr_name + ".n.mate.rname";
 		string p_clipped_filename_file = cl_prefix + "." + tmp_chr_name + ".p.clipped.fname";
@@ -11760,7 +11762,7 @@ void TEA::count_clipped_v(
 		string clipped_file = cl_prefix + "." + tmp_chr_name + ".clipped";
 
 		ofstream out_cl(cl_file, ios::binary);
-		ofstream out_germline(germline_file, ios::binary);
+		ofstream out_tea(tea_file, ios::binary);
 		ofstream out_clipped(clipped_file, ios::binary);
 		ofstream out_p_mate_rname(p_mate_readname_file, ios::binary);
 		ofstream out_n_mate_rname(n_mate_readname_file, ios::binary);
@@ -11768,7 +11770,7 @@ void TEA::count_clipped_v(
 		ofstream out_n_clipped_filename(n_clipped_filename_file, ios::binary);
 
 		out_cl << header_cl;
-		out_germline << header_germline;
+		out_tea << header_tea;
 		out_clipped << header_clipped;
 		{
 			for (auto& a_pair : pm_cl) {
@@ -11793,7 +11795,7 @@ void TEA::count_clipped_v(
 					end_pos = max(end_pos, negative_entry.value.pos[0]);
 				}
 				local_reader.SetRegion(chr_ref_id, start_pos, chr_ref_id, end_pos);
-				output_clipped_stat_v(out_p_clipped_filename, out_n_clipped_filename, out_p_mate_rname, out_n_mate_rname, out_cl, out_germline, out_clipped, contig_dir, ref_repeat_interval_tree, stat_results, vannot, local_reader, the_ram_boundary_start, the_ram_boundary_end,
+				output_clipped_stat_v(out_p_clipped_filename, out_n_clipped_filename, out_p_mate_rname, out_n_mate_rname, out_cl, out_tea, out_clipped, contig_dir, ref_repeat_interval_tree, stat_results, vannot, local_reader, the_ram_boundary_start, the_ram_boundary_end,
 						positive_entry, negative_entry, chr, prefixed_chr, read_length, rmasker_filter_margin, gene_margin);
 			}
 		}
@@ -11822,7 +11824,7 @@ void TEA::count_clipped_v(
 				int64_t end_pos = the_ram_boundary_end - read_length;
 
 				local_reader.SetRegion(chr_ref_id, start_pos, chr_ref_id, end_pos);
-				output_clipped_stat_v(out_p_clipped_filename, out_n_clipped_filename, out_p_mate_rname, out_n_mate_rname, out_cl, out_germline, out_clipped, contig_dir, ref_repeat_interval_tree, stat_results, vannot, local_reader, the_ram_boundary_start, the_ram_boundary_end,
+				output_clipped_stat_v(out_p_clipped_filename, out_n_clipped_filename, out_p_mate_rname, out_n_mate_rname, out_cl, out_tea, out_clipped, contig_dir, ref_repeat_interval_tree, stat_results, vannot, local_reader, the_ram_boundary_start, the_ram_boundary_end,
 						positive_entry, negative_entry, chr, prefixed_chr, read_length, rmasker_filter_margin, gene_margin);
 			}
 		}
@@ -11849,7 +11851,7 @@ void TEA::count_clipped_v(
 					end_pos = max(end_pos, negative_entry.value.pos[0]);
 				}
 				local_reader.SetRegion(chr_ref_id, start_pos, chr_ref_id, end_pos);
-				output_clipped_stat_v(out_p_clipped_filename, out_n_clipped_filename, out_p_mate_rname, out_n_mate_rname, out_cl, out_germline, out_clipped, contig_dir, ref_repeat_interval_tree, stat_results, vannot, local_reader, the_ram_boundary_start, the_ram_boundary_end, positive_entry, negative_entry, chr, prefixed_chr, read_length, rmasker_filter_margin, gene_margin);
+				output_clipped_stat_v(out_p_clipped_filename, out_n_clipped_filename, out_p_mate_rname, out_n_mate_rname, out_cl, out_tea, out_clipped, contig_dir, ref_repeat_interval_tree, stat_results, vannot, local_reader, the_ram_boundary_start, the_ram_boundary_end, positive_entry, negative_entry, chr, prefixed_chr, read_length, rmasker_filter_margin, gene_margin);
 			}
 		}
 		local_reader.Close();
@@ -12450,7 +12452,7 @@ void TEA::output_clipped_stat(
 		ofstream& out_n_clipped_filename,
 		ofstream& out_p_mate_rname,
 		ofstream& out_n_mate_rname,
-		ofstream& out_cl, ofstream& out_germline,
+		ofstream& out_cl, ofstream& out_tea,
 		ofstream& out_clipped,
 		const string& contig_dir,
 		RefRepeatIntervalTree& ref_repeat_interval_tree,
@@ -12738,29 +12740,29 @@ void TEA::output_clipped_stat(
 		a_stat_entry.conf = 0;
 	}
 
-	bool has_written_germline = false;
+	bool has_written_tea = false;
 	if(options.oneside_ram) {
 		if (a_stat_entry.conf >= options.min_out_conf) {
 			if(debug) {
-				cout << "[TEA.output_clipped_stat] write to .germline (oneside-ram)\n";
+				cout << "[TEA.output_clipped_stat] write to .tea (oneside-ram)\n";
 			}
-			out_germline << options.naive_prefix << "\t" << a_stat_entry.str() << "\n";
-			has_written_germline = true;
+			out_tea << options.naive_prefix << "\t" << a_stat_entry.str() << "\n";
+			has_written_tea = true;
 		}
 	}
 	else {
 		if (!options.oneside_ram && !positive_entry.value.pos.empty() && !negative_entry.value.pos.empty()) {
 			if (a_stat_entry.conf >= options.min_out_conf) {
 				if(debug) {
-					cout << "[TEA.output_clipped_stat] write to .germline (not oneside-ram)\n";
+					cout << "[TEA.output_clipped_stat] write to .tea (not oneside-ram)\n";
 				}
-				out_germline << options.naive_prefix << "\t" << a_stat_entry.str() << "\n";
-				has_written_germline = true;
+				out_tea << options.naive_prefix << "\t" << a_stat_entry.str() << "\n";
+				has_written_tea = true;
 			}
 		}
 	}
 
-	if(has_written_germline) {
+	if(has_written_tea) {
 		int64_t n_valid_entries = 0;
 		for (auto& an_entry : clipped_entries) {
 			if (an_entry.aligned != 1|| an_entry.strand < 0 || 0 == an_entry.clipped_seq.length()) {
@@ -12791,7 +12793,7 @@ void TEA::output_clipped_stat(
 		}
 	}
 
-	if(has_written_germline) {
+	if(has_written_tea) {
 		int64_t n_valid_entries = 0;
 		for (auto& an_entry : clipped_entries) {
 			if (an_entry.aligned != 1 || an_entry.strand > 0 || 0 == an_entry.clipped_seq.length()) {
@@ -12826,7 +12828,7 @@ void TEA::output_clipped_stat(
 	out_cl << a_stat_entry.str() << "\n";
 }
 
-void TEA::output_clipped_stat_v(ofstream& out_p_clipped_filename, ofstream& out_n_clipped_filename, ofstream& out_p_mate_rname, ofstream& out_n_mate_rname, ofstream& out_cl, ofstream& out_germline, ofstream& out_clipped, const string& contig_dir, RefRepeatIntervalTree& ref_repeat_interval_tree, RefRepeatIntervalVector& stat_results, const map<int64_t, string>& vannot,
+void TEA::output_clipped_stat_v(ofstream& out_p_clipped_filename, ofstream& out_n_clipped_filename, ofstream& out_p_mate_rname, ofstream& out_n_mate_rname, ofstream& out_cl, ofstream& out_tea, ofstream& out_clipped, const string& contig_dir, RefRepeatIntervalTree& ref_repeat_interval_tree, RefRepeatIntervalVector& stat_results, const map<int64_t, string>& vannot,
 				BamTools::BamReader& local_reader, const int64_t the_ram_boundary_start, const int64_t the_ram_boundary_end, const RAMIntervalEntry& positive_entry, const RAMIntervalEntry& negative_entry, const string& chr, const string& prefixed_chr, const int64_t read_length, const int64_t rmasker_filter_margin, const int64_t gene_margin) {
 	vector<ClippedEntry> clipped_entries;
 	int64_t max_pos_positive = 0;
@@ -13046,7 +13048,7 @@ void TEA::output_clipped_stat_v(ofstream& out_p_clipped_filename, ofstream& out_
 		}
 	}
 	if(!a_stat_entry.desc.empty()) {
-		out_germline << options.naive_prefix << "\t" << a_stat_entry.str() << "\n";
+		out_tea << options.naive_prefix << "\t" << a_stat_entry.str() << "\n";
 	}
 	{
 		int64_t n_valid_entries = 0;
@@ -13363,7 +13365,7 @@ void TEA::output_mate_fa(boost::unordered_map<string, boost::unordered_map<int8_
 			all_files << neg_fa_name << "\n";
 		}
 
-		cout << "[TEA.output_mate_fa] adds germline FASTA files\n";
+		cout << "[TEA.output_mate_fa] adds tea FASTA files\n";
 		bool headless = false;
 
 		for (auto& c : chr_names) {
@@ -13371,19 +13373,20 @@ void TEA::output_mate_fa(boost::unordered_map<string, boost::unordered_map<int8_
 			if(string::npos == tmp_chr_name.find("chr")) {
 				tmp_chr_name = "chr" + c;
 			}
+
 			const char* delim_tab = "\t";
 			const char* delim_comma = ",";
 			vector<string> data;
 			vector<string> cols;
 			string line;
-			string germline_file = cl_prefix + "." + tmp_chr_name + ".germline";
+			string tea_file = cl_prefix + "." + tmp_chr_name + ".tea";
 
-			ifstream in_germline(germline_file, ios::binary);
+			ifstream in_tea(tea_file, ios::binary);
 			// ignore the first line;
 			if(!headless) {
-				getline(in_germline, line, '\n');
+				getline(in_tea, line, '\n');
 			}
-			while(getline(in_germline, line, '\n')) {
+			while(getline(in_tea, line, '\n')) {
 				castle::StringUtils::c_string_multi_split(line, delim_tab, data);
 				castle::StringUtils::c_string_multi_split(data[8], delim_comma, cols);
 				string key_name = data[0] + "." + data[1] + "." + data[2] + "." + data[3] + "." + cols[0];
@@ -13391,6 +13394,7 @@ void TEA::output_mate_fa(boost::unordered_map<string, boost::unordered_map<int8_
 				string nclipped = contig_dir + "/" + key_name + ".neg.fa";
 				string prammate = contig_dir + "/" + key_name + ".rpos.fa";
 				string nrammate = contig_dir + "/" + key_name + ".rneg.fa";
+
 				if(boost::filesystem::exists(pclipped)) {
 					all_files << pclipped << "\n";
 				}
@@ -13415,7 +13419,7 @@ void TEA::output_mate_fa(boost::unordered_map<string, boost::unordered_map<int8_
 	string assembler_cmd = (boost::format("cat %s | xargs -n 1 -P %d -I {} %s {} %s > %s") % all_assembly_files % n_cores % options.assembler % options.assembler_param % out_log_file).str();
 	system(assembler_cmd.c_str());
 
-	cout << "[TEA.output_mate_fa] write germline calls\n";
+	cout << "[TEA.output_mate_fa] write tea calls\n";
 	bool headless = false;
 	for (auto& c : chr_names) {
 		tasks.push_back([&, headless] {
@@ -13428,18 +13432,18 @@ void TEA::output_mate_fa(boost::unordered_map<string, boost::unordered_map<int8_
 			vector<string> data;
 			vector<string> cols;
 			string line;
-			string germline_file = cl_prefix + "." + tmp_chr_name + ".germline";
-			string germline_contig_file = germline_file  + ".contig" ;
+			string tea_file = cl_prefix + "." + tmp_chr_name + ".tea";
+			string tea_contig_file = tea_file  + ".contig";
 
-			ifstream in_germline(germline_file, ios::binary);
-			ofstream out_germline(germline_contig_file, ios::binary);
+			ifstream in_tea(tea_file, ios::binary);
+			ofstream out_tea(tea_contig_file, ios::binary);
 			// ignore the first line;
 			if(!headless) {
-				getline(in_germline, line, '\n');
-				out_germline << line << "\torientation\tpolyA\tpolyT\tpclipped\tnclipped\tprammate\tnrammate\n";
+				getline(in_tea, line, '\n');
+				out_tea << line << "\torientation\tpolyA\tpolyT\tpclipped\tnclipped\tprammate\tnrammate\n";
 			}
 
-			while(getline(in_germline, line, '\n')) {
+			while(getline(in_tea, line, '\n')) {
 				castle::StringUtils::c_string_multi_split(line, delim_tab, data);
 				castle::StringUtils::c_string_multi_split(data[9], delim_comma, cols);
 				string key_name = data[0] + "." + data[1] + "." + data[2] + "." + data[3] + "." + cols[0];
@@ -13477,7 +13481,6 @@ void TEA::output_mate_fa(boost::unordered_map<string, boost::unordered_map<int8_
 				else if (p1.size() > 1 && p2.size() == 1) {
 					prammate = p1;
 				}
-
 
 				string nrammate_prefix = contig_dir + "/" + key_name + ".rneg.fa.cap";
 				string nrammate_contig = nrammate_prefix + ".contigs";
@@ -13532,7 +13535,7 @@ void TEA::output_mate_fa(boost::unordered_map<string, boost::unordered_map<int8_
 					orientation = "-";
 				}
 
-				out_germline << line << "\t" << orientation << "\t" << polyA << "\t" << polyT << "\t" << pclipped << "\t" << nclipped << "\t" << prammate << "\t" << nrammate << "\n";
+				out_tea << line << "\t" << orientation << "\t" << polyA << "\t" << polyT << "\t" << pclipped << "\t" << nclipped << "\t" << prammate << "\t" << nrammate << "\n";
 			}
 		});
 		headless = true;
@@ -13934,12 +13937,12 @@ void TEA::output_mate_fa_v(boost::unordered_map<string, boost::unordered_map<int
 			const char* delim_tab = "\t";
 			vector<string> data;
 			string line;
-			string germline_file = cl_prefix + "." + tmp_chr_name + ".germline";
+			string tea_file = cl_prefix + "." + tmp_chr_name + ".tea";
 
-			ifstream in_germline(germline_file, ios::binary);
+			ifstream in_tea(tea_file, ios::binary);
 			// ignore the first line;
-			getline(in_germline, line, '\n');
-			while(getline(in_germline, line, '\n')) {
+			getline(in_tea, line, '\n');
+			while(getline(in_tea, line, '\n')) {
 				castle::StringUtils::c_string_multi_split(line, delim_tab, data);
 				string key_name = data[0] + "." + data[1] + "." + data[2] + "." + data[3] + "." + data[8];
 				string pclipped = contig_dir + "/" + key_name + ".pos.fa";
@@ -13977,17 +13980,17 @@ void TEA::output_mate_fa_v(boost::unordered_map<string, boost::unordered_map<int
 			const char* delim_tab = "\t";
 			vector<string> data;
 			string line;
-			string germline_file = cl_prefix + "." + tmp_chr_name + ".germline";
-			string germline_contig_file = cl_prefix + "." + tmp_chr_name + ".contig";
+			string tea_file = cl_prefix + "." + tmp_chr_name + ".tea";
+			string tea_contig_file = cl_prefix + "." + tmp_chr_name + ".contig";
 
-			ifstream in_germline(germline_file, ios::binary);
-			ofstream out_germline(germline_contig_file, ios::binary);
+			ifstream in_tea(tea_file, ios::binary);
+			ofstream out_tea(tea_contig_file, ios::binary);
 
 			// adding header;
-			getline(in_germline, line, '\n');
-			out_germline << line << "\torientation\tpolyA\tpolyT\tpclipped\tnclipped\tprammate\tnrammate\n";
+			getline(in_tea, line, '\n');
+			out_tea << line << "\torientation\tpolyA\tpolyT\tpclipped\tnclipped\tprammate\tnrammate\n";
 
-			while(getline(in_germline, line, '\n')) {
+			while(getline(in_tea, line, '\n')) {
 				castle::StringUtils::c_string_multi_split(line, delim_tab, data);
 //				string key_name = options.naive_prefix + "." + data[0] + "." + data[1] + "." + data[2] + "." + data[7];
 				string the_first_taxon_id = data[8];
@@ -14068,7 +14071,7 @@ void TEA::output_mate_fa_v(boost::unordered_map<string, boost::unordered_map<int
 					orientation = "-";
 				}
 
-				out_germline << line << "\t" << orientation << "\t" << polyA << "\t" << polyT << "\t" << pclipped << "\t" << nclipped << "\t" << prammate << "\t" << nrammate << "\n";
+				out_tea << line << "\t" << orientation << "\t" << polyA << "\t" << polyT << "\t" << pclipped << "\t" << nclipped << "\t" << prammate << "\t" << nrammate << "\n";
 			}
 		});
 	}
