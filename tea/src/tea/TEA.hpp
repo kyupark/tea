@@ -1,9 +1,11 @@
-/*
- * TEA.hpp
- *
- *  Created on: Aug 17, 2016
- *      Author: el174
- */
+//============================================================================
+// Name        : TEA.hpp
+// Author      : Kyu Park
+// Version     :
+// Copyright   : Lee Lab @ Boston Children's Hospital
+// Description : TEA 2.0
+//============================================================================
+
 
 #ifndef TEA_TEA_HPP_
 #define TEA_TEA_HPP_
@@ -52,6 +54,8 @@ public:
 	void run_rid();
 	void run_vid();
 	void run_uid();
+
+	void append_contig();
 
 	// transduction
 	void run_transduction();
@@ -410,7 +414,6 @@ inline void TEA::get_two_longest_fa(pair<string, string>& contigs, const string&
 	}
 }
 
-
 inline void TEA::get_bai_index_path(const string& parent_path, string& bai_path) {
 	bai_path = parent_path;
 	bai_path += ".bai";
@@ -433,6 +436,7 @@ inline void TEA::get_bai_index_path(const string& parent_path, string& bai_path)
 	string sambamba_cmd = (boost::format("sambamba index -t %d %s %s") % n_cores % parent_path % bai_path).str();
 	system(sambamba_cmd.c_str());
 }
+
 inline void TEA::get_bni_index_path(const string& parent_path, string& bni_path) {
 	string target_path(parent_path);
 	target_path[target_path.size() - 2] = 'n';

@@ -1,9 +1,10 @@
-/*
- * TEA.cpp
- *
- *  Created on: Aug 17, 2016
- *      Author: el174
- */
+//============================================================================
+// Name        : TEA.cpp
+// Author      : Kyu Park
+// Version     :
+// Copyright   : Lee Lab @ Boston Children's Hospital
+// Description : TEA 2.0
+//============================================================================
 
 #include "TEA.hpp"
 
@@ -40,7 +41,8 @@ void TEA::preprocess() {
 			default:
 				break;
 		}
-	} else {
+	}
+	else {
 		int32_t selected_step = options.sub_name_map[options.sub_module];
 		switch (selected_step) {
 			case 0:
@@ -60,7 +62,6 @@ void TEA::preprocess() {
 				break;
 			default:
 				break;
-
 		}
 	}
 }
@@ -75,6 +76,7 @@ void TEA::preprocess_v() {
 		cl_sorted_bai_path = options.working_prefix + ".cl.sorted.bam.bai";
 		cl_sorted_bni_path = options.working_prefix + ".cl.sorted.bam.bni";
 	}
+
 	generate_um_bams(cl_sorted_bam_path, cl_sorted_bai_path, cl_sorted_bni_path);
 	create_um_FASTQs();
 	generate_va_bams();
@@ -225,7 +227,6 @@ void TEA::run_rid() {
 		min_qual = meerkat::ReadGroup::known_qencodings[qenc].min;
 	}
 
-//	string c = "22";
 	vector<string> chr_names;
 	for(auto& c_entry : ram) {
 		auto c = c_entry.first;
@@ -253,7 +254,6 @@ void TEA::run_rid() {
 		}
 		return local_lhs < local_rhs;
 	});
-
 
 	vector<function<void()> > tasks;
 	bool headless = false;
@@ -368,23 +368,29 @@ void TEA::run_rid() {
 			}
 
 			output_raw_file(c, cl_prefix, p_cl, n_cl, pm_cl, positive_only, negative_only, rl["all"], the_rep_is["fr"], headless);
+
 			int64_t gene_margin = 2;
 			count_clipped(ril_annot_alt, gene_annot, c, cl_prefix, contig_dir, pm_cl, p_cl, n_cl, positive_only, negative_only, rl["all"], the_rep_is["fr"], rmasker_filter_margin, gene_margin, headless);
+
 
 		});
 		headless = true;
 	}
 	castle::ParallelRunner::run_unbalanced_load(n_cores, tasks);
 
-	output_mate_fa(ram);
+	if (options.rid_contig) {
+		output_mate_fa(ram);
+	}
 
-	vector<string> cluster_raw_files;
+
 	vector<string> clipped_files;
-	vector<string> tea_files;
+	vector<string> cluster_raw_files;
 	vector<string> cluster_files;
+	vector<string> tea_files;
 	vector<string> tea_contig_files;
 
 	vector<string> removal_files;
+
 
 	for (auto c : chr_names) {
 //		auto c = c_entry.first;
@@ -398,35 +404,45 @@ void TEA::run_rid() {
 			string n_mate_rname_file = cl_prefix + "." + tmp_chr_name + ".n.mate.rname";
 			string p_clipped_fname_file = cl_prefix + "." + tmp_chr_name + ".p.clipped.fname";
 			string n_clipped_fname_file = cl_prefix + "." + tmp_chr_name + ".n.clipped.fname";
+
 			removal_files.push_back(p_mate_rname_file);
 			removal_files.push_back(n_mate_rname_file);
 			removal_files.push_back(p_clipped_fname_file);
 			removal_files.push_back(n_clipped_fname_file);
 		}
 
-		string cluster_raw_file = cl_prefix + "." + tmp_chr_name + ".cluster.raw";
 		string clipped_file = cl_prefix + "." + tmp_chr_name + ".clipped";
-		string tea_file = cl_prefix + "." + tmp_chr_name + ".tea";
+		string cluster_raw_file = cl_prefix + "." + tmp_chr_name + ".cluster.raw";
 		string cluster_file = cl_prefix + "." + tmp_chr_name + ".cluster";
+		string tea_file = cl_prefix + "." + tmp_chr_name + ".tea";
 		string tea_contig_file = cl_prefix + "." + tmp_chr_name + ".tea.contig";
-		cluster_raw_files.push_back(cluster_raw_file);
+
 		clipped_files.push_back(clipped_file);
-		tea_files.push_back(tea_file);
+		cluster_raw_files.push_back(cluster_raw_file);
 		cluster_files.push_back(cluster_file);
-		tea_contig_files.push_back(tea_contig_file);
+		tea_files.push_back(tea_file);
+
+		if (options.rid_contig) {
+			tea_contig_files.push_back(tea_contig_file);
+		}
+
 	}
 
-	string out_cluster_raw_file = cl_prefix + ".cluster.raw";
+
 	string out_clipped_file = cl_prefix + ".clipped";
-	string out_tea_file = cl_prefix + ".tea";
+	string out_cluster_raw_file = cl_prefix + ".cluster.raw";
 	string out_cluster_file = cl_prefix + ".cluster";
+	string out_tea_file = cl_prefix + ".tea";
 	string out_tea_contig_file = cl_prefix + ".tea.contig";
 
-	castle::IOUtils::plain_file_merge(out_cluster_raw_file, cluster_raw_files, n_cores, true);
 	castle::IOUtils::plain_file_merge(out_clipped_file, clipped_files, n_cores, true);
-	castle::IOUtils::plain_file_merge(out_tea_file, tea_files, n_cores, true);
+	castle::IOUtils::plain_file_merge(out_cluster_raw_file, cluster_raw_files, n_cores, true);
 	castle::IOUtils::plain_file_merge(out_cluster_file, cluster_files, n_cores, true);
-	castle::IOUtils::plain_file_merge(out_tea_contig_file, tea_contig_files, n_cores, true);
+	castle::IOUtils::plain_file_merge(out_tea_file, tea_files, n_cores, true);
+
+	if (options.rid_contig) {
+		castle::IOUtils::plain_file_merge(out_tea_contig_file, tea_contig_files, n_cores, true);
+	}
 
 	castle::IOUtils::remove_files(removal_files, n_cores);
 
@@ -944,6 +960,290 @@ void TEA::run_transduction() {
 		write_non_dup_umm(out_umm2, out_umm_tmp2, dup_cnt);
 	});
 	castle::ParallelRunner::run_unbalanced_load(n_cores, tasks);
+}
+
+void TEA::append_contig(){
+	options.cmd_contig = true;
+
+	string all_assembly_files = options.prefix + ".asssemblies.target";
+	if (!options.working_dir.empty()) {
+		all_assembly_files = options.working_prefix + ".asssemblies.target";
+	}
+	if(!options.is_force && boost::filesystem::exists(all_assembly_files)) {
+		return;
+	}
+	set<string> ref_support;
+	ref_support.insert("hg18");
+	ref_support.insert("hg19");
+	ref_support.insert("ponAbe2");
+	ref_support.insert("panTro3");
+	ref_support.insert("rheMac2");
+	string ref = options.ref;
+	if (ref_support.end() == ref_support.find(ref)) {
+		cout << (boost::format("[TEA.run_rid] The reference %s is not supported\n") % ref).str();
+		exit(1);
+	}
+
+	boost::unordered_map<string, pair<string, string>> rannot;
+	load_repeat_annotation(rannot);
+
+	set<string> chrl;
+	boost::unordered_map<string, vector<pair<int64_t, int64_t>>> gap_annot;
+	boost::unordered_map<string, RefRepeatIntervalVector> ril_annot_alt;
+	boost::unordered_map<string, GeneIntervalVector> gene_annot;
+
+	bool out_chrl = true;
+	bool out_gap = false;
+
+	load_ref_annotation(chrl, rannot, ril_annot_alt, gap_annot, gene_annot, out_chrl, out_gap);
+
+	string cbam_file;
+	if (!options.no_clipped && (options.is_sampe || options.is_mem) ) {
+		cbam_file = options.prefix + ".softclips.consd.bam";
+	}
+
+	string cl_dir = options.output_dir + "-" + options.rasym + "m";
+	string naive_prefix = options.naive_prefix;
+	string contig_dir = options.prefix + "/assembly_" + options.rasym + "m";
+
+	if (!options.working_dir.empty()) {
+		if (!options.no_clipped && (options.is_sampe || options.is_mem)) {
+			cbam_file = options.working_prefix + ".softclips.consd.bam";
+		}
+		cl_dir = options.output_dir + "-" + options.rasym + "m";
+		contig_dir = options.working_prefix + "/assembly_" + options.rasym + "m";
+	}
+	string cl_prefix = cl_dir + "/" + naive_prefix;
+	if (!options.no_clipped && (options.is_sampe || options.is_mem)) {
+		if (!boost::filesystem::exists(cbam_file)) {
+			cout << (boost::format("[TEA.run_rid] there is no clipped bam file: %s\n") % cbam_file).str();
+			exit(1);
+		}
+	}
+	if (!boost::filesystem::exists(cl_dir)) {
+		boost::filesystem::create_directories(cl_dir);
+	}
+	if (!boost::filesystem::exists(contig_dir)) {
+		boost::filesystem::create_directories(contig_dir);
+	}
+
+	boost::unordered_map<string, int32_t> rl;
+	load_read_length(rl);
+
+	boost::unordered_map<string, boost::unordered_map<string, double>> is;
+	load_insert_size(is, rl);
+
+	auto& the_rep_is = is["all"];
+	double rmasker_filter_margin = 500;
+
+	cout << (boost::format("[TEA.run_rid] fragment: %d (mu: %d, sd: %d), intra.gap: %d, inter.gap: %d, ins.margin: %d, rmasker.filter.margin: %d\n") % the_rep_is["fr"] % the_rep_is["mu"] % the_rep_is["sd"] % the_rep_is["intra_gap"] % the_rep_is["inter_gap"] % the_rep_is["ins_margin"] % rmasker_filter_margin).str();
+
+	const bool rm_dup = false;
+
+	boost::unordered_map<string, boost::unordered_map<int8_t, vector<RAMRepeatEntry>>> ram;
+	load_ram(ram, rannot, rm_dup);
+
+	string the_first_stat_file = options.prefix + ".firststat";
+	if (!options.working_dir.empty()) {
+		the_first_stat_file = options.working_prefix + ".firststat";
+	}
+	if (!boost::filesystem::exists(the_first_stat_file)) {
+		cout << "[TEA.run_rid] ERROR:: could not open " << the_first_stat_file << "\n";
+		exit(1);
+	}
+
+	{
+		string line;
+		ifstream in(the_first_stat_file);
+		for (int64_t line_id = 0; line_id < 5; ++line_id) {
+			getline(in, line, '\n');
+		}
+		qenc = boost::lexical_cast<int32_t>(line);
+		min_qual = meerkat::ReadGroup::known_qencodings[qenc].min;
+	}
+
+	vector<string> chr_names;
+	for(auto& c_entry : ram) {
+		auto c = c_entry.first;
+		chr_names.push_back(c);
+	}
+
+	cout << (boost::format("[TEA.run_rid] Sorting chr_names \n")).str();
+	sort(chr_names.begin(), chr_names.end(), [&](const string& lhs, const string& rhs)->bool{
+		string local_lhs = lhs;
+		string local_rhs = rhs;
+		boost::replace_all(local_lhs, "chr", "");
+		boost::replace_all(local_rhs, "chr", "");
+		int64_t lhs_v = numeric_limits<int64_t>::max();
+		int64_t rhs_v = lhs_v;
+		try {
+			lhs_v = boost::lexical_cast<int64_t>(local_lhs);
+		} catch(exception& ex) {}
+		try {
+			rhs_v = boost::lexical_cast<int64_t>(local_rhs);
+		} catch(exception& ex) {}
+		if(lhs_v < rhs_v) {
+			return true;
+		} else if(lhs_v > rhs_v) {
+			return false;
+		}
+		return local_lhs < local_rhs;
+	});
+
+	vector<function<void()> > tasks;
+	bool headless = false;
+	for (auto c: chr_names) {
+		tasks.push_back([&, c, headless] {
+
+			RAMIntervalVector p_cl;
+			RAMIntervalVector n_cl;
+
+			if (ram[c][1].size() > 0) {
+				get_cluster_alt(c, p_cl, ram[c][1], rannot, 1, is["all"]["intra_gap"]);
+			}
+			if (ram[c][-1].size() > 0) {
+				get_cluster_alt(c, n_cl, ram[c][-1], rannot, -1, is["all"]["intra_gap"]);
+			}
+
+			multimap<int64_t, int64_t> pm_cl;
+			vector<int64_t> unpaired_pidx;
+			vector<int64_t> unpaired_nidx;
+
+			if (!p_cl.empty() && !n_cl.empty()) {
+				bool stringent_pair = ("um" == options.rasym);
+				for (uint64_t r_id = 0; r_id < p_cl.size(); ++r_id) {
+					p_cl[r_id].value.global_cluster_id = r_id;
+				}
+				for (uint64_t r_id = 0; r_id < n_cl.size(); ++r_id) {
+					n_cl[r_id].value.global_cluster_id = r_id;
+				}
+				pair_cluster_alt(pm_cl, p_cl, n_cl, is["all"]["inter_gap"], rl["all"], stringent_pair);
+			}
+
+			boost::unordered_set<int64_t> positive_paired;
+			boost::unordered_set<int64_t> negative_paired;
+
+			auto it = pm_cl.begin();
+//			cout << c << ":" << pm_cl.size() << "\n";
+			if (pm_cl.size() == 1) {
+				auto p = p_cl[it->first];
+				auto n = n_cl[it->second];
+
+				positive_paired.insert(p.value.global_cluster_id);
+				negative_paired.insert(n.value.global_cluster_id);
+			}
+			else if (pm_cl.size() > 1) {
+				while (it != prev(pm_cl.end())) {
+					auto nx = next(it);
+					auto p = p_cl[it->first];
+					auto n = n_cl[it->second];
+					auto pp = p_cl[nx->first];
+					auto nn = n_cl[nx->second];
+
+					if ((p.start == pp.start || n.stop == nn.stop)
+							&& (p.value.rep_repeat == pp.value.rep_repeat
+									|| n.value.rep_repeat == nn.value.rep_repeat)) {
+						if( p.value.ram + n.value.ram < pp.value.ram + nn.value.ram) {
+							it = pm_cl.erase(it);
+							continue;
+						}
+						else {
+							nx = pm_cl.erase(nx);
+						}
+					}
+					positive_paired.insert(p.value.global_cluster_id);
+					negative_paired.insert(n.value.global_cluster_id);
+					if (nx == pm_cl.end()) {
+						break;
+					}
+					++it;
+				}
+				auto& p = p_cl[it->first];
+				auto& n = n_cl[it->second];
+
+				positive_paired.insert(p.value.global_cluster_id);
+				negative_paired.insert(n.value.global_cluster_id);
+			}
+
+			boost::unordered_set<int64_t> positive_only;
+			boost::unordered_set<int64_t> negative_only;
+
+			for (int64_t r_id = 0; r_id < static_cast<int64_t>(p_cl.size()); ++r_id) {
+				if (positive_paired.end() != positive_paired.find(r_id)) {
+					continue;
+				}
+				bool only_polya = false;
+				if (1 == p_cl[r_id].value.rep_repeat.size()) {
+					for (auto& rep : p_cl[r_id].value.rep_repeat) {
+						if("PolyA" == rep) {
+							only_polya = true;
+						}
+					}
+				}
+				if (!only_polya) {
+					positive_only.insert(r_id);
+				}
+			}
+
+			for (int64_t r_id = 0; r_id < static_cast<int64_t>(n_cl.size()); ++r_id) {
+				if (negative_paired.end() != negative_paired.find(r_id)) {
+					continue;
+				}
+				bool only_polya = false;
+				if (1 == n_cl[r_id].value.rep_repeat.size()) {
+					for (auto& rep : n_cl[r_id].value.rep_repeat) {
+						if("PolyA" == rep) {
+							only_polya = true;
+						}
+					}
+				}
+				if (!only_polya) {
+					negative_only.insert(r_id);
+				}
+			}
+
+//			output_raw_file(c, cl_prefix, p_cl, n_cl, pm_cl, positive_only, negative_only, rl["all"], the_rep_is["fr"], headless);
+
+			int64_t gene_margin = 2;
+			count_clipped(ril_annot_alt, gene_annot, c, cl_prefix, contig_dir, pm_cl, p_cl, n_cl, positive_only, negative_only, rl["all"], the_rep_is["fr"], rmasker_filter_margin, gene_margin, headless);
+
+		});
+		headless = true;
+	}
+	castle::ParallelRunner::run_unbalanced_load(n_cores, tasks);
+
+
+	output_mate_fa(ram);
+
+
+	vector<string> tea_contig_files;
+	vector<string> removal_files;
+
+	for (auto c : chr_names) {
+		string tmp_chr_name(c);
+		if(string::npos == tmp_chr_name.find("chr")) {
+			tmp_chr_name = "chr" + c;
+		}
+
+		string tea_contig_file = cl_prefix + "." + tmp_chr_name + ".tea.contig";
+		tea_contig_files.push_back(tea_contig_file);
+
+		if (!options.debug) {
+			string p_mate_rname_file = cl_prefix + "." + tmp_chr_name + ".p.mate.rname";
+			string n_mate_rname_file = cl_prefix + "." + tmp_chr_name + ".n.mate.rname";
+			string p_clipped_fname_file = cl_prefix + "." + tmp_chr_name + ".p.clipped.fname";
+			string n_clipped_fname_file = cl_prefix + "." + tmp_chr_name + ".n.clipped.fname";
+			removal_files.push_back(p_mate_rname_file);
+			removal_files.push_back(n_mate_rname_file);
+			removal_files.push_back(p_clipped_fname_file);
+			removal_files.push_back(n_clipped_fname_file);
+		}
+	}
+
+	string out_tea_contig_file = cl_prefix + ".tea.contig";
+	castle::IOUtils::plain_file_merge(out_tea_contig_file, tea_contig_files, n_cores, true);
+	castle::IOUtils::remove_files(removal_files, n_cores);
+
 }
 
 
@@ -2638,7 +2938,7 @@ void TEA::create_tea_orphan(const string& out_path, set<string>& gold, const boo
 }
 
 void TEA::clean() {
-	if(!options.is_cleaning) {
+	if(!options.is_cleaning ) {
 		return;
 	}
 	string prefix = options.prefix;
@@ -2654,6 +2954,7 @@ void TEA::clean() {
 	cout << (boost::format("[TEA.clean] path: %s\n") % root_path.string()).str();
 
 	vector<string> removal_paths;
+
 //	castle::IOUtils::selective_search(root_path, including_regex, removal_paths);
 //
 //	vector<string> excluding_set;
@@ -3280,15 +3581,14 @@ void TEA::post_process() {
 			// align tmp.tmp.filtered fa against repeat sequence
 			string out_repeat_tmp_tmp_repeat_aln_sam = tea_tmp_prefix + "." + chr + ".tea.contig.tmp.tmp.filtered.fa.repeat.aln.sam";
 			if(castle::IOUtils::get_file_size(out_repeat_tmp_tmp_repeat_aln_sam) <= 0) {
-				string aln_cmd = (boost::format("bwa aln -t 1 %s %s | bwa samse -f %s %s - %s") % options.repeat_reference % out_germlime_contig_tmp_tmp_filtered_fa
-						% out_repeat_tmp_tmp_repeat_aln_sam % options.repeat_reference % out_germlime_contig_tmp_tmp_filtered_fa).str();
+				string aln_cmd = (boost::format("bwa aln -t 1 %s %s | bwa samse -f %s %s - %s") % options.repeat_reference % out_germlime_contig_tmp_tmp_filtered_fa % out_repeat_tmp_tmp_repeat_aln_sam % options.repeat_reference % out_germlime_contig_tmp_tmp_filtered_fa).str();
 				system(aln_cmd.c_str());
 			}
 			// align tmp.tmp.filtered fa against ref sequence
 			string out_repeat_tmp_tmp_ref_aln_sam = tea_tmp_prefix + "." + chr + ".tea.contig.tmp.tmp.filtered.fa.ref.aln.sam";
 			if(castle::IOUtils::get_file_size(out_repeat_tmp_tmp_ref_aln_sam) <= 0) {
-				string aln_cmd = (boost::format("bwa aln -t 1 %s %s | bwa samse -f %s %s - %s") % options.human_reference % out_germlime_contig_tmp_tmp_filtered_fa
-						% out_repeat_tmp_tmp_ref_aln_sam % options.human_reference % out_germlime_contig_tmp_tmp_filtered_fa).str();
+				string aln_cmd = (boost::format("bwa aln -t 1 %s %s | bwa samse -f %s %s - %s")
+				% options.human_reference % out_germlime_contig_tmp_tmp_filtered_fa % out_repeat_tmp_tmp_ref_aln_sam % options.human_reference % out_germlime_contig_tmp_tmp_filtered_fa).str();
 				system(aln_cmd.c_str());
 			}
 			// read from .tmp.tmp.refined to list aa and bb (refined_map)
@@ -3954,8 +4254,17 @@ void TEA::create_post_contig_list(const string& out_path, const set<string>& o, 
 	}
 }
 
-void TEA::output_raw_file(const string& chr, const string& cl_prefix, const RAMIntervalVector& p_cl, const RAMIntervalVector& n_cl, const multimap<int64_t, int64_t>& pm_cl, const boost::unordered_set<int64_t>& positive_only, const boost::unordered_set<int64_t>& negative_only, const int64_t read_length,
-		const int64_t fragment_size, const bool headless) {
+void TEA::output_raw_file(
+		const string& chr,
+		const string& cl_prefix,
+		const RAMIntervalVector& p_cl,
+		const RAMIntervalVector& n_cl,
+		const multimap<int64_t, int64_t>& pm_cl,
+		const boost::unordered_set<int64_t>& positive_only,
+		const boost::unordered_set<int64_t>& negative_only,
+		const int64_t read_length,
+		const int64_t fragment_size,
+		const bool headless) {
 
 	string header_cl_raw = "chr\ts\te\tsize\trep.repeat\tfamily\tclass\tram\tram1\tram2\ts1\te1\ts2\te2\tpos1\tpos2\trep.repeat1\trep.repeat2\trepeat.name1\trepeat.name2\t"
 			"rname1\trname2\n";
@@ -11561,17 +11870,21 @@ void TEA::count_clipped(
 	GeneIntervalVector gene_results;
 
 //	cout << "[TEA.count_clipped] process paired\n";
-	string cl_file = cl_prefix + "." + tmp_chr_name + ".cluster";
-	string tea_file = cl_prefix + "." + tmp_chr_name + ".tea";
+
 	string p_mate_readname_file = cl_prefix + "." + tmp_chr_name + ".p.mate.rname";
 	string n_mate_readname_file = cl_prefix + "." + tmp_chr_name + ".n.mate.rname";
 	string p_clipped_filename_file = cl_prefix + "." + tmp_chr_name + ".p.clipped.fname";
 	string n_clipped_filename_file = cl_prefix + "." + tmp_chr_name + ".n.clipped.fname";
-	string clipped_file = cl_prefix + "." + tmp_chr_name + ".clipped";
 
+	string clipped_file = cl_prefix + "." + tmp_chr_name + ".clipped";
+	string cl_file = cl_prefix + "." + tmp_chr_name + ".cluster";
+	string tea_file = cl_prefix + "." + tmp_chr_name + ".tea";
+
+
+	ofstream out_clipped(clipped_file, ios::binary);
 	ofstream out_cl(cl_file, ios::binary);
 	ofstream out_tea(tea_file, ios::binary);
-	ofstream out_clipped(clipped_file, ios::binary);
+
 	ofstream out_p_mate_rname(p_mate_readname_file, ios::binary);
 	ofstream out_n_mate_rname(n_mate_readname_file, ios::binary);
 	ofstream out_p_clipped_filename(p_clipped_filename_file, ios::binary);
@@ -12452,7 +12765,8 @@ void TEA::output_clipped_stat(
 		ofstream& out_n_clipped_filename,
 		ofstream& out_p_mate_rname,
 		ofstream& out_n_mate_rname,
-		ofstream& out_cl, ofstream& out_tea,
+		ofstream& out_cl,
+		ofstream& out_tea,
 		ofstream& out_clipped,
 		const string& contig_dir,
 		RefRepeatIntervalTree& ref_repeat_interval_tree,
@@ -12590,9 +12904,6 @@ void TEA::output_clipped_stat(
 
 	bool debug = false;
 	for (auto& an_entry : clipped_entries) {
-//		if("chr1" == an_entry.chr && 1508219 == an_entry.ram_start && 1508937 == an_entry.ram_end) {
-//			debug = true;
-//		}
 
 		if (an_entry.strand > 0) {
 			int64_t delta = abs(an_entry.clipped_pos_rep - a_stat_entry.pbp);
@@ -12606,7 +12917,9 @@ void TEA::output_clipped_stat(
 				an_entry.aligned = 1;
 			}
 		}
+
 		out_clipped << an_entry.str() << "\n";
+
 	}
 	int64_t s = 0;
 	int64_t e = 0;

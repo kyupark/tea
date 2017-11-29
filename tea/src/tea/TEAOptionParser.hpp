@@ -75,7 +75,7 @@ public:
 	int32_t bp_margin;
 
 	int32_t min_acr;
-	double min_acrr;
+	double  min_acrr;
 	int32_t min_tsd;
 	int32_t max_tsd;
 	int32_t min_out_conf;
@@ -98,6 +98,8 @@ public:
 	bool is_mem;
 	bool including_head_clip;
 	bool debug;
+	bool rid_contig;
+	bool cmd_contig;
 
 };
 

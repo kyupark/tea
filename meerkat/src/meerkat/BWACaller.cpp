@@ -149,6 +149,8 @@ int64_t BWACaller::split_FASTQ_alt(const string& file_path_1, const string& file
 	int64_t n_file_lines_2 = castle::IOUtils::get_number_of_lines(file_path_2);
 	if (n_file_lines_1 != n_file_lines_2) {
 		cerr << "[BWACaller.split_FASTQ] Your input FASTQ files do not have the same number of lines\n";
+		cerr << "[BWACaller.split_FASTQ] " << n_file_lines_1 << " lines in " << file_path_1  << "\n";
+		cerr << "[BWACaller.split_FASTQ] " << n_file_lines_2 << " lines in " << file_path_2  << "\n";
 		exit(1);
 	}
 	cout << (boost::format("[BWACaller.split_FASTQ] # n_lines: %d\n") % n_lines).str();

@@ -216,8 +216,8 @@ namespace meerkat {
 		return true;
 	}
 	bool ReadGroup::recordUUAlt(ofstream& f1, ofstream& f2,
-			BamTools::BamAlignment &a, BamTools::BamAlignment &b, int big_s_bps,
-			int n_cutoff) {
+			BamTools::BamAlignment &a, BamTools::BamAlignment &b,
+			int big_s_bps, int n_cutoff) {
 		/* Not even an FF pair can be produced */
 		if (a.Length < big_s_bps || b.Length < big_s_bps)
 			return false;
@@ -740,8 +740,7 @@ namespace meerkat {
 			return;
 
 		int idx = al.IsReverseStrand() ? 0 : al.CigarData.size() - 1;
-		al.CigarData[idx].Length = max(0,
-				(signed) al.CigarData[idx].Length - x);
+		al.CigarData[idx].Length = max(0, (signed) al.CigarData[idx].Length - x);
 	}
 	void ReadGroup::split_read(BamTools::BamAlignment &al, ostream & split1,
 			ostream& split2, int frag_size, int n_cutoff) {
@@ -755,8 +754,7 @@ namespace meerkat {
 		BamAlignment left = ReadGroup::snip(al, 0, frag_size);
 		string aln_length = boost::lexical_cast<string>(al.Length);
 		left.Name += "~" + aln_length;
-		BamAlignment right = ReadGroup::snip(al, al.Length - frag_size,
-				frag_size);
+		BamAlignment right = ReadGroup::snip(al, al.Length - frag_size, frag_size);
 		right.Name += "~" + aln_length;
 //		if(debug) {
 //			cout << "[ReadGroup.split_read] left: " << left.Name << ": " << left.QueryBases << "\n";

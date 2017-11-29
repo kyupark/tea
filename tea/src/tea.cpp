@@ -1,8 +1,8 @@
 //============================================================================
 // Name        : tea.cpp
-// Author      : Euncheon Lim
+// Author      : Kyu Park
 // Version     :
-// Copyright   : Park Lab @ Harvard Medical School
+// Copyright   : Lee Lab @ Boston Children's Hospital
 // Description : TEA 2.0
 //============================================================================
 
@@ -13,7 +13,7 @@
 using namespace std;
 
 int main(int argc, char **argv) {
-	cout << "tea main tea-g171122a3-keeps_temp_files-two_longest_contig \n";
+	cout << "tea main tea-h171129a6-keeps_temp_files-indep_contig_module \n";
 
 	setvbuf(stdout, NULL, _IONBF, 0);
 	tea::TEAOptionParser option_parser(argc, argv);
@@ -71,6 +71,19 @@ int main(int argc, char **argv) {
 		comp_suffix = ".2";
 		rc.find_overlaps(comp_suffix);
 	}
+	else if("contig" == option_parser.program_name) {
+		tea::TEA tea;
+		tea.set_option_parser(option_parser);
+		tea.append_contig();
+		tea.clean();
+	}
+	else if("clean" == option_parser.program_name) {
+		tea::TEA tea;
+		option_parser.is_cleaning = true;
+		tea.set_option_parser(option_parser);
+		tea.clean();
+	}
+
 	cout << checker;
 	return 0;
 }

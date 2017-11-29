@@ -161,8 +161,10 @@ namespace meerkat {
 	inline int ReadGroup::getMateNumber(const BamTools::BamAlignment &al) {
 		return al.IsFirstMate() ? 1 : 2;
 	}
-	inline void ReadGroup::writeFQpair(ostream &f1, BamTools::BamAlignment &a,
-			ostream &f2, BamTools::BamAlignment &b, int n_cutoff) {
+	inline void ReadGroup::writeFQpair(
+			ostream &f1, BamTools::BamAlignment &a,
+			ostream &f2, BamTools::BamAlignment &b,
+			int n_cutoff) {
 //		bool debug = string::npos != a.Name.find("ST-E00104:502:HFJN5CCXX:1:1108:32826:10890");
 		int n = 0;
 		for (size_t i = 0; i < a.QueryBases.size(); ++i) {
@@ -197,11 +199,12 @@ namespace meerkat {
 			writeFQ(f2, b);
 		}
 	}
+
 	/*
 	 * Write out the substring [start, start+length] (inclusive) of the
 	 * aligned read 'al' to the file 'f' in FASTQ format.
 	 *
-	 * writeFQ() quietly aborts if al contains more than n_cutoff N bases.
+	 * writeFQpair() quietly aborts if al contains more than n_cutoff N bases.
 	 *
 	 * NOTE: Quite similar to the PrintFastq function in the bamtools
 	 * utils.
@@ -210,14 +213,14 @@ namespace meerkat {
 	inline void ReadGroup::writeFQ(ostream &f, BamTools::BamAlignment &al) {
 		string quals = al.Qualities;
 		string bases = al.QueryBases;
+
 		if (al.IsReverseStrand()) {
 			BamTools::Utilities::Reverse(quals);
 			BamTools::Utilities::ReverseComplement(bases);
 		}
 
 		/* Using \n instead of endl to avoid unnecessary stream flushes */
-		f << "@" << al.Name << "\n" << bases << "\n" << "+" << "\n" << quals
-				<< "\n";
+		f << "@" << al.Name << "\n" << bases << "\n" << "+" << "\n" << quals << "\n";
 	}
 } // namespace std
 
