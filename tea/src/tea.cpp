@@ -13,7 +13,7 @@
 using namespace std;
 
 int main(int argc, char **argv) {
-	cout << "tea main tea-h171129a6-keeps_temp_files-indep_contig_module \n";
+	cout << "tea main tea-h171130a9-keeps_temp_files-indep_contig_module-better_clean \n";
 
 	setvbuf(stdout, NULL, _IONBF, 0);
 	tea::TEAOptionParser option_parser(argc, argv);

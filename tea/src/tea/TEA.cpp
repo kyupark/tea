@@ -372,7 +372,6 @@ void TEA::run_rid() {
 			int64_t gene_margin = 2;
 			count_clipped(ril_annot_alt, gene_annot, c, cl_prefix, contig_dir, pm_cl, p_cl, n_cl, positive_only, negative_only, rl["all"], the_rep_is["fr"], rmasker_filter_margin, gene_margin, headless);
 
-
 		});
 		headless = true;
 	}
@@ -2941,6 +2940,7 @@ void TEA::clean() {
 	if(!options.is_cleaning ) {
 		return;
 	}
+
 	string prefix = options.prefix;
 	if(!options.working_dir.empty()) {
 		prefix = options.working_prefix;
@@ -4299,6 +4299,7 @@ void TEA::output_raw_file(
 			}
 			rep_repeat.insert(rep_repeat_p.begin(), rep_repeat_p.end());
 			rep_repeat.insert(rep_repeat_n.begin(), rep_repeat_n.end());
+
 			string repeat_repeat = castle::StringUtils::join(rep_repeat, ",");
 			string p_rep_repeat = castle::StringUtils::join(rep_repeat_p, ",");
 			string n_rep_repeat = castle::StringUtils::join(rep_repeat_n, ",");
@@ -11880,15 +11881,14 @@ void TEA::count_clipped(
 	string cl_file = cl_prefix + "." + tmp_chr_name + ".cluster";
 	string tea_file = cl_prefix + "." + tmp_chr_name + ".tea";
 
-
-	ofstream out_clipped(clipped_file, ios::binary);
-	ofstream out_cl(cl_file, ios::binary);
-	ofstream out_tea(tea_file, ios::binary);
-
 	ofstream out_p_mate_rname(p_mate_readname_file, ios::binary);
 	ofstream out_n_mate_rname(n_mate_readname_file, ios::binary);
 	ofstream out_p_clipped_filename(p_clipped_filename_file, ios::binary);
 	ofstream out_n_clipped_filename(n_clipped_filename_file, ios::binary);
+
+	ofstream out_clipped(clipped_file, ios::binary);
+	ofstream out_cl(cl_file, ios::binary);
+	ofstream out_tea(tea_file, ios::binary);
 
 	string header_cl = "chr\ts\te\tsize\ttsd\tpbp\tnbp\trep.repeat\tfamily\tclass\tram\tpram\tnram\tcr\tpcr\tncr\t"
 			"acr\tpacr\tnacr\tacrr\tpram_start\tpram_end\tnram_start\tnram_end\tpgene\tngene\tscore\ts2n\toi\tdesc\tconf\n";
@@ -13136,6 +13136,7 @@ void TEA::output_clipped_stat(
 		for (int64_t p_id = 0; p_id < max_pos; ++p_id) {
 			out_n_mate_rname << a_stat_entry.s << "\t" << a_stat_entry.e << "\t" << a_stat_entry.rep_suffix << "\t" << positions[p_id] << "\t" << read_names[p_id] << "\n";
 		}
+
 	}
 
 	out_cl << a_stat_entry.str() << "\n";
@@ -13452,6 +13453,7 @@ void TEA::output_mate_fa(boost::unordered_map<string, boost::unordered_map<int8_
 		auto c = c_entry.first;
 		chr_names.push_back(c);
 	}
+
 	sort(chr_names.begin(), chr_names.end(), [&](const string& lhs, const string& rhs)->bool{
 		string local_lhs = lhs;
 		string local_rhs = rhs;
@@ -13749,11 +13751,11 @@ void TEA::output_mate_fa(boost::unordered_map<string, boost::unordered_map<int8_
 			string tea_contig_file = tea_file  + ".contig";
 
 			ifstream in_tea(tea_file, ios::binary);
-			ofstream out_tea(tea_contig_file, ios::binary);
+			ofstream out_tea_contig(tea_contig_file, ios::binary);
 			// ignore the first line;
 			if(!headless) {
 				getline(in_tea, line, '\n');
-				out_tea << line << "\torientation\tpolyA\tpolyT\tpclipped\tnclipped\tprammate\tnrammate\n";
+				out_tea_contig << line << "\torientation\tpolyA\tpolyT\tpclipped\tnclipped\tprammate\tnrammate\n";
 			}
 
 			while(getline(in_tea, line, '\n')) {
@@ -13848,7 +13850,7 @@ void TEA::output_mate_fa(boost::unordered_map<string, boost::unordered_map<int8_
 					orientation = "-";
 				}
 
-				out_tea << line << "\t" << orientation << "\t" << polyA << "\t" << polyT << "\t" << pclipped << "\t" << nclipped << "\t" << prammate << "\t" << nrammate << "\n";
+				out_tea_contig << line << "\t" << orientation << "\t" << polyA << "\t" << polyT << "\t" << pclipped << "\t" << nclipped << "\t" << prammate << "\t" << nrammate << "\n";
 			}
 		});
 		headless = true;
@@ -13983,21 +13985,21 @@ void TEA::_output_mate_fa_ram(
 		const multimap<string, AlnPairEntry>& a_negative_repeat_map,
 		boost::unordered_map<string, boost::unordered_map<int8_t, vector<RAMRepeatEntry>>>& ram) {
 
-	for (auto& it_ram : ram) {
+	for(auto& it_ram : ram) {
 		auto& chr = it_ram.first;
 
-		for (auto& a_ram : ram[chr][1]) {
+		for(auto& a_ram : ram[chr][1]) {
 			auto range = a_positive_repeat_map.equal_range(a_ram.read_name);
-			for (auto& it = range.first; it != range.second; ++it) {
+			for(auto& it = range.first; it != range.second; ++it) {
 				auto& aln_pair = it->second;
 				auto& the_seq_vec = positive_mate_reads[aln_pair.file_name_prefix];
 				the_seq_vec.push_back(a_ram.mate_seq);
 			}
 		}
 
-		for (auto& a_ram : ram[chr][-1]) {
+		for(auto& a_ram : ram[chr][-1]) {
 			auto range = a_negative_repeat_map.equal_range(a_ram.read_name);
-			for (auto& it = range.first; it != range.second; ++it) {
+			for(auto& it = range.first; it != range.second; ++it) {
 				auto& aln_pair = it->second;
 				auto& the_seq_vec = negative_mate_reads[aln_pair.file_name_prefix];
 				the_seq_vec.push_back(a_ram.mate_seq);
