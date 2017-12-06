@@ -39,6 +39,7 @@ public:
 	string working_dir;
 	string output_dir;
 	string working_prefix;
+	string tea_file;
 
 	string isinfoname;
 	string repeat_reference;

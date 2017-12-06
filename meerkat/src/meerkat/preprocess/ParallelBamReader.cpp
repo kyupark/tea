@@ -29,6 +29,7 @@ void ParallelBamReader::collect_boundaries(const int64_t size_block) {
 	string a_path(options.fname);
 	string an_index_path;
 	get_bai_index_path(a_path, an_index_path);
+
 	BamTools::BamReader reader;
 	if (!reader.Open(a_path, an_index_path)) {
 		std::cout << "ERROR: could not open BAM file '" << a_path << "'\n";
@@ -376,8 +377,10 @@ void ParallelBamReader::preprocess() {
 
 //	collect_boundaries_alt();
 
-	if (!boost::filesystem::exists(rfile) || !boost::filesystem::exists(pdffile) || !boost::filesystem::exists(resultfile) || !boost::filesystem::exists(rdist_unmapfile) || !boost::filesystem::exists(rdist_scfile)
-	|| !boost::filesystem::exists(sr1_file) || !boost::filesystem::exists(sr2_file)) {
+	if (!boost::filesystem::exists(rfile) || !boost::filesystem::exists(pdffile)
+	|| !boost::filesystem::exists(resultfile) || !boost::filesystem::exists(rdist_unmapfile)
+	|| !boost::filesystem::exists(rdist_scfile) || !boost::filesystem::exists(sr1_file)
+	|| !boost::filesystem::exists(sr2_file)) {
 		/*** First run through the BAM: record some basic statistics ***
 		 *** and discover all soft clipped reads.  All of the soft   ***
 		 *** clipped reads are stored in a map for the second run.   ***
@@ -3795,6 +3798,7 @@ void ParallelBamReader::output_read_groups_alt() {
 				all_rgs[itr_a_map->first] += itr_a_map->second;
 			}
 		}
+
 		ofstream isinfo(options.isinfoname, ios::binary);
 		for (auto rgit = all_rgs.begin(); all_rgs.end() != rgit; ++rgit) {
 			auto& x = rgit->second;
@@ -4215,7 +4219,7 @@ void ParallelBamReader::create_reports() {
 
 void ParallelBamReader::align_clipped_reads() {
 	if (!options.clip) {
-		cout << "[ParallelBamReader.align_clipped_reads] Option -l 0 is on. Skipping generating cl.sorted.bam file. \n"
+		cout << "[ParallelBamReader.align_clipped_reads] Option -l 0 is on. Skipping generating cl.sorted.bam file. \n";
 		return;
 	}
 	string cl_sortbam = options.prefix + ".cl.sorted.bam";

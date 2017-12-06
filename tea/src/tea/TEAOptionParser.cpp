@@ -178,6 +178,9 @@ TEAOptionParser::TEAOptionParser(int argc, char **argv) :
 			} else if ("-t" == argument) {
 				string value(argv[i + 1]);
 				n_cores = min(n_cores, boost::lexical_cast<int32_t>(value));
+			} else if ("-T" == argument) {
+				string value(argv[i + 1]);
+				n_cores = min(n_cores, boost::lexical_cast<int32_t>(value));
 			} else if("-V" == argument) {
 				string value(argv[i + 1]);
 				vannot_file = value;
@@ -190,6 +193,7 @@ TEAOptionParser::TEAOptionParser(int argc, char **argv) :
 				if (bam_pos == value.size()-4){
 					prefix = value.substr(0, bam_pos);
 				}
+
 				else {
 					cout << "-b takes a '.bam' file \n";
 					exit(1);
@@ -262,6 +266,9 @@ TEAOptionParser::TEAOptionParser(int argc, char **argv) :
 				debug = true;
 			} else if("--contig" == argument) {
 				rid_contig = true;
+			} else if("-T" == argument) {
+				string value(argv[i + 1]);
+				tea_file = value;
 			}
 
 		} catch (exception& ex) {
@@ -270,22 +277,53 @@ TEAOptionParser::TEAOptionParser(int argc, char **argv) :
 			exit(1);
 		}
 	}
+
+	if (!tea_file.empty()) {
+		auto delim_pos = tea_file.rfind("/");
+		if (string::npos != delim_pos) {
+			if ((tea_file.size() - 1) == delim_pos) {
+				cout << "-T argument needs to be a file, not a folder. \n";
+				exit(1);
+			}
+			auto prefix_tmp = tea_file.substr(delim_pos + 1);
+
+			auto tea_pos = prefix_tmp.rfind(".tea");
+			auto germline_pos = prefix_tmp.rfind(".germline");
+			if (tea_pos == prefix_tmp.size()-4) {
+				prefix = prefix_tmp.substr(0, tea_pos);
+			}
+			else if (germline_pos == prefix_tmp.size()-9) {
+				prefix = prefix_tmp.substr(0, germline_pos);
+			}
+
+			if (working_dir.empty()) {
+				auto output_dir_temp = prefix_tmp.substr(0, delim_pos + 1);
+				auto delim_pos = output_dir_temp.rfind("/");
+				if (string::npos != delim_pos) {
+					working_dir = output_dir_temp.substr(0, delim_pos + 1);
+				}
+			}
+		}
+	}
+
+
 	if (working_dir.empty()) {
 		string sep = prefix.empty() ? "" : ".";
 		isinfoname = prefix + sep + "isinfo";
-	} else {
+	}
+	else {
 		auto delim_pos = prefix.rfind("/");
 		if ((prefix.size() - 1) == delim_pos) {
 			delim_pos = prefix.rfind("/", prefix.size() - 2);
-			working_prefix = prefix.substr(delim_pos + 1);
 			output_dir = prefix.substr(delim_pos + 1);
+			working_prefix = prefix.substr(delim_pos + 1);
 		} else {
 			if (string::npos == delim_pos) {
-				working_prefix = working_dir + prefix.substr(0) + "/" + prefix.substr(0);
 				output_dir = working_dir + prefix.substr(0);
+				working_prefix = working_dir + prefix.substr(0) + "/" + prefix.substr(0);
 			} else {
-				working_prefix = working_dir + prefix.substr(delim_pos + 1) + "/" + prefix.substr(delim_pos + 1);
 				output_dir = working_dir + prefix.substr(delim_pos + 1);
+				working_prefix = working_dir + prefix.substr(delim_pos + 1) + "/" + prefix.substr(delim_pos + 1);
 			}
 		}
 		if ("-" != prefix) {

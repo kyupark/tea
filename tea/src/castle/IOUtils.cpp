@@ -671,7 +671,11 @@ void IOUtils::remove_files(const vector<string>& paths, const int32_t n_cores) {
 			try {
 				boost::filesystem::remove(paths[f_id]);
 			} catch(exception& ex) {
-				cerr << "Failed to delete this file/folder " << paths[f_id] << "\n";
+				try {
+					boost::filesystem::remove_all(paths[f_id]);
+				} catch(exception& ex) {
+					cerr << ex.what() << ": Failed to delete this file/folder " << paths[f_id] << "\n";
+				}
 			}
 
 

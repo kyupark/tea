@@ -56,6 +56,7 @@ public:
 	void run_uid();
 
 	void append_contig();
+	void append_contig_alt();
 
 	// transduction
 	void run_transduction();
@@ -209,26 +210,53 @@ private:
 			const int64_t gene_margin,
 			const bool headless);
 
+	void count_clipped_append(
+			const string& chr,
+			const string& cl_prefix,
+			const string& contig_dir,
+			const int64_t read_length,
+			const int64_t fragment_size,
+			const bool headless);
+
 	void count_clipped_v(
-				boost::unordered_map<string, RefRepeatIntervalVector>& ril_annot_alt,
-				map<int64_t, string>& vannot,
-				const string& chr,
-				const string& cl_prefix,
-				const string& contig_dir,
-				const multimap<int64_t, int64_t>& pm_cl,
-				const RAMIntervalVector& p_cl,
-				const RAMIntervalVector& n_cl,
-				boost::unordered_set<int64_t>& positive_only,
-				boost::unordered_set<int64_t>& negative_only,
-				const int64_t read_length,
-				const int64_t fragment_size,
-				const int64_t rmasker_filter_margin,
-				const int64_t gene_margin);
-	void get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& max_pos_positive, int64_t& max_pos_negative, int64_t& n_positive_clipped_reads, int64_t& n_negative_clipped_reads,
-			int64_t& n_aligned_clipped_positive, int64_t& n_aligned_clipped_negative,
-			BamTools::BamReader& local_reader, const int64_t the_ram_boundary_start, const int64_t the_ram_boundary_end, const RAMIntervalEntry& positive_entry, const RAMIntervalEntry& negative_entry, const string& chr, const int64_t read_length, const int64_t mid_point);
-	void output_clipped_stat(ofstream& out_p_clipped_filename, ofstream& out_n_clipped_filename, ofstream& out_p_mate_rname, ofstream& out_n_mate_rname, ofstream& out_cl, ofstream& out_tea, ofstream& out_clipped, const string& contig_dir, RefRepeatIntervalTree& ref_repeat_interval_tree, RefRepeatIntervalVector& stat_results, GeneIntervalTree& gene_interval_tree, GeneIntervalVector& gene_results,
-			BamTools::BamReader& local_reader, const int64_t the_ram_boundary_start, const int64_t the_ram_boundary_end, const RAMIntervalEntry& positive_entry, const RAMIntervalEntry& negative_entry, const string& chr, const string& prefixed_chr, const int64_t read_length, const int64_t rmasker_filter_margin, const int64_t gene_margin, const int64_t mid_point);
+			boost::unordered_map<string, RefRepeatIntervalVector>& ril_annot_alt,
+			map<int64_t, string>& vannot,
+			const string& chr,
+			const string& cl_prefix,
+			const string& contig_dir,
+			const multimap<int64_t, int64_t>& pm_cl,
+			const RAMIntervalVector& p_cl,
+			const RAMIntervalVector& n_cl,
+			boost::unordered_set<int64_t>& positive_only,
+			boost::unordered_set<int64_t>& negative_only,
+			const int64_t read_length,
+			const int64_t fragment_size,
+			const int64_t rmasker_filter_margin,
+			const int64_t gene_margin);
+
+	void get_clipped_entries(vector<ClippedEntry>& clipped_entries, int64_t& max_pos_positive, int64_t& max_pos_negative, int64_t& n_positive_clipped_reads, int64_t& n_negative_clipped_reads, int64_t& n_aligned_clipped_positive, int64_t& n_aligned_clipped_negative, BamTools::BamReader& local_reader, const int64_t the_ram_boundary_start, const int64_t the_ram_boundary_end, const RAMIntervalEntry& positive_entry, const RAMIntervalEntry& negative_entry, const string& chr, const int64_t read_length, const int64_t mid_point);
+
+	void get_clipped_entries_append(vector<ClippedEntry>& clipped_entries, int64_t& max_pos_positive, int64_t& max_pos_negative, int64_t& n_positive_clipped_reads, int64_t& n_negative_clipped_reads, int64_t& n_aligned_clipped_positive, int64_t& n_aligned_clipped_negative, BamTools::BamReader& local_reader, const int64_t the_ram_boundary_start, const int64_t the_ram_boundary_end, const RAMIntervalEntry& positive_entry, const RAMIntervalEntry& negative_entry, const string& chr, const int64_t read_length, const int64_t mid_point);
+
+	void output_clipped_stat(ofstream& out_p_clipped_filename, ofstream& out_n_clipped_filename, ofstream& out_p_mate_rname, ofstream& out_n_mate_rname, ofstream& out_cl, ofstream& out_tea, ofstream& out_clipped, const string& contig_dir, RefRepeatIntervalTree& ref_repeat_interval_tree, RefRepeatIntervalVector& stat_results, GeneIntervalTree& gene_interval_tree, GeneIntervalVector& gene_results, BamTools::BamReader& local_reader, const int64_t the_ram_boundary_start, const int64_t the_ram_boundary_end, const RAMIntervalEntry& positive_entry, const RAMIntervalEntry& negative_entry, const string& chr, const string& prefixed_chr, const int64_t read_length, const int64_t rmasker_filter_margin, const int64_t gene_margin, const int64_t mid_point);
+
+	void output_clipped_stat_append(
+			ofstream& out_p_clipped_filename,
+			ofstream& out_n_clipped_filename,
+			ofstream& out_p_mate_rname,
+			ofstream& out_n_mate_rname,
+			const string& contig_dir,
+			BamTools::BamReader& local_reader,
+			const int64_t the_ram_boundary_start,
+			const int64_t the_ram_boundary_end,
+			const RAMIntervalEntry& positive_entry,
+			const RAMIntervalEntry& negative_entry,
+			const string& chr,
+			const string& prefixed_chr,
+			const int64_t read_length,
+			const int64_t mid_point);
+
+
 	void output_clipped_stat_v(ofstream& out_p_clipped_filename, ofstream& out_n_clipped_filename, ofstream& out_p_mate_rname, ofstream& out_n_mate_rname, ofstream& out_cl, ofstream& out_tea, ofstream& out_clipped, const string& contig_dir, RefRepeatIntervalTree& ref_repeat_interval_tree, RefRepeatIntervalVector& stat_results, const map<int64_t, string>& vannot,
 				BamTools::BamReader& local_reader, const int64_t the_ram_boundary_start, const int64_t the_ram_boundary_end, const RAMIntervalEntry& positive_entry, const RAMIntervalEntry& negative_entry, const string& chr, const string& prefixed_chr, const int64_t read_length, const int64_t rmasker_filter_margin, const int64_t gene_margin);
 	void output_mate_fa(boost::unordered_map<string, boost::unordered_map<int8_t, vector<RAMRepeatEntry>>>& ram);

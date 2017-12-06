@@ -38,6 +38,7 @@
 #include "../../emma/IntervalTree.hpp"
 #include "api/BamReader.h"
 #include "api/BamWriter.h"
+#include "SeqLib/BamReader.h"
 
 #include "Histogram.hpp"
 #include "ReadGroup.h"
